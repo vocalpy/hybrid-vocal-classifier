@@ -1,5 +1,3 @@
-#hvc_funcs
-#utility functions for the "hybrid vocalization classifier"
 import xml.etree.ElementTree as ET
 
 import numpy as np

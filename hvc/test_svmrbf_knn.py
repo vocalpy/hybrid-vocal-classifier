@@ -14,12 +14,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn import neighbors
 
-#from opensourcelandia
-from randomdotorg import RandomDotOrg
+#from utils.randomdotorg import RandomDotOrg
 
 #from functions written just for these experiments
-from finch_helper_funcs import load_from_mat,filter_samples,grid_search, find_best_k
+from utils.finch_helper_funcs import filter_samples,grid_search, find_best_k
+from utils.matlab import load_ftr_files
 from generate_summary import generate_summary_results_files
+
+import pdb;pdb.set_trace()
 
 def shuffle_then_grab_n_samples_by_song_ID(sample_song_IDs,song_ID_list,labels,
                                            num_samples,return_popped_songlist=False):
@@ -43,12 +45,12 @@ def shuffle_then_grab_n_samples_by_song_ID(sample_song_IDs,song_ID_list,labels,
     any songs in the test set.
     """
     song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
-    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
-    try:
-        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-    except HTTPError: # i.e., if random service not available
-        random.seed()
-        random.shuffle(song_ID_list_copy_to_pop)
+#    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
+#    try:
+#        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
+#    except HTTPError: # i.e., if random service not available
+    random.seed()
+    random.shuffle(song_ID_list_copy_to_pop)
     #make copy of list in case we need it back in loop below after popping off items
 
     #outer while loop to make sure there's more than one sample for each class

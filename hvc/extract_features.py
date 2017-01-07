@@ -19,3 +19,14 @@ for dir_name in argv1_txt:
             dir_names.append(normpath(putative_dir_name))
 
 labelset = list(sys.argv[2])
+
+# same for Tachibana and for Todd? forgot
+spect_params
+
+# shouldn't be a constant, should be an argument to the function, default True
+quantify_deltas
+
+# set up output, but this can just be a file, right?
+
+#determine segmenting parameters
+

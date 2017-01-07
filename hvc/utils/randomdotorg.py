@@ -37,7 +37,7 @@ __license__ = "GPL-3"
 import random
 import urllib.request, urllib.parse, urllib.error
 
-
+    
 def _fetch_randomorg(service, **kwargs):
     """Internal function to make a fetch in a random.org service.
     >>> _fetch_randomorg('numbers', num=3, min=10, max=20)
