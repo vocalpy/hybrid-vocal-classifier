@@ -39,7 +39,7 @@ def readrecf(filename):
             elif "Samples" in line:
                 ind = line.find('=')
                 rec_dict['num_samples'] = int(line[ind+1:])
-            elif "T after" in line:
+            elif "T After" in line:
                 ind = line.find('=')
                 rec_dict['time_after'] = float(line[ind+1:])
             elif "T Before" in line:
@@ -47,28 +47,28 @@ def readrecf(filename):
                 rec_dict['time before'] = float(line[ind+1:])
             elif "Output Sound File" in line:
                 ind = line.find('=')
-                rec_dict['outfile'] = int(line[ind+1:])
-            elif "thresholds" in line:
+                rec_dict['outfile'] = line[ind+1:]
+            elif "Thresholds" in line:
                 th_list = []
                 while 1:
-                    line = recfile.line()
+                    line = recfile.readline()
                     if line == "":
                         break
                     try:
-                        th_list.append(float)
+                        th_list.append(float(line))
                     except ValueError:  # because we reached next section
                         line_tmp = line
                         break
                 rec_dict['thresholds'] = th_list
-                if line = "":
+                if line == "":
                     break
-            elif "feedback information" in line:
+            elif "Feedback information" in line:
                 fb_dict = {}
                 while 1:
                     line = recfile.readline()
-                    if line = "":
+                    if line == "":
                         break
-                    elif line = "\n":
+                    elif line == "\n":
                         continue
                     ind = line.find("msec")
                     time = float(line[:ind-1])
@@ -76,10 +76,12 @@ def readrecf(filename):
                     fb_type = line[ind+2:]
                     fb_dict[time] = fb_type
                 rec_dict['feedback_info'] = fb_dict
-                if line = "":
+                if line == "":
                     break
-            elif "trigger times" in line:
-                pass
-            elif "file created" in line:
-                pass
+            elif "File created" in line:
+                header = [line]
+                for counter in range(4):
+                    line = recfile.readline()
+                    header.append(line)
+                rec_dict['header']=header
     return rec_dict
