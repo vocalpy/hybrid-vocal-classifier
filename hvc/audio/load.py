@@ -20,7 +20,7 @@ def readrecf(filename):
             if line_tmp == "":
                 line = recfile.readline()
             else:
-                line = lime_tmp
+                line = line_tmp
                 line_tmp = ""
                 
             if line == "":  # if End Of File
