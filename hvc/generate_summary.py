@@ -11,8 +11,8 @@ from sklearn.metrics import confusion_matrix as confuse_mat
 from sklearn.metrics import recall_score
 
 # from functions files written for these experiments
-from svm_rbf_test_utility_functions import load_from_mat
-from knn_test_functions import load_knn_data
+from utils.svm_rbf_test_utility_functions import load_from_mat
+from utils.knn_test_functions import load_knn_data
 
 ####utility functions for this script
 def filter_labels(labels,labelset):

@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC

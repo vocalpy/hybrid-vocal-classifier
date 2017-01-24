@@ -21,8 +21,6 @@ from utils.finch_helper_funcs import filter_samples,grid_search, find_best_k
 from utils.matlab import load_ftr_files
 from generate_summary import generate_summary_results_files
 
-import pdb;pdb.set_trace()
-
 def shuffle_then_grab_n_samples_by_song_ID(sample_song_IDs,song_ID_list,labels,
                                            num_samples,return_popped_songlist=False):
     """
@@ -120,14 +118,14 @@ svm_fname = glob.glob('*concat_svm_ftr*')
 if len(svm_fname) > 1:
     raise ValueError('found more than one file of concatenated svm features')
 svm_fname = svm_fname[0]
-svm_samples,svm_labels,svm_song_IDs = load_from_mat(svm_fname,'svm')
+svm_samples,svm_labels,svm_song_IDs = load_ftr_files(svm_fname,'svm')
 svm_samples,svm_labels,svm_song_IDs = filter_samples(svm_samples,svm_labels,labelset,svm_song_IDs)
 
 knn_fname = glob.glob('*concat_knn_ftr*')
 if len(knn_fname) > 1:
     raise ValueError('found more than one file of concatenated svm features')
 knn_fname = knn_fname[0]
-knn_samples, knn_labels, knn_song_IDs = load_from_mat(knn_fname,'knn')
+knn_samples, knn_labels, knn_song_IDs = load_ftr_files(knn_fname,'knn')
 knn_samples, knn_labels, knn_song_IDs = filter_samples(knn_samples,knn_labels,labelset,knn_song_IDs)
 
 # shape and elements for svm and knn labels should be the same
