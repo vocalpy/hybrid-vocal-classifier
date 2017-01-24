@@ -86,5 +86,7 @@ for dir_name in dir_names:
         continue
     for not_mat in not_mats:
         cbin = not_mat[:-8] + '.cbin'
-        
+        # load cbin
+        # segment
+        # for each syllable, get spectrogram
         
