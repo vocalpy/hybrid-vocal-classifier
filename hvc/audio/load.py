@@ -1,13 +1,5 @@
 import numpy as np
 
-def read_cbin(filename):
-    """
-    loads .cbin files output by EvTAF
-    """
-
-    data = np.fromfile(filename,dtype=">d") # ">d" means big endian, double
-    return data
-
 def readrecf(filename):
     """
     reads .rec files output by EvTAF
@@ -85,3 +77,16 @@ def readrecf(filename):
                     header.append(line)
                 rec_dict['header']=header
     return rec_dict
+
+def read_cbin(filename):
+    """
+    loads .cbin files output by EvTAF
+    """
+
+    data = np.fromfile(filename,dtype=">d") # ">d" means big endian, double
+    recfile = filename[:-4] + '.rec'
+    rec_dict = readrecf(recfile)
+    sample_freq = rec_dict['sample_freq']
+    return data, sample_freq
+
+
