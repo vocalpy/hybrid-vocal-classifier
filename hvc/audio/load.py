@@ -78,15 +78,30 @@ def readrecf(filename):
                 rec_dict['header']=header
     return rec_dict
 
-def read_cbin(filename):
+def read_cbin(filename,channel=0):
     """
-    loads .cbin files output by EvTAF
-    """
+    loads .cbin files output by EvTAF. 
+    
+    arguments
+    ---------
+    filename : string
 
-    data = np.fromfile(filename,dtype=">d") # ">d" means big endian, double
-    recfile = filename[:-4] + '.rec'
+    channel : integer
+        default is 0
+
+    returns
+    -------
+    data : numpy array
+        1-d vector of 16-bit signed integers
+
+    sample_freq : integer
+        sampling frequency in Hz. Typically 32000.
+    """
+    
+    # .cbin files are big endian, 16 bit signed int, hence dtype=">i2" below
+    data = np.fromfile(filename,dtype=">i2")
+    recfile = filename[:-5] + '.rec'
     rec_dict = readrecf(recfile)
+    data = data[channel::rec_dict['num_channels']]  # step by number of channels
     sample_freq = rec_dict['sample_freq']
     return data, sample_freq
-
-
