@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.io import loadmat
 
 def readrecf(filename):
     """
@@ -105,3 +106,12 @@ def read_cbin(filename,channel=0):
     data = data[channel::rec_dict['num_channels']]  # step by number of channels
     sample_freq = rec_dict['sample_freq']
     return data, sample_freq
+
+def load_notmat(filename):
+    """
+    wrapper around scipy.io.loadmat.
+    Calls loadmat with squeeze_me=True to remove extra dimensions from arrays
+    that loadmat parser sometimes adds.
+    """
+    notmat = loadmat(filename,squeeze_me=True)
+    return notmat

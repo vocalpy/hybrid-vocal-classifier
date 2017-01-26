@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.mlab import specgram
 
 def extract_Tachibana_features(wav,fs,nfft=256,spmax=128,overlap=192,minf=500,
-                               maxf=6000)
+                               maxf=6000):
     """
     Extracts acoustic features from waveform representing a songbird syllable.
     Based on Matlab code written by R.O. Tachibana (rtachi@gmail.com) in Sept.
@@ -44,25 +44,26 @@ def extract_Tachibana_features(wav,fs,nfft=256,spmax=128,overlap=192,minf=500,
     # note that the matlab specgram function returns the STFT by default
     # whereas the default for the matplotlib.mlab version of specgram returns the PSD.
     # So to get the behavior of matplotlib.mlab.specgram to match, mode must be set to 'complex'
-    B,F = specgram(wav_diff,nfft,fs,hanning(nfft),overlap,mode='complex')[0:2] # don't need time vector
-    B2 = np.vstack((B,np.flipud(B[1:-1,:]))
+    B,F = specgram(wav_diff,nfft,fs,np.hanning(nfft),overlap,
+                   mode='complex')[0:2] # don't need time vector
+    B2 = np.vstack((B,np.flipud(B[1:-1,:])))
     S = 20*np.log10(np.abs(B[1:,:]))
     cc = np.real(np.fft.fft(np.log10(np.abs(B2)), axis=0))
     # ^ by this step, everything after the decimal point is already difft from what matlab returns
     C = cc[2:nfft/2+1,:]
     # 5-order delta
     if length(wav) < (5*nfft-4*overlap):
-        SD = np.zeros(spmax,1);
-        CD = np.zeros(spmax,1);
-    else
-        SD = -2*S(:,1:end-4)-1*S(:,2:end-3)+1*S(:,4:end-1)+2*S(:,5:end); 
-        CD = -2*C(:,1:end-4)-1*C(:,2:end-3)+1*C(:,4:end-1)+2*C(:,5:end);
-    end
+        SD = np.zeros(spmax,1)
+        CD = np.zeros(spmax,1)
+    else:
+        SD = -2*S[:,1:-4]-1*S[:,2:-3]+1*S[:,4:-1]+2*S[:,5:]
+        CD = -2*C[:,1:-4]-1*C[:,2:-3]+1*C[:,4:-1]+2*C[:,5:]
+
     # mean 
-    mS = np.mean(S,2)'
-    mDS = np.mean(np.abs(SD),2)'
-    mC = np.mean(C,2)'
-    mDC = np.mean(np.abs(CD),2)'
+    mS = np.mean(S,2).T
+    mDS = np.mean(np.abs(SD),2).T
+    mC = np.mean(C,2).T
+    mDC = np.mean(np.abs(CD),2).T
 
 #     make other acoustical features -------------------
 #       SpecCentroid
@@ -75,58 +76,59 @@ def extract_Tachibana_features(wav,fs,nfft=256,spmax=128,overlap=192,minf=500,
 #       PitchGoodness
 #       Amp 
    
-    maxq = round(fs/minf)*2;
-    minq = round(fs/maxf)*2;
-    [nr,nc] = size(B);
+    maxq = np.round(fs/minf)*2
+    minq = np.round(fs/maxf)*2
+    nr,nc = B.shape
     x = repmat(F,1,nc);
     # amplitude spectrum
-    s = abs(B);
+    s = np.abs(B)
     # probability
-    p = s./repmat(sum(s,1),nr,1);
+    p = s / repmat(np.sum(s,1),nr,1)
     # 1st moment: centroid (mean of distribution)
-    m1 = sum(x.*p,1);
+    m1 = np.sum(x * p,1)
     # 2nd moment: variance (ƒÐ^2)
-    m2 = sum(((x-repmat(m1,nr,1)).^2).*p, 1);
+    m2 = np.sum((np.power(x-repmat(m1,nr,1),2)) * p, 1)
     # 3rd moment
-    m3 = sum(((x-repmat(m1,nr,1)).^3).*p, 1);
+    m3 = np.sum((np.power(x-repmat(m1,nr,1),3)) * p, 1)
     # 4th moment
-    m4 = sum(((x-repmat(m1,nr,1)).^4).*p, 1);
+    m4 = np.sum((np.power(x-repmat(m1,nr,1),4)) * p, 1)
     # distribution parameters
-    SpecCentroid = m1; % mean
-    SpecSpread = m2.^(1/2); % standard deviation
-    SpecSkewness = m3./(m2.^(3/2));
-    SpecKurtosis = m4./(m2.^2);
+    SpecCentroid = m1  # mean
+    SpecSpread = np.power(m2,1/2)  # standard deviation
+    SpecSkewness = m3 / np.power(m2,3/2)
+    SpecKurtosis = m4 / np.power(m2,2)
     # entropy
-    SpecFlatness = exp(mean(log(s),1))./mean(s,1);
+    SpecFlatness = np.exp(np.mean(np.log(s),1)) / np.mean(s,1)
     # slope
-    SpecSlope = zeros(1,nc);
-    X = [F ones(nr,1)];
-    for n=1:nc,
-        beta = (X'*X)\X'*s(:,n);
-        SpecSlope(n) = beta(1);
-    end
+    SpecSlope = np.zeros((1,nc))
+    X = np.horzcat((F,np.ones((nr,1)))
+    for n in range(nc):
+        beta = (X.T*X)\X.T*s[:,n]
+        SpecSlope[n] = beta[1]
+
     # cepstral pitch and pitch goodness
-    exs = [s; repmat(s(end,:),nfft,1); flipud(s(2:end-1,:))];
+    exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
     C = real(fft(log10(exs)));
-    [mv,mid] = max(C(minq:maxq,:));
+    [mv,mid] = np.max(C(minq:maxq,:));
     Pitch = fs./(mid+minq-1);
     PitchGoodness = mv;
-    % amplitude in dB
+    # amplitude in dB
     Amp = 20*log10(sum(s)/nfft);
 
     # 5-order delta
-    A = [SpecCentroid' SpecSpread' SpecSkewness' SpecKurtosis' SpecFlatness' SpecSlope' Pitch' PitchGoodness' Amp'];
-    d5A = -2*A(1:end-4,:)-1*A(2:end-3,:)+1*A(4:end-1,:)+2*A(5:end,:); 
+    A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
+                    SpecFlatness.T,SpecSlope.T,Pitch.T,PitchGoodness.T,Amp.T)
+    d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
 
-    % zerocross (in Hz)
-    zc = length(find(diff(sign(wav))~=0))/2;
-    ZeroCross = zc/dur;
+    # zerocross (in Hz)
+    zc = length(find(diff(sign(wav))~=0))/2
+    ZeroCross = zc/dur
 
     # mean
-    mA = [mean(A,1) ZeroCross mean(abs(d5A),1)];
-    mA(isnan(mA)) = 0;
+    mA = np.horzcat((np.mean(A,1),ZeroCross,np.mean(np.abs(d5A),1))
+    mA[np.isnan(mA)] = 0
 
     # output
-    features = [mS mDS mC mDC dur mA];
+    features = np.horzcat((mS,mDS,mC,mDC,dur,mA))
     return features
 

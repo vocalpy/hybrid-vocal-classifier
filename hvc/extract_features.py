@@ -5,6 +5,8 @@ import glob
 import numpy as np
 from scipy.io import loadmat
 
+from hvc.audio.load import load_cbin,load_notmat
+
 with open(sys.argv[1],'r') as argv1_file:
     argv1_txt = argv1_file.readlines()
 if len(argv1_txt) > 1:
@@ -46,7 +48,7 @@ for dir_name in dir_names:
                                      ])
 
     for ind, not_mat in enumerate(not_mats):
-        not_mat_dict = loadmat(not_mat)
+        not_mat_dict = load_notmat(not_mat)
         segment_params[ind] = (not_mat_dict['min_dur'],
                                not_mat_dict['min_int'],
                                not_mat_dict['threshold'],
@@ -85,8 +87,13 @@ for dir_name in dir_names:
         print('Did not find .not.mat files in {}'.format(dir_name))
         continue
     for not_mat in not_mats:
-        cbin = not_mat[:-8] + '.cbin'
-        # load cbin
+        cbin = not_mat[:-8]
+        dat, fs = load_cbin(cbin)
+        notmat_dict = load_notmat(not_mat)
+        time_vec = np.arange(1,dat.shape[0]+1) / fs
+        onsets = notmat_dict['onsets'] / 1000  # convert from ms to s
+        offsets = notmat_dict['offsets'] / 1000
+        
         # segment
         # for each syllable, get spectrogram
         
