@@ -91,14 +91,16 @@ for dir_name in dir_names:
         dat, fs = read_cbin(cbin)
         notmat_dict = load_notmat(not_mat)
         time_vec = np.arange(1,dat.shape[0]+1) / fs
+        #reshape time_vec so broadcasting works when subtracting onsets below
+        time_vec = time_vec.reshape((time_vec.shape[0],1))
         onsets = notmat_dict['onsets'] / 1000  # convert from ms to s
         # get corresponding indices in time_vec, so we can raw audio of syllable
         # from dat vector
-        onset_ids = np.argmin(np.abs(time_vec - onsets),axis=1)
+        onset_ids = np.argmin(np.abs(time_vec - onsets),axis=0)
         offsets = notmat_dict['offsets'] / 1000
-        offset_ids = np.argmin(np.abs(time_vec - offsets),axis=1)
+        offset_ids = np.argmin(np.abs(time_vec - offsets),axis=0)
         syls = []
         for on_ind,off_ind in zip(onset_ids,offset_ids):
             syls.append(dat[on_ind:off_ind])
-
         import pdb;pdb.set_trace()
+
