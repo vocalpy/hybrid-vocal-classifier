@@ -5,7 +5,7 @@ import glob
 import numpy as np
 from scipy.io import loadmat
 
-from hvc.audio.load import load_cbin,load_notmat
+from hvc.audio.load import read_cbin,load_notmat
 
 with open(sys.argv[1],'r') as argv1_file:
     argv1_txt = argv1_file.readlines()
@@ -88,12 +88,17 @@ for dir_name in dir_names:
         continue
     for not_mat in not_mats:
         cbin = not_mat[:-8]
-        dat, fs = load_cbin(cbin)
+        dat, fs = read_cbin(cbin)
         notmat_dict = load_notmat(not_mat)
         time_vec = np.arange(1,dat.shape[0]+1) / fs
         onsets = notmat_dict['onsets'] / 1000  # convert from ms to s
+        # get corresponding indices in time_vec, so we can raw audio of syllable
+        # from dat vector
+        onset_ids = np.argmin(np.abs(time_vec - onsets),axis=1)
         offsets = notmat_dict['offsets'] / 1000
-        
-        # segment
-        # for each syllable, get spectrogram
-        
+        offset_ids = np.argmin(np.abs(time_vec - offsets),axis=1)
+        syls = []
+        for on_ind,off_ind in zip(onset_ids,offset_ids):
+            syls.append(dat[on_ind:off_ind])
+
+        import pdb;pdb.set_trace()
