@@ -24,7 +24,6 @@ def load_from_mat(fname,return_notmat_fnames=False):
     mat_file = scio.loadmat(fname)
     #loads 'cell array' from .mat file. ftr_file is a dictionary of numpy record arrays
     #the 'feature_cell' record array has two columns: col 1 = actual vals, col 0 is just ftr names
-    pdb.set_trace()
     samples = mat_file['features_mat']
     labels = mat_file['label_vec'].flatten() # flatten because matlab vectors are imported as 2d numpy arrays with one row
     song_IDs_vec = mat_file['song_IDs_vec'].flatten()

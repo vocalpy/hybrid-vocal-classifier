@@ -1,5 +1,3 @@
-import pdb
-
 #from standard library
 import glob
 import sys
@@ -14,7 +12,7 @@ from sklearn.svm import SVC
 from sklearn import neighbors
 
 #from functions written just for these experiments
-from finch_helper_funcs import load_from_mat,uniqify_filename_list
+from hvc.utils.finch_helper_funcs import load_from_mat,uniqify_filename_list
 
 # get command line arguments
 args = sys.argv
