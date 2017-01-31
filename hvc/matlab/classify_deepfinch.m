@@ -70,18 +70,15 @@ for i=1:numel(dirs)
     disp(['Changing to directory ' dirs{i}])
     cd(dirs{i})  
 
-    make_HDFnotmat(min_dur,min_int,threshold,sm_win)
-    HDFnotmats = ls('*.HDF.not.mat');
-    make_spect_files(HDFnotmats,'classify',duration,overlap)
+    make_notmat(min_dur,min_int,threshold,sm_win)
+    notmats = ls('*.not.mat');
+    make_spect_files(notmats,'classify',duration,overlap)
     if strcmp(clf_type,'knn')
         disp('Making feature files to train k-NN classifiers')
-        % feature files for k-NN
-        
-        make_feature_files_for_knn(HDFnotmats,'classify',quantify_deltas)
+        make_feature_files_for_knn(notmats,'classify',quantify_deltas)
     elseif strcmp(clf_type,'svm')
         disp('Making feature files to train SVM classifiers')
-        % feature files for SVM
-        make_feature_files_for_svm(HDFnotmats,'classify')
+        make_feature_files_for_svm(notmats,'classify')
     end 
 end
 

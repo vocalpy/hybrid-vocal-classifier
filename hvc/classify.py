@@ -50,24 +50,26 @@ SHOULD_BE_DOUBLE = ['Fs','min_dur','min_int','offsets','onsets','sm_win','thresh
 #loop through dirs
 for classify_dir in classify_dirs:
     os.chdir(classify_dir)
-    HDF_notmats = glob.glob('*.HDF.not.mat')
+    notmats = glob.glob('*.not.mat')
     if type(clf)==neighbors.classification.KNeighborsClassifier:
         ftr_files = glob.glob('*knn_ftr.to_classify*')
 
     elif type(clf)==SVC:
         ftr_files = glob.glob('*svm_ftr.to_classify*')
-    
-    for ftr_file,notmat in zip(ftr_files,HDF_notmats):
+
+    for ftr_file,notmat in zip(ftr_files,notmats):
         if type(clf)==neighbors.classification.KNeighborsClassifier:
             samples = load_from_mat(ftr_file,'knn','classify')
         elif type(clf)==SVC:
             samples = load_from_mat(ftr_file,'svm','classify')
         samples_scaled = scaler.transform(samples)
         pred_labels = clf.predict(samples_scaled)
-        pred_labels = [chr(val) for val in pred_labels] #chr() to convert back to character from uint32
-        pred_labels = ''.join(pred_labels) # convert into one long string, what evsonganalty expects
+        #chr() to convert back to character from uint32
+        pred_labels = [chr(val) for val in pred_labels]
+        # convert into one long string, what evsonganalty expects
+        pred_labels = ''.join(pred_labels)
         notmat_dict = scio.loadmat(notmat)
-        notmat_dict['labels'] = pred_labels
+        notmat_dict['predicted_labels'] = pred_labels
         print('saving ' + notmat)
         for key, val in notmat_dict.items():
             if key in SHOULD_BE_DOUBLE:

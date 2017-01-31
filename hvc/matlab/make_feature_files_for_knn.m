@@ -42,7 +42,7 @@ for i=1:size(notmats,1)
         id = strfind(notmat_fn,'.not.mat') - 1;
         spect_fn = [notmat_fn(1:id) '.spect.to_train.mat'];
     elseif strcmp(purpose,'classify')
-        id = strfind(notmat_fn,'.HDF.not.mat') - 1;
+        id = strfind(notmat_fn,'.not.mat') - 1;
         spect_fn = [notmat_fn(1:id) '.spect.to_classify.mat'];
     end
 
@@ -188,7 +188,7 @@ for i=1:size(notmats,1)
         extens_id = strfind(notmat_fn,'.not.mat')-1; % where to put new file extension
         ftr_fn = [notmat_fn(1:extens_id) '.knn_ftr.to_train.mat'];
     elseif strcmp(purpose,'classify')
-        extens_id = strfind(notmat_fn,'.HDF.not.mat')-1; % where to put new file extension
+        extens_id = strfind(notmat_fn,'.not.mat')-1; % where to put new file extension
         ftr_fn = [notmat_fn(1:extens_id) '.knn_ftr.to_classify.mat'];
     end
     disp(['Saving: ' ftr_fn])

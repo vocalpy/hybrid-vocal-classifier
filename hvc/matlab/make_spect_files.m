@@ -43,13 +43,8 @@ overlap = p.Results.overlap;
 % Loop throu all .not.mat files in current directory
 for i=1:size(notmats,1)
     notmat_fn = notmats(i,:); % get name of .not.mat filename
-    if strcmp(purpose,'train')
-        id = strfind(notmat_fn,'.not.mat')-1;
-        cbin_fn=notmat_fn(1:id);                % name of corresponding .cbin file
-    elseif strcmp(purpose,'classify')
-        id = strfind(notmat_fn,'.HDF.not.mat')-1;
-        cbin_fn=notmat_fn(1:id);
-    end
+    id = strfind(notmat_fn,'.not.mat')-1;
+    cbin_fn=notmat_fn(1:id);                % name of corresponding .cbin file
     
     load(notmat_fn);
     
@@ -105,9 +100,7 @@ for i=1:size(notmats,1)
                 freqbins_cell{syl} = NaN;
                 timebins_cell{syl} = NaN;
             end
-        end
-            
-        
+        end   
     end
     
     if strcmp(purpose,'train')
