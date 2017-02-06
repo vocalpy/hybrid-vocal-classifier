@@ -48,15 +48,16 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         syl = np.asarray(syl)
         
         #extract duration of syllable
-        dur = syl.shape/fs
+        dur = syl.shape[0]/fs
 
         # spectrogram and cepstrum -------------------
         syl_diff = np.diff(syl) # Tachibana applied a differential filter
         # note that the matlab specgram function returns the STFT by default
         # whereas the default for the matplotlib.mlab version of specgram returns the PSD.
         # So to get the behavior of matplotlib.mlab.specgram to match, mode must be set to 'complex'
-        B,F = specgram(syl_diff,nfft,fs,np.hanning(nfft),overlap,
-                       mode='complex')[0:2] # don't need time vector
+        B,F = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
+                       noverlap=overlap,
+                       mode='complex')[0:2]  # don't need time vector
         B2 = np.vstack((B,np.flipud(B[1:-1,:])))
         S = 20*np.log10(np.abs(B[1:,:]))
         import pdb;pdb.set_trace()

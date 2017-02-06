@@ -6,7 +6,7 @@ import numpy as np
 from scipy.io import loadmat
 
 from hvc.audio.load import read_cbin,load_notmat
-from hvc.features
+from hvc.features import extract_svm_features
 
 with open(sys.argv[1],'r') as argv1_file:
     argv1_txt = argv1_file.readlines()
@@ -81,6 +81,8 @@ if uniq_segment_params.shape[-1] > 1:
             print('That index is out of range. Enter a smaller number.')
             continue
 
+NUM_SVM_FEATURES = 532
+all_svm_feature_arrays = []
 for dir_name in dir_names:
     os.chdir(dir_name)
     not_mats = glob.glob('*.not.mat')
@@ -103,5 +105,6 @@ for dir_name in dir_names:
         syls = []
         for on_ind,off_ind in zip(onset_ids,offset_ids):
             syls.append(dat[on_ind:off_ind])
+        all_svm_feature_arrays.append(extract_svm_features(syls,fs))
         import pdb;pdb.set_trace()
 
