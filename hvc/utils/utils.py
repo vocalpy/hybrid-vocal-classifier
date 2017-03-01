@@ -5,7 +5,7 @@ from scipy.io import wavfile
 from scipy.signal import slepian # AKA DPSS, window used for FFT
 from scipy.signal import spectrogram
 
-import hvc.sequences
+import sequences
 
 class song_spect:
     """
@@ -127,11 +127,11 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
             syl_length = int(syl.find('Length').text)
             label = syl.find('Label').text
             
-            syl_obj = hvc.sequences.Syllable(position = syl_position,
+            syl_obj = sequences.Syllable(position = syl_position,
                                              length = syl_length,
                                              label = label)
             syl_list.append(syl_obj)
-        seq_obj = hvc.sequences.Sequence(wav_file = wav_file,
+        seq_obj = sequences.Sequence(wav_file = wav_file,
                                          position = position,
                                          length = length,
                                          syl_list = syl_list)

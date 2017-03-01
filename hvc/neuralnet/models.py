@@ -1,10 +1,9 @@
-import pdb
-
 import numpy as np
 
 from keras.models import Sequential, Model
-from keras.layers.core import Dense, Activation, Dropout, Flatten, Reshape
-from keras.layers.convolutional import Convolution2D,MaxPooling2D,Convolution3D
+from keras.layers.core import Activation, Dense, Dropout, Flatten, Reshape
+from keras.layers.convolutional import Convolution2D, MaxPooling2D, \
+                                       Convolution3D, ZeroPadding2D
 from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import TimeDistributed
 from keras.optimizers import SGD, Adam
@@ -21,7 +20,6 @@ def Koumura_crossentropy(silent_gap_label_onehot):
     
     #closure so I can have value for silent_gap_label_onehot inside loss function
     def calc(y_true,y_pred):
-        pdb.set_trace()
         y_true_not_silent_gap_inds = np.where((y_true!=silent_gap_label_onehot)).any(axis=1)
         y_true_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
         y_pred_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
@@ -265,4 +263,58 @@ def naive_LSTM(input_shape,num_syllable_classes):
                   optimizer='rmsprop',
                   metrics=['accuracy'])
     
+    return model
+
+def VGG_16(input_shape,num_syllable_classes,weights_path=None):
+    """
+    VGG_16 convnet
+    based on https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3
+    """
+    model = Sequential()
+    model.add(ZeroPadding2D((1,1),input_shape=input_shape))
+    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(MaxPooling2D((2,2), strides=(2,2)))
+
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(128, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(128, 3, 3, activation='relu'))
+    model.add(MaxPooling2D((2,2), strides=(2,2)))
+
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(MaxPooling2D((2,2), strides=(2,2)))
+
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(MaxPooling2D((2,2), strides=(2,2)))
+
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(ZeroPadding2D((1,1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(MaxPooling2D((2,2), strides=(2,2)))
+
+    model.add(Flatten())
+    model.add(Dense(4096, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(4096, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_syllable_classes, activation='softmax'))
+
+    if weights_path:
+        model.load_weights(weights_path)
+
     return model
