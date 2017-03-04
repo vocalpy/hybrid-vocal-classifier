@@ -80,7 +80,7 @@ sm_wins = [];
 for i=1:numel(dirs)
     cd(dirs{i})
     notmats = ls('*.not.mat');
-    if isempty(notmats);cd(root_dir);continue;end
+    if isempty(notmats);cd(home_dir);continue;end
     for j=1:size(notmats,1)
         load(notmats(j,:),'min_dur','min_int','threshold','sm_win')
         allnotmats{end+1} = notmats(j,:);
