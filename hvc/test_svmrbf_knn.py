@@ -8,13 +8,19 @@ import pickle
 import random
 import copy
 
+version = sys.version_info
+if version[0] < 3:
+    from urllib2 import HTTPError
+else:
+    from urllib.error import HTTPError
+
 #from Anaconda
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn import neighbors
 
-#from utils.randomdotorg import RandomDotOrg
+from utils.randomdotorg import RandomDotOrg
 
 #from functions written just for these experiments
 from utils.finch_helper_funcs import filter_samples,grid_search, find_best_k
@@ -42,14 +48,15 @@ def shuffle_then_grab_n_samples_by_song_ID(sample_song_IDs,song_ID_list,labels,
     This is used when creating the test set so that the training set does not contain
     any songs in the test set.
     """
-    song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
-#    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
-#    try:
-#        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-#    except HTTPError: # i.e., if random service not available
-    random.seed()
-    random.shuffle(song_ID_list_copy_to_pop)
+    
     #make copy of list in case we need it back in loop below after popping off items
+    song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
+    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
+    try:
+        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
+    except HTTPError: # i.e., if random service not available
+        random.seed()
+        random.shuffle(song_ID_list_copy_to_pop)
 
     #outer while loop to make sure there's more than one sample for each class
     #see comments in lines 70-72
