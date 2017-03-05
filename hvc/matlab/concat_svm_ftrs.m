@@ -65,6 +65,8 @@ pat = '[a-z]{1,2}\d{1,3}[a-z]{1,2}\d{1,3}';
 bird_name = char(regexp(a_cbin,pat,'match')); % use regexp to extract birdname
 
 curr_dir = pwd;
-save_fname = [bird_name '_svm_ftr_file_from_' curr_dir '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
+filesep_inds = strfind(curr_dir,filesep);
+just_dir_name = curr_dir(filesep_inds(end)+1:end);
+save_fname = [bird_name '_svm_ftr_file_from_' just_dir_name '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
 save_fname = [output_dir '\' save_fname];
-save(save_fname,'features_mat','label_vec','song_IDs_vec','notmat_fnames','dstr')
+save(save_fname,'features_mat','label_vec','song_IDs_vec','notmat_fnames','just_dir_name')

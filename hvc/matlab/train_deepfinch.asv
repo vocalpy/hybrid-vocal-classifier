@@ -206,7 +206,7 @@ birdname = char(regexp(knn_ftr_files(1,:),pattern,'match'));
 all_ftr_cells = cell(2,12);
 all_labels_vec = [];
 all_song_IDs_vec = [];
-all_dir_names = {};
+all_dir_names = []; %
 for i = 1:size(knn_ftr_files,1)
     load(knn_ftr_files(i,:));
     all_ftr_cells(1,:) = feature_cell(1,:);
@@ -215,31 +215,31 @@ for i = 1:size(knn_ftr_files,1)
     end
     all_labels_vec = [all_labels_vec;label_vec'];
     all_song_IDs_vec = [all_song_IDs_vec;song_IDs_vec];
-    all_dir_names = [all_dir_names{:};{just_dir_name}];
+    all_dir_names = [all_dir_names;just_dir_name];
 end
 
 feature_cell = all_ftr_cells;
 label_vec = all_labels_vec;
 song_IDs_vec = all_song_IDs_vec;
-save([birdname '_concat_knn_ftr_cell_generated_' nowstr '.mat'],'feature_cell','label_vec','song_IDs_vec','all_dir_names')
+save([birdname '_concat_knn_ftr_cell_generated_' nowstr '.mat'],'feature_cell','label_vec','song_IDs_vec','all_dstrs')
 
 % for svm
 svm_ftr_files = ls('*svm_ftr*');
 all_ftrs_mat = [];
 all_labels_vec = [];
 all_song_IDs_vec = [];
-all_dir_names = {}; %
+all_dir_names = []; %
 for i = 1:size(svm_ftr_files,1)
     load(svm_ftr_files(i,:));
     all_ftrs_mat = [all_ftrs_mat;features_mat];
     all_labels_vec = [all_labels_vec;label_vec'];
     all_song_IDs_vec = [all_song_IDs_vec;song_IDs_vec];
-    all_dir_names = [all_dir_names{:};{just_dir_name}];
+    all_dir_names = [all_dir_names;just_dir_name];
 end
 features_mat = all_ftrs_mat;
 label_vec = all_labels_vec;
 song_IDs_vec = all_song_IDs_vec;
-save([birdname '_concat_svm_ftr_cell_generated_' nowstr '.mat'],'features_mat','label_vec','song_IDs_vec','all_dir_names')
+save([birdname '_concat_svm_ftr_cell_generated_' nowstr '.mat'],'features_mat','label_vec','song_IDs_vec','all_dstrs')
 
 %lastly save segmenting params used in train_deepfinch script
 save([birdname '_training_params.mat'],...
@@ -251,3 +251,4 @@ save([birdname '_training_params.mat'],...
     'min_int',...
     'threshold',...
     'sm_win')
+    
