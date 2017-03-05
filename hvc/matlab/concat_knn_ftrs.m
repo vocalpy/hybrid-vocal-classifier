@@ -115,9 +115,8 @@ a_cbin = dir(1,:);
 pat = '[a-z]{1,2}\d{1,3}[a-z]{1,2}\d{1,3}';
 birdname = char(regexp(a_cbin,pat,'match')); % use regexp to extract birdname
 
-d_num=fn2datenum(a_cbin); % get date from filename
-dstr = datestr(d_num,'mm-dd-yy');
-save_fname = [birdname '_knn_ftr_file_from_' dstr '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
+curr_dir = pwd;
+save_fname = [birdname '_knn_ftr_file_from_' curr_dir '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
 disp(['saving: ' save_fname]);
 save_fname = [output_dir '\' save_fname];
 save(save_fname,'feature_cell','label_vec','song_IDs_vec','notmat_fnames','dstr')
