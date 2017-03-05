@@ -113,7 +113,7 @@ def grid_search(X,y):
     C_range = np.logspace(-2, 10, 13)
     gamma_range = np.logspace(-9, 3, 13)
     param_grid = dict(gamma=gamma_range, C=C_range)
-    cv = StratifiedShuffleSplit(y, n_iter=5, test_size=0.2, random_state=42)
+    cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
     grid.fit(X, y)
     print("The best parameters are %s with a score of %0.2f"
