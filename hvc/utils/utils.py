@@ -5,7 +5,7 @@ from scipy.io import wavfile
 from scipy.signal import slepian # AKA DPSS, window used for FFT
 from scipy.signal import spectrogram
 
-import sequences
+from hvc.utils import sequences
 
 class song_spect:
     """
@@ -27,6 +27,11 @@ def make_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
     """
     Computes spectogram of raw song waveform using FFT.
     Defaults to FFT parameters from Koumura Okanoya 2016.
+    **Note that spectrogram is log transformed (base 10), and that
+    both spectrogram and freq_bins are "flipped" (reflected across horizontal
+    axis) so that when plotted the lower frequencies of the spectrogram are 
+    at 0 on the y axis.
+
     Inputs:
         wav_file -- filename of .wav file corresponding to song
         size -- of FFT window, default is 512 samples
@@ -35,7 +40,7 @@ def make_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
         freq_range -- range of frequencies to return. Two-element list; frequencies
                       less than the first element or greater than the second are discarded.
     Returns:
-        spect -- spectrogram
+        spect -- spectrogram, log transformed
         time_bins -- vector assigning time values to each column in spect
             e.g. [0,8,16] <-- 8 ms time bins
         freq_bins -- vector assigning frequency values to each row in spect
@@ -48,33 +53,39 @@ def make_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
                            window=win_dpss,
                            nperseg=win_dpss.shape[0],
                            noverlap=fft_overlap)
-    #below, I set freq_bins to >= freq_cutoffs so that Koumura default of [1000,8000] returns 112 freq. bins
-    f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) & (freq_bins < freq_cutoffs[1]))[0] #returns tuple
+    #below, I set freq_bins to >= freq_cutoffs 
+    #so that Koumura default of [1000,8000] returns 112 freq. bins
+    f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) & 
+                        (freq_bins < freq_cutoffs[1]))[0] #returns tuple
     freq_bins = freq_bins[f_inds]
     spect = spect[f_inds,:]
+    spect = np.log10(spect) # log transform to increase range
+
+    #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
+    spect = np.flipud(spect)
+    freq_bins = np.flipud(freq_bins)
     spect_obj = song_spect(spect,freq_bins,time_bins,sampfreq)
     return spect_obj
     
-def compute_log_amp(spect):
+def compute_amp(spect):
     """
-    returns log amplitude of spectrogram.
+    compute amplitude of spectrogram
     Assumes the values for frequencies are power spectral density (PSD).
-    Takes the log of the PSD and sums it for each time bin, i.e. in each column.
+    Sums PSD for each time bin, i.e. in each column.
     Inputs:
         spect -- output from spect_from_song
     Returns:
         amp -- amplitude
     """
-    log_spect = np.log(spect)
-    log_amp = np.sum(log_spect,axis=0)
-    return log_amp
 
-def segment_song(log_amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.002):
+    return np.sum(spect,axis=0)
+
+def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.002):
     """
     Divides songs into segments based on threshold crossings of amplitude.
     Returns onsets and offsets of segments, corresponding (hopefully) to syllables in a song.
     Inputs:
-        log_amp -- log amplitude of power spectral density. Returned by compute_log_amp.
+        amp -- amplitude of power spectral density. Returned by compute_amp.
         time_bins -- time in s, must be same length as log amp. Returned by make_song_spect.
         threshold -- value above which amplitude is considered part of a segment. default is 5000.
         min_syl_dur -- minimum duration of a syllable. default is 0.02, i.e. 20 ms.
@@ -84,11 +95,13 @@ def segment_song(log_amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_du
         So for syllable 1 of a song, its onset is onsets[0] and its offset is offsets[0].
         To get that segment of the spectrogram, you'd take spect[:,onsets[0]:offsets[0]]
     """
-    above_th = sum_log_spec > np.log(threshold) # True where sum_log_spec is greater than log(threshold)
+    above_th = amp > threshold
     h = [1, -1] 
     above_th_convoluted = np.convolve(h,above_th) # convolving with h causes:
-    onsets = time_bins[np.nonzero(above_th_convoluted > 0)] # +1 whenever above_th changes from 0 to 1
-    offsets = time_bins[np.nonzero(above_th_convoluted < 0)] # and -1 whenever above_th changes from 1 to 0
+    # +1 whenever above_th changes from 0 to 1
+    onsets = time_bins[np.nonzero(above_th_convoluted > 0)]
+    # and -1 whenever above_th changes from 1 to 0
+    offsets = time_bins[np.nonzero(above_th_convoluted < 0)]
     
     #get rid of silent intervals that are shorter than min_silent_dur
     silent_gap_durs = onsets[1:] - offsets[:-1] # duration of silent gaps
