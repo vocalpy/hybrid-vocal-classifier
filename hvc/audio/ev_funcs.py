@@ -2,6 +2,7 @@
 ev_funcs
 Python implementations of functions used with EvTAF and evsonganaly.m
 """
+
 import numpy as np
 from scipy.io import loadmat
 
@@ -117,5 +118,14 @@ def load_notmat(filename):
     Calls loadmat with squeeze_me=True to remove extra dimensions from arrays
     that loadmat parser sometimes adds.
     """
+
+    if ".not.mat" in filename:
+        pass
+    elif filename[-4:] == "cbin":
+            filename += ".not.mat"
+    else:
+        raise ValueError("Filename should have extension .cbin.not.mat or"
+                         " .cbin")
+
     notmat = loadmat(filename,squeeze_me=True)
     return notmat
