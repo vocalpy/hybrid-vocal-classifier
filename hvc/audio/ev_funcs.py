@@ -84,7 +84,7 @@ def readrecf(filename):
                 rec_dict['header']=header
     return rec_dict
 
-def read_cbin(filename,channel=0):
+def load_cbin(filename,channel=0):
     """
     loads .cbin files output by EvTAF. 
     

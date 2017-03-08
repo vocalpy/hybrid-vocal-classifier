@@ -5,7 +5,7 @@ import glob
 import numpy as np
 from scipy.io import loadmat
 
-from hvc.audio.load import read_cbin,load_notmat
+from hvc.audio.load import load_cbin,load_notmat
 from hvc.features import extract_svm_features
 
 with open(sys.argv[1],'r') as argv1_file:
@@ -91,7 +91,7 @@ for dir_name in dir_names:
         continue
     for not_mat in not_mats:
         cbin = not_mat[:-8]
-        dat, fs = read_cbin(cbin)
+        dat, fs = load_cbin(cbin)
         notmat_dict = load_notmat(not_mat)
         time_vec = np.arange(1,dat.shape[0]+1) / fs
         #reshape time_vec so broadcasting works when subtracting onsets below
