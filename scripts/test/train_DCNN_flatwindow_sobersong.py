@@ -146,18 +146,18 @@ test_labels = all_syl_labels_shuffled[-1:-1:-NUM_TRAIN_SAMPLES,:]
 # (since at each time point the input is one column of spectrogram)
 num_channels,num_freqbins, num_timebins = all_syl_spects[0].shape
 input_shape = (num_channels,num_freqbins,num_timebins)
-vgg16 = hvc.neuralnet.models.VGG_16(input_shape=input_shape,
+flatwindow = hvc.neuralnet.models.DCNN_flatwindow(input_shape=input_shape,
                                    num_syllable_classes=num_syl_classes) 
 
 now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-filename = 'VGG16_training_' + now_str + '.log'
+filename = 'DCNN_flatwindow_training_' + now_str + '.log'
 csv_logger = CSVLogger(filename,
                        separator=',',
                        append=True)
 callbacks_list = [csv_logger]
 
 print('Training model.')
-vgg16.fit(train_spects,
+flatwindow.fit(train_spects,
           train_labels,
           validation_split=0.33,
           batch_size=32,
