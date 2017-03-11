@@ -227,7 +227,11 @@ def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
             s = layer.strides[0]
             local_window_timebins = pool_out_size(local_window_timebins,f,s)
                 
-    model.add(Convolution2D(num_syllable_classes*5,local_window_freqbins,local_window_timebins,activation='relu', name='full'))
+    model.add(Convolution2D(num_syllable_classes*5,
+                            local_window_freqbins,
+                            local_window_timebins,
+                            activation='relu',
+                            name='full'))
     #pretty sure last softmax layer in model consists of yet another convolution where the
     #number of filters equals the number of syllable classes. And he uses identity activation
 
@@ -316,5 +320,9 @@ def VGG_16(input_shape,num_syllable_classes,weights_path=None):
 
     if weights_path:
         model.load_weights(weights_path)
+    sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+    model.compile(optimizer=sgd,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
 
     return model
