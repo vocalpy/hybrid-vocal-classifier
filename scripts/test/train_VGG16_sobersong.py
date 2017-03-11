@@ -92,16 +92,17 @@ for cbin_ind,cbin in enumerate(cbins[:NUM_SONGS_TO_USE]):
 
 #scale all spects by mean and std of training set
 spect_scaler = StandardScaler()
-# concatenate all spects then transpose so Hz bins are 'features'
-spect_scaler.fit(np.hstack(all_syl_spects[:]).T)
+# concatenate all spects then rotate  so Hz bins are 'features'
+spect_scaler.fit(np.rot90(np.hstack(all_syl_spects[:])))
 # now scale each individual training spect
-for ind, spect in enumerate(all_syl_spects):
-    all_syl_spects[ind] = np.transpose(spect_scaler.transform(spect.T))
+all_syl_spects_scaled = []
+for spect in all_syl_spects:
+    all_syl_spects_scaled.append(
+        np.rot90(spect_scaler.transform(np.rot90(spect),3)))
 
 #reshape training data for model
-all_syl_spects = np.dstack(all_syl_spects[:])
-x,y,n = all_syl_spects.shape
-all_syl_spects = all_syl_spects.reshape(n,1,x,y)
+all_syl_spects = np.stack(all_syl_spects[:],axis=0)
+all_syl_spects = np.expand_dims(all_syl_spects,axis=1)
 
 uniq_syls, syl_counts = np.unique(all_syl_labels,return_counts=True)
 print('Training set:')
@@ -124,7 +125,7 @@ print('Shuffling syllables.')
 # shuffle and split into training and test sets
 RANDOM_SEED = 42 
 np.random.seed(RANDOM_SEED) 
-shuffle_ids = np.random.permutation(n)  # n is from bigram_spects_padded.shape
+shuffle_ids = np.random.permutation(all_syl_spects.shape[0])
 all_syl_spects_shuffled = all_syl_spects[shuffle_ids,:,:,:]
 all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
 
@@ -140,17 +141,19 @@ test_labels = all_syl_labels_shuffled[-1:-1:-NUM_TRAIN_SAMPLES,:]
 # Will be the same for all spects since we used the same FFT params for all.
 # freqBins size is also input shape to LSTM net
 # (since at each time point the input is one column of spectrogram)
-num_channels, num_freq_bins, num_time_bins = all_syl_spects[0].shape
-input_shape = (num_channels,num_freq_bins,num_time_bins)
+num_channels,num_freqbins, num_timebins = all_syl_spects[0].shape
+input_shape = (num_channels,num_freqbins,num_timebins)
 vgg16 = hvc.neuralnet.models.VGG_16(input_shape=input_shape,
                                    num_syllable_classes=num_syl_classes) 
+
+import pdb;pdb.set_trace()
 
 print('Training model.')
 vgg16.fit(train_spects,
           train_labels,
           validation_split=0.33,
           batch_size=32,
-          nb_epoch=100,
+          nb_epoch=200,
           verbose=1
                )
 
