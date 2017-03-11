@@ -151,7 +151,8 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     model.add(TimeDistributed(
         (MaxPooling2D((2,2), strides=(2,2),name='pool3'))))
     
-    #calculate shape that local window would have after passing through convolution + pooling layers.
+    #calculate shape that local window would have after passing through
+    #convolution + pooling layers.
     #For y axis of window, the output shape should already be correct.
     local_window_freqbins = model.layers[-1].output_shape[3] #i.e. rows
     #But for x axis we need to calculate it
@@ -170,8 +171,9 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
                        local_window_timebins,
                        activation='relu',
                        name='full'))))
-    #pretty sure last softmax layer in model consists of yet another convolution where the
-    #number of filters equals the number of syllable classes. And he uses identity activation           
+    #pretty sure last softmax layer in model consists of yet another convolution
+    # where the number of filters equals the number of syllable classes. And he
+    # uses identity activation
     model.add(TimeDistributed(
         (Convolution2D(num_syllable_classes,1,1,activation='linear'))))
     #This yields a 3-D output (neglecting the 1st batch size dimension):
@@ -213,7 +215,8 @@ def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
     model.add(Convolution2D(16,1, 1, activation='relu', name='conv3_2'))
     model.add(MaxPooling2D((2,2), strides=(2,2),name='pool3'))
     
-    #calculate shape that local window would have after passing through convolution + pooling layers.
+    #calculate shape that local window would have after passing through
+    #convolution + pooling layers.
     #For y axis of window, the output shape should already be correct.
     local_window_freqbins = model.layers[-1].output_shape[2] #i.e. rows
     #But for x axis we need to calculate it
@@ -232,8 +235,9 @@ def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
                             local_window_timebins,
                             activation='relu',
                             name='full'))
-    #pretty sure last softmax layer in model consists of yet another convolution where the
-    #number of filters equals the number of syllable classes. And he uses identity activation
+    #pretty sure last softmax layer in model consists of yet another convolution
+    #where the number of filters equals the number of syllable classes. And he
+    #uses identity activation
 
     model.add(Flatten())
     output_ns = model.layers[-1].output_shape[-1]
@@ -242,7 +246,7 @@ def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
     model.add(Dense(num_syllable_classes))
     model.add(Activation('softmax'))
 
-    #adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)               
+    #adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer='sgd',
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
