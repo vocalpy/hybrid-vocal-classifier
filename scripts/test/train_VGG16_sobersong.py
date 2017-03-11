@@ -26,7 +26,7 @@ MAX_SILENT_GAP = 0.08 # s to keep before or after a syllable
 
 # constants used by script
 DATA_DIR = os.path.normpath('C:/DATA/gy6or6/032212')
-NUM_SONGS_TO_USE = 20
+NUM_SONGS_TO_USE = 40
 LABELS_TO_USE = list('abcdefghijk')
 
 os.chdir(DATA_DIR)
@@ -98,10 +98,13 @@ spect_scaler.fit(np.rot90(np.hstack(all_syl_spects[:])))
 all_syl_spects_scaled = []
 for spect in all_syl_spects:
     all_syl_spects_scaled.append(
-        np.rot90(spect_scaler.transform(np.rot90(spect),3)))
+        np.rot90(
+            spect_scaler.transform(np.rot90(spect))
+            ,3)
+            )
 
 #reshape training data for model
-all_syl_spects = np.stack(all_syl_spects[:],axis=0)
+all_syl_spects = np.stack(all_syl_spects_scaled[:],axis=0)
 all_syl_spects = np.expand_dims(all_syl_spects,axis=1)
 
 uniq_syls, syl_counts = np.unique(all_syl_labels,return_counts=True)
@@ -130,7 +133,7 @@ all_syl_spects_shuffled = all_syl_spects[shuffle_ids,:,:,:]
 all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
 
 #constants for training
-NUM_TRAIN_SAMPLES = 512
+NUM_TRAIN_SAMPLES = 2000
 train_spects = all_syl_spects_shuffled[:NUM_TRAIN_SAMPLES,:,:,:]
 train_labels = all_syl_labels_shuffled[:NUM_TRAIN_SAMPLES,:]
 
@@ -145,8 +148,6 @@ num_channels,num_freqbins, num_timebins = all_syl_spects[0].shape
 input_shape = (num_channels,num_freqbins,num_timebins)
 vgg16 = hvc.neuralnet.models.VGG_16(input_shape=input_shape,
                                    num_syllable_classes=num_syl_classes) 
-
-import pdb;pdb.set_trace()
 
 print('Training model.')
 vgg16.fit(train_spects,
