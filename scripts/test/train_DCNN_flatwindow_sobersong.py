@@ -4,18 +4,19 @@ from __future__ import division
 import os
 import glob
 import datetime
+import shelve
 
 import numpy as np
 from scipy.io import wavfile
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from keras.utils.np_utils import to_categorical
-from keras.callbacks import ModelCheckpoint, CSVLogger
+from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 
 import hvc.utils.utils
 import hvc.neuralnet.models
 from hvc.utils import sequences
-from hvc.audio.ev_funcs import load_cbin,load_notmat
+from hvc.audio.evfuncs import load_cbin,load_notmat
 
 #constants for spectrogram
 SAMP_FREQ = 32000 # Hz
@@ -25,8 +26,10 @@ FREQ_CUTOFFS=[1000,8000]
 MAX_SILENT_GAP = 0.08 # s to keep before or after a syllable
 
 # constants used by script
-DATA_DIR = os.path.normpath('C:/DATA/gy6or6/032212/')
-NUM_SONGS_TO_USE = 40
+BIRD_ID = 'bl26lb16'
+DATA_DIR = os.path.normpath('C:/DATA/bl26lb16/pre_surgery_baseline/042012/')
+OUTPUT_DIR = os.path.normpath('C:/DATA/bl26lb16/hvc_neuralnet_results/')
+#NUM_SONGS_TO_USE = 6
 LABELS_TO_USE = list('abcdefghijk')
 
 os.chdir(DATA_DIR)
@@ -41,9 +44,9 @@ MAX_SPECT_WIDTH = 300; # time bins of spect, currently ~ 1ms
 all_syl_labels = []
 all_syl_spects = []
 background_noise = []
-for cbin_ind,cbin in enumerate(cbins[:NUM_SONGS_TO_USE]):
+for cbin_ind,cbin in enumerate(cbins):
     print('extracting syllables from song {} of {}\r'.format(cbin_ind,
-                                                             NUM_SONGS_TO_USE))
+                                                             len(cbins)))
     dat, fs = load_cbin(cbin)
     if fs != SAMP_FREQ:
         raise ValueError(
@@ -107,38 +110,47 @@ for spect in all_syl_spects:
 all_syl_spects = np.stack(all_syl_spects_scaled[:],axis=0)
 all_syl_spects = np.expand_dims(all_syl_spects,axis=1)
 
-uniq_syls, syl_counts = np.unique(all_syl_labels,return_counts=True)
-print('Training set:')
-for syl,count in zip(uniq_syls,syl_counts):
-    print('\tSyllable {} -- {} samples.'.format(syl,count)) 
-num_syl_classes = np.size(uniq_syls)
+num_syl_classes = np.size(LABELS_TO_USE)
 # make a dictionary that maps labels to classes 0 to n-1 where n is number of
 # classes of syllables.
 # Need this map instead of e.g. converting from char to int because
 # keras to_categorical function requires
 # input where classes are labeled from 0 to n-1
 classes_zero_to_n = range(num_syl_classes)
-label_map = dict(zip(uniq_syls,classes_zero_to_n))
+label_map = dict(zip(LABELS_TO_USE,classes_zero_to_n))
 all_syl_labels_zero_to_n = np.asarray([label_map[syl]
                                         for syl in all_syl_labels])
 #so we can then convert to array of binary / one-hot vectors for training
 all_syl_labels_binary = to_categorical(all_syl_labels_zero_to_n,num_syl_classes)
 
-print('Shuffling syllables.')
-# shuffle and split into training and test sets
-RANDOM_SEED = 42 
-np.random.seed(RANDOM_SEED) 
-shuffle_ids = np.random.permutation(all_syl_spects.shape[0])
-all_syl_spects_shuffled = all_syl_spects[shuffle_ids,:,:,:]
-all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
+num_syl_spects = all_syl_spects.shape[0]
+half_spects = num_syl_spects // 2
+
+train_spects = all_syl_spects[:half_spects,:,:,:]
+train_labels = all_syl_labels_binary[:half_spects,:]
+
+validat_spects = all_syl_spects[half_spects:,:,:,:]
+validat_labels = all_syl_labels_binary[half_spects:,:]
+
+#print('Shuffling syllables.')
+## shuffle and split into training and test sets
+#RANDOM_SEED = 42 
+#np.random.seed(RANDOM_SEED) 
+#shuffle_ids = np.random.permutation(all_syl_spects.shape[0])
+#all_syl_spects_shuffled = all_syl_spects[shuffle_ids,:,:,:]
+#all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
 
 #constants for training
-NUM_TRAIN_SAMPLES = 2000
-train_spects = all_syl_spects_shuffled[:NUM_TRAIN_SAMPLES,:,:,:]
-train_labels = all_syl_labels_shuffled[:NUM_TRAIN_SAMPLES,:]
+NUM_TRAIN_SAMPLES = 100
+train_spects_subset = train_spects[:NUM_TRAIN_SAMPLES,:,:,:]
+train_labels_subset = train_labels[:NUM_TRAIN_SAMPLES,:]
 
-test_spects = all_syl_spects_shuffled[-1:-1:-NUM_TRAIN_SAMPLES,:,:,:]
-test_labels = all_syl_labels_shuffled[-1:-1:-NUM_TRAIN_SAMPLES,:]
+
+uniq_syls, syl_counts = np.unique(all_syl_labels[:NUM_TRAIN_SAMPLES],
+                                  return_counts=True)
+print('Training set:')
+for syl,count in zip(uniq_syls,syl_counts):
+    print('\tSyllable {} -- {} samples.'.format(syl,count)) 
 
 # Also need to know number of rows, i.e. freqbins.
 # Will be the same for all spects since we used the same FFT params for all.
@@ -150,20 +162,50 @@ flatwindow = hvc.neuralnet.models.DCNN_flatwindow(input_shape=input_shape,
                                    num_syllable_classes=num_syl_classes) 
 
 now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-filename = 'DCNN_flatwindow_training_' + now_str + '.log'
+num_samples = "_" + str(NUM_TRAIN_SAMPLES) + "_samples"
+filename = BIRD_ID + '_' + 'DCNN_flatwindow_training_' + now_str + num_samples + '.log'
 csv_logger = CSVLogger(filename,
                        separator=',',
                        append=True)
-callbacks_list = [csv_logger]
+weights_filename= BIRD_ID + '_' + "weights " + now_str + num_samples + ".best.hdf5"
+checkpoint = ModelCheckpoint(weights_filename,
+                             monitor='val_acc',
+                             verbose=1,
+                             save_best_only=True,
+                             save_weights_only=True,
+                             mode='max')
+earlystop = EarlyStopping(monitor='val_acc',
+                          min_delta=0,
+                          patience=20,
+                          verbose=1,
+                          mode='auto')
+callbacks_list = [csv_logger,checkpoint,earlystop]
 
+BATCH_SIZE = 32
+NB_EPOCH = 200
+
+if not os.path.isdir(OUTPUT_DIR):
+    os.mkdir(OUTPUT_DIR)
+os.chdir(OUTPUT_DIR)
 print('Training model.')
-flatwindow.fit(train_spects,
-          train_labels,
-          validation_split=0.33,
-          batch_size=32,
-          nb_epoch=200,
+flatwindow.fit(train_spects_subset,
+          train_labels_subset,
+          validation_data=(validat_spects,validat_labels),
+          batch_size=BATCH_SIZE,
+          nb_epoch=NB_EPOCH,
           callbacks=callbacks_list,
           verbose=1)
 
+shelve_fname = BIRD_ID + '_' + now_str + num_samples + "_training_set_data"
+with shelve.open(shelve_fname) as shv:
+    shv['data_dir'] = DATA_DIR
+#    shv['num_songs_to_use'] = NUM_SONGS_TO_USE
+    shv['cbins'] = cbins
+#    shv['shuffle_ids'] = shuffle_ids
+    shv['half_of_spects'] = half_spects
+    shv['num_train_samples'] = NUM_TRAIN_SAMPLES
+#    shv['validation_split'] = VALIDAT_SPLIT
+    shv['batch_size'] = BATCH_SIZE
+    shv['nb_epoch'] = NB_EPOCH
 # save: all_syl_labels, all_syl_labels_shuffled, label_map, etc....
 # train lables and train spects of course
