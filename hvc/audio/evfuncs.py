@@ -33,7 +33,10 @@ def readrecf(filename):
                 rec_dict['num_channels'] = int(line[ind+1:])
             elif "ADFREQ" in line:
                 ind = line.find('=')
-                rec_dict['sample_freq'] = int(line[ind+1:])
+                try:
+                    rec_dict['sample_freq'] = int(line[ind+1:])
+                except ValueError:
+                    rec_dict['sample_freq'] = float(line[ind+1:])
             elif "Samples" in line:
                 ind = line.find('=')
                 rec_dict['num_samples'] = int(line[ind+1:])
