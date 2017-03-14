@@ -15,7 +15,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger
 import hvc.utils.utils
 import hvc.neuralnet.models
 from hvc.utils import sequences
-from hvc.audio.ev_funcs import load_cbin,load_notmat
+from hvc.audio.evfuncs import load_cbin,load_notmat
 
 #constants for spectrogram
 SAMP_FREQ = 32000 # Hz
@@ -165,5 +165,6 @@ vgg16.fit(train_spects,
           callbacks=callbacks_list,
           verbose=1)
 
+# save scaler!!!
 # save: all_syl_labels, all_syl_labels_shuffled, label_map, etc....
 # train lables and train spects of course
