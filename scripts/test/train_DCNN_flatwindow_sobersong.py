@@ -10,6 +10,7 @@ import numpy as np
 from scipy.io import wavfile
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
+from sklearn.externals import joblib
 from keras.utils.np_utils import to_categorical
 from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 
@@ -26,11 +27,13 @@ FREQ_CUTOFFS=[1000,8000]
 MAX_SILENT_GAP = 0.08 # s to keep before or after a syllable
 
 # constants used by script
-BIRD_ID = 'bl26lb16'
-DATA_DIR = os.path.normpath('C:/DATA/bl26lb16/pre_surgery_baseline/042012/')
-OUTPUT_DIR = os.path.normpath('C:/DATA/bl26lb16/hvc_neuralnet_results/')
+BIRD_ID = 'gr41rd51'
+DATA_DIR = os.path.normpath('C:/DATA/gr41rd51/pre_surgery_baseline/06-22-12')
+OUTPUT_DIR = os.path.normpath('C:/DATA/gr41rd51/hvc_neuralnet_results/')
 #NUM_SONGS_TO_USE = 6
-LABELS_TO_USE = list('abcdefghijk')
+#LABELS_TO_USE = list('abcdefghijk')
+LABELS_TO_USE =  [105, 97, 98, 99, 100, 101, 102, 103, 106, 107, 109]
+LABELS_TO_USE = [chr(label) for label in LABELS_TO_USE]
 
 os.chdir(DATA_DIR)
 cbins = glob.glob('*.cbin')
@@ -141,7 +144,7 @@ validat_labels = all_syl_labels_binary[half_spects:,:]
 #all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
 
 #constants for training
-NUM_TRAIN_SAMPLES = 100
+NUM_TRAIN_SAMPLES = 200
 train_spects_subset = train_spects[:NUM_TRAIN_SAMPLES,:,:,:]
 train_labels_subset = train_labels[:NUM_TRAIN_SAMPLES,:]
 
@@ -163,11 +166,13 @@ flatwindow = hvc.neuralnet.models.DCNN_flatwindow(input_shape=input_shape,
 
 now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 num_samples = "_" + str(NUM_TRAIN_SAMPLES) + "_samples"
-filename = BIRD_ID + '_' + 'DCNN_flatwindow_training_' + now_str + num_samples + '.log'
+filename = BIRD_ID + '_' + 'DCNN_flatwindow_training_' + now_str + \
+           num_samples + '.log'
 csv_logger = CSVLogger(filename,
                        separator=',',
                        append=True)
-weights_filename= BIRD_ID + '_' + "weights " + now_str + num_samples + ".best.hdf5"
+weights_filename = BIRD_ID + '_' + "weights " + now_str + num_samples + \
+                   ".best.hdf5"
 checkpoint = ModelCheckpoint(weights_filename,
                              monitor='val_acc',
                              verbose=1,
@@ -196,8 +201,17 @@ flatwindow.fit(train_spects_subset,
           callbacks=callbacks_list,
           verbose=1)
 
+spect_params = {
+    'samp_freq' : SAMP_FREQ,
+    'window_size' : WINDOW_SIZE,
+    'window_step' : WINDOW_STEP,
+    'freq_cutoffs' : FREQ_CUTOFFS
+    }
+
 shelve_fname = BIRD_ID + '_' + now_str + num_samples + "_training_set_data"
 with shelve.open(shelve_fname) as shv:
+    shv['max_spect_width'] = MAX_SPECT_WIDTH
+    shv['spect_params'] = spect_params
     shv['data_dir'] = DATA_DIR
 #    shv['num_songs_to_use'] = NUM_SONGS_TO_USE
     shv['cbins'] = cbins
@@ -207,5 +221,16 @@ with shelve.open(shelve_fname) as shv:
 #    shv['validation_split'] = VALIDAT_SPLIT
     shv['batch_size'] = BATCH_SIZE
     shv['nb_epoch'] = NB_EPOCH
-# save: all_syl_labels, all_syl_labels_shuffled, label_map, etc....
-# train lables and train spects of course
+    shv['train_labels'] = train_labels_subset
+    shv['validation_labels'] = validat_labels
+    shv['label_map'] = label_map
+
+with (BIRD_ID + '_' + now_str + num_samples + "_scaler") as scaler_file:
+    joblib.dump(spect_scaler,scaler_file)
+
+with (BIRD_ID + '_' + now_str + num_samples + "_train_spects") as tr_spect_file:
+    joblib.dump(train_spects_subset,tr_spect_file)
+
+with (BIRD_ID + '_' + now_str + num_samples + 
+      "_validat_spects") as val_spect_file:
+    joblib.dump(validat_spects,val_spect_file)
