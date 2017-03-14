@@ -78,6 +78,7 @@ for classify_dir in classify_dirs:
         notmat_dict = scio.loadmat(notmat)
         notmat_dict['predicted_labels'] = pred_labels
         notmat_dict['classifier_type'] = clf_type
+        notmat_dict['classifier_file'] = clf_file
         print('saving ' + notmat)
         # evsonganaly/Matlab expects all vars as double
         for key, val in notmat_dict.items():
