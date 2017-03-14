@@ -25,13 +25,14 @@ os.chdir(TRAIN_DIR)
 try:
     classify_dict = scio.loadmat('.\\classify\\to_classify.mat')
 except FileNotFoundError:
-    print("Did not find required files in the directory supplied as command-line argument."+
-        "Please double check directory name.")
+    print("Did not find required files in the directory supplied as command-line
+          " argument.\nPlease double check directory name.")
     
 classify_dirs = classify_dict['classify_dirs']
-clf_file = classify_dict['clf_file'][0] #[0] because it's a string stored within a numpy array
+clf_file = classify_dict['clf_file'][0] #[0] because string stored in np array
 extension_id = clf_file.find('.dat')
-clf_file = clf_file[:extension_id] # need to get rid of '.dat' extension before calling shelve with filename
+# need to get rid of '.dat' extension before calling shelve with filename
+clf_file = clf_file[:extension_id]
 clf_file = '.\\train\\svmrbf_knn_results\\' + clf_file
 clf_type = classify_dict['clf_type']
 
@@ -44,8 +45,14 @@ with shelve.open(clf_file, 'r') as shlv:
         clf = shlv['svm_clf']
         scaler = shlv['svm_scaler']
 
-SHOULD_BE_DOUBLE = ['Fs','min_dur','min_int','offsets','onsets','sm_win','threshold']
 # used in loop below, see there for explanation
+SHOULD_BE_DOUBLE = ['Fs',
+                    'min_dur',
+                    'min_int',
+                    'offsets',
+                    'onsets',
+                    'sm_win',
+                    'threshold']
       
 #loop through dirs
 for classify_dir in classify_dirs:
@@ -70,8 +77,10 @@ for classify_dir in classify_dirs:
         pred_labels = ''.join(pred_labels)
         notmat_dict = scio.loadmat(notmat)
         notmat_dict['predicted_labels'] = pred_labels
+        notmat_dict['classifier_type'] = clf_type
         print('saving ' + notmat)
+        # evsonganaly/Matlab expects all vars as double
         for key, val in notmat_dict.items():
             if key in SHOULD_BE_DOUBLE:
-                notmat_dict[key] = val.astype('d') # evsonganaly/Matlab expects all vars as double
+                notmat_dict[key] = val.astype('d') 
         scio.savemat(notmat,notmat_dict)
