@@ -170,3 +170,168 @@ def find_best_k(train_samples,train_labels,test_samples,test_labels):
     k = num_nabes_list[scores.argmax()] #argmax returns index of max val
     print("best k was {} with accuracy of {}".format(k,np.max(scores)))
     return scores, k
+
+def train_test_song_split(samples,labels,song_IDs,train_size,test_size = 0.2):
+    """train_test_song_split:
+    Splits samples from songs into training and test sets
+
+    Input arguments:
+		samples -- m-by-n numpy array, m rows of samples each with n features
+        labels -- vector of length m, where each element is a label corresponding
+                  to row m of 'samples' array
+        song_IDs_vec -- vector of length m, where each element denotes which song
+                       that sample m(sub i) belongs to in the samples array.
+                       E.g., if elements 15-37 have the value "3", then all those
+                       samples belong to the third song. Used to relate number of
+                       songs to number of samples.  
+    	train_size -- either a float between 0.0 and 1.0, representing the percent
+                     of the songs to put into the train set, or an integer rep-
+                     -resenting the number of songs to put into the train set.
+                     Returned in 'train_samples' and 'train_labels'
+       	test_size -- same as train_size, but for set returned in test_samples and
+       				 test_labels. Default is 0.2, i.e., one-fifth of set for
+       				 5-fold cross-validation
+
+    Returns:
+        train_samples, train_labels, test_samples, test_labels
+    """
+    uniq_song_IDs = np.unique(song_IDs)
+    n_songs = max(uniq_song_IDs)
+    if np.asarray(train_size).dtype.kind == 'f':
+        if train_size >= 1.:
+            raise ValueError(
+                'train_size=%f should be smaller '
+                'than 1.0 or be an integer' % test_size)
+        else:
+            n_train = int(round(test_size * n_songs))
+    elif np.asarray(train_size).dtype.kind == 'i':
+        if train_size >= n_songs:
+            raise ValueError(
+                'train_size=%d should be smaller '
+                'than the number of songs %d' % (test_size, n_songs))
+        else:
+            n_train = int(train_size)
+    
+    if np.asarray(test_size).dtype.kind == 'f':
+        if test_size >= 1.:
+            raise ValueError(
+                'test_size=%f should be smaller '
+                'than 1.0 or be an integer' % test_size)
+        else:
+            n_test = int(round(test_size * n_songs))
+    elif np.asarray(test_size).dtype.kind == 'i':
+        if test_size >= n_songs:
+            raise ValueError(
+                'test_size=%d should be smaller '
+                'than the number of songs %d' % (test_size, n_songs))
+        else:
+            n_test = int(test_size)
+    
+    if n_train + n_test > n_songs:
+        raise ValueError(
+            'Number of training songs, %d, plus number of test songs, %d,'
+            'is greater than the total number of songs, %d' % (n_train, n_test, n_songs))
+
+    # loop until there are at least two examples of each label in the training set
+    # this is necessary for StratifiedShuffleSplit to work in the Grid Search function
+    while 1:
+        np.random.shuffle(uniq_song_IDs) # shuffles array in place, no need to assign to a different variable
+        train_song_IDs = uniq_song_IDs[0:n_train]
+        test_song_IDs = uniq_song_IDs[n_train:n_train + n_test]
+        train_song_sample_IDs = np.where(np.in1d(song_IDs,train_song_IDs))[0] #[0] because where returns tuple
+        train_samples = samples[train_song_sample_IDs,:]
+        train_labels = labels[train_song_sample_IDs]
+        test_song_sample_IDs = np.where(np.in1d(song_IDs,test_song_IDs))[0] #[0] because where returns tuple
+        test_samples = samples[test_song_sample_IDs,:]
+        test_labels = labels[test_song_sample_IDs]
+        inds = np.unique(train_labels,return_inverse=True)[1] # indices of unique labels, don't need unique labels to bin and count
+        if np.min(np.bincount(inds))<2:
+            continue
+        else:
+            return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
+
+def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
+    """train_test_syllable_split:
+    Splits samples from songs into training and test sets. Different from train_test_song_split
+    in that this function returns the same number of training samples for each class
+
+
+    Input arguments:
+		samples -- m-by-n numpy array, m rows of samples each with n features
+        labels -- vector of length m, where each element is a label corresponding
+                  to row m of 'samples' array
+
+        song_IDs_vec -- vector of length m, where each element denotes which song
+                       that sample m(sub i) belongs to in the samples array.
+                       E.g., if elements 15-37 have the value "3", then all those
+                       samples belong to the third song. Used to relate number of
+
+                       songs to number of samples.  
+    	train_size -- either a float between 0.0 and 1.0, representing the percent
+                     of the songs to put into the train set, or an integer rep-
+                     -resenting the number of songs to put into the train set.
+                     Returned in 'train_samples' and 'train_labels'
+
+       	test_size -- same as train_size, but for set returned in test_samples and
+       				 test_labels. Default is 0.2, i.e., one-fifth of set for
+       				 5-fold cross-validation
+
+
+    Returns:
+        train_samples, train_labels, test_samples, test_labels
+    """
+    uniq_song_IDs = np.unique(song_IDs)
+    n_songs = max(uniq_song_IDs)
+    if np.asarray(train_size).dtype.kind == 'f':
+        if train_size >= 1.:
+            raise ValueError(
+                'train_size=%f should be smaller '
+                'than 1.0 or be an integer' % test_size)
+        else:
+            n_train = int(round(test_size * n_songs))
+    elif np.asarray(train_size).dtype.kind == 'i':
+        if train_size >= n_songs:
+            raise ValueError(
+                'train_size=%d should be smaller '
+                'than the number of songs %d' % (test_size, n_songs))
+        else:
+            n_train = int(train_size)
+    
+    if np.asarray(test_size).dtype.kind == 'f':
+        if test_size >= 1.:
+            raise ValueError(
+                'test_size=%f should be smaller '
+                'than 1.0 or be an integer' % test_size)
+        else:
+            n_test = int(round(test_size * n_songs))
+    elif np.asarray(test_size).dtype.kind == 'i':
+        if test_size >= n_songs:
+            raise ValueError(
+                'test_size=%d should be smaller '
+                'than the number of songs %d' % (test_size, n_songs))
+
+        else:
+            n_test = int(test_size)
+    
+    if n_train + n_test > n_songs:
+        raise ValueError(
+            'Number of training songs, %d, plus number of test songs, %d,'
+            'is greater than the total number of songs, %d' % (n_train, n_test, n_songs))
+
+    # loop until there are at least two examples of each label in the training set
+    # this is necessary for StratifiedShuffleSplit to work in the Grid Search function
+    while 1:
+        np.random.shuffle(uniq_song_IDs) # shuffles array in place, no need to assign to a different variable
+        train_song_IDs = uniq_song_IDs[0:n_train]
+        test_song_IDs = uniq_song_IDs[n_train:n_train + n_test]
+        train_song_sample_IDs = np.where(np.in1d(song_IDs,train_song_IDs))[0] #[0] because where returns tuple
+        train_samples = samples[train_song_sample_IDs,:]
+        train_labels = labels[train_song_sample_IDs]
+        test_song_sample_IDs = np.where(np.in1d(song_IDs,test_song_IDs))[0] #[0] because where returns tuple
+        test_samples = samples[test_song_sample_IDs,:]
+        test_labels = labels[test_song_sample_IDs]
+        inds = np.unique(train_labels,return_inverse=True)[1] # indices of unique labels, don't need unique labels to bin and count
+        if np.min(np.bincount(inds))<2:
+            continue
+        else:
+            return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
