@@ -115,8 +115,7 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     
     return onsets,offsets
 
-def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
-                 duration=300)
+def extract_syls(cbin,spect_params,labels_to_use='all',syl_spect_width=300):
     """
     extract syllables from song files using threshold crossings, then return
     spectrograms of each syllable along with associated label if there
@@ -127,17 +126,17 @@ def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
     cbin : string
         .cbin filename
     spect_params: dictionary
-        with keys 'window_size','window_step','freq_cutoffs'
+        with keys 'window_size','window_step','freq_cutoffs', and 'samp_freq'.
+        Note that 'samp_freq' is the **expected** sampling frequency and the
+        function throws an error if the actual sampling frequency of cbin does
+        not match the expected one.
     label_to_use : string
         String of all labels for which associated spectrogram should be made.
         E.g., if labels_to_use = 'iab' then syllables labeled 'i','a',or 'b'
         will be extracted and returned, but a syllable labeled 'x' would be
         ignored. If labels_to_use=='all' then all spectrograms are returned with
         empty strings for the labels. Default is 'all'.
-    samp_freq : int
-        expected rate, samples per second. Throws an error if actual sampling
-        rate of cbin file does not match expected. Default is 32000 (Hz)
-    duration : int
+    syl_spect_width : int
         total duration of each spectrogram, given in number of time bins in
         spectrogram. Default is 300 (assumes a time bin ~ 1 ms).
 
@@ -148,27 +147,25 @@ def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
     all_syl_labels : list of chars
     """
 
-    if labels != 'all':
-        if type(labels) == str:
-            labels = list(labels)
+    if labels_to_use != 'all':
+        if type(labels_to_use) == str:
+            labels_to_use = list(labels_to_use)
         else:
-            ValueError('labels argument should be a string')
+            ValueError('labels_to_use argument should be a string')
 
     all_syl_labels = []
     all_syl_spects = []
     dat, fs = load_cbin(cbin)
-    if fs != samp_freq:
+    if fs != spect_params['samp_freq']:
         raise ValueError(
             'Sampling frequency for {}, {}, does not match expected sampling '
             'frequency of {}'.format(cbin,
                                      fs,
-                                     SAMP_FREQ))
+                                     spect_params['samp_freq']))
     dat,fs = load_cbin(cbin)
-    spect_obj = hvc.utils.utils.make_spect(dat,fs,
-                                           size=spect_params['window_size'],
-                                           step=spect_params['window_step'],
-                                           freq_cutoffs=
-                                            spect_params['freq_cutoffs'])
+    spect_obj = make_spect(dat,fs,size=spect_params['window_size'],
+                           step=spect_params['window_step'],
+                           freq_cutoffs=spect_params['freq_cutoffs'])
     spect = spect_obj.spect
     time_bins = spect_obj.timeBins
 
@@ -182,10 +179,12 @@ def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
                                 for offset in offsets]
     #extract each syllable, but include the "silence" around it
     for ind,label in enumerate(labels):
-        if label not in LABELS_TO_USE:
+        if labels_to_use == 'all':
+            label = None
+        elif label not in labels_to_use:
             continue
         temp_syl_spect = spect[:,onsets_time_bins[ind]:offsets_time_bins[ind]]
-        width_diff = MAX_SPECT_WIDTH - temp_syl_spect.shape[1]
+        width_diff = syl_spect_width - temp_syl_spect.shape[1]
         # take half of difference between spects and make that the start index
         # so one half of 'empty' area will be on one side of spect
         # and the other half will be on other side
@@ -203,4 +202,4 @@ def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
         all_syl_labels.append(label)
         all_syl_spects.append(temp_syl_spect)
     
-    return all_syl_labels,all_syl_spects
+    return all_syl_spects,all_syl_labels
