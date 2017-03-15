@@ -2,12 +2,14 @@
 from __future__ import division
 
 import os
+import sys
 import glob
 import datetime
 import shelve
 
 import numpy as np
 from scipy.io import wavfile
+import yaml
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.externals import joblib
@@ -16,85 +18,36 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 
 import hvc.utils.utils
 import hvc.neuralnet.models
-from hvc.utils import sequences
-from hvc.audio.evfuncs import load_cbin,load_notmat
+from hvc.evfuncs import load_cbin,load_notmat
+from hvc.audio import extract_syls
 
-#constants for spectrogram
-SAMP_FREQ = 32000 # Hz
-WINDOW_SIZE= 512
-WINDOW_STEP= 32
-FREQ_CUTOFFS=[1000,8000]
-MAX_SILENT_GAP = 0.08 # s to keep before or after a syllable
+config_file = sys.argv[1]
+with open(config_file) as yaml_to_parse:
+    config_dict = yaml.load(yaml_to_parse)
+labelset = list(config_dict['labelset'])
+spect_params = config_dict['spect_params']
+syl_spect_width = config_dict['syl_spect_width']
 
 # constants used by script
-BIRD_ID = 'gr41rd51'
-DATA_DIR = os.path.normpath('C:/DATA/gr41rd51/pre_surgery_baseline/06-22-12')
-OUTPUT_DIR = os.path.normpath('C:/DATA/gr41rd51/hvc_neuralnet_results/')
-#NUM_SONGS_TO_USE = 6
-#LABELS_TO_USE = list('abcdefghijk')
-LABELS_TO_USE =  [105, 97, 98, 99, 100, 101, 102, 103, 106, 107, 109]
-LABELS_TO_USE = [chr(label) for label in LABELS_TO_USE]
+train_dir = config_dict['train']['dirs'][0]
+output_dir = config_dict['output_dir'] + 'hvc_neuralnet_results'
+output_dir = os.path.normpath(output_dir)
 
-os.chdir(DATA_DIR)
+#given that there's only one sampling frequency, use it to figure out the number
+#of time bins in the fixed length spectrogram into which the sequences will be
+# padded. for default, 32 / 32000 = 0.001 s, i.e. 1 ms
+timebin_size_in_s = spect_params['window_step'] / spect_params['samp_freq']
+
+os.chdir(train_dir)
 cbins = glob.glob('*.cbin')
-
-#given that there's only one sampling frequency, use it to figure out the number of time bins in the
-#fixed length spectrogram into which the sequences will be padded
-timebin_size_in_s = WINDOW_STEP / SAMP_FREQ # for default, 32 / 32000 = 0.001 s, i.e. 1 ms
-
-MAX_SPECT_WIDTH = 300; # time bins of spect, currently ~ 1ms
-
 all_syl_labels = []
 all_syl_spects = []
 background_noise = []
 for cbin_ind,cbin in enumerate(cbins):
     print('extracting syllables from song {} of {}\r'.format(cbin_ind,
                                                              len(cbins)))
-    dat, fs = load_cbin(cbin)
-    if fs != SAMP_FREQ:
-        raise ValueError(
-            'Sampling frequency for {}, {}, does not match expected sampling '
-            'frequency of {}'.format(cbin,
-                                     fs,
-                                     SAMP_FREQ))
-    dat,fs = load_cbin(cbin)
-    spect_obj = hvc.utils.utils.make_spect(dat,fs,
-                                           size=WINDOW_SIZE,
-                                           step=WINDOW_STEP,
-                                           freq_cutoffs=FREQ_CUTOFFS)
-    spect = spect_obj.spect     
-    time_bins = spect_obj.timeBins
-
-    notmat = load_notmat(cbin)
-    labels = notmat['labels']
-    onsets = notmat['onsets'] / 1000.0
-    offsets = notmat['offsets'] / 1000.0
-    onsets_time_bins = [np.argmin(np.abs(time_bins - onset))
-                                for onset in onsets]
-    offsets_time_bins = [np.argmin(np.abs(time_bins - offset))
-                                for offset in offsets]
-    #extract each syllable, but include the "silence" around it
-    for ind,label in enumerate(labels):
-        if label not in LABELS_TO_USE:
-            continue
-        temp_syl_spect = spect[:,onsets_time_bins[ind]:offsets_time_bins[ind]]
-        width_diff = MAX_SPECT_WIDTH - temp_syl_spect.shape[1]
-        # take half of difference between spects and make that the start index
-        # so one half of 'empty' area will be on one side of spect
-        # and the other half will be on other side
-        # i.e., center the spectrogram
-        left_width = int(round(width_diff / 2))
-        right_width = width_diff - left_width
-        if left_width > onsets_time_bins[ind]:
-            left_width = onsets_time_bins[ind]
-            right_width = width_diff - left_width
-        elif offsets_time_bins[ind] + right_width > spect.shape[-1]:
-            right_width = spect.shape[-1] - offsets_time_bins[ind]
-            left_width = width_diff - right_width
-        temp_syl_spect = spect[:,onsets_time_bins[ind]-left_width:
-                                 offsets_time_bins[ind]+right_width]
-        all_syl_labels.append(label)
-        all_syl_spects.append(temp_syl_spect)
+    syls,labels = extract_syls(cbin,spect_params,labelset)
+    import pdb;pdb.set_trace()
 
 #scale all spects by mean and std of training set
 spect_scaler = StandardScaler()
@@ -113,14 +66,14 @@ for spect in all_syl_spects:
 all_syl_spects = np.stack(all_syl_spects_scaled[:],axis=0)
 all_syl_spects = np.expand_dims(all_syl_spects,axis=1)
 
-num_syl_classes = np.size(LABELS_TO_USE)
+num_syl_classes = np.size(labelset)
 # make a dictionary that maps labels to classes 0 to n-1 where n is number of
 # classes of syllables.
 # Need this map instead of e.g. converting from char to int because
 # keras to_categorical function requires
 # input where classes are labeled from 0 to n-1
 classes_zero_to_n = range(num_syl_classes)
-label_map = dict(zip(LABELS_TO_USE,classes_zero_to_n))
+label_map = dict(zip(labelset,classes_zero_to_n))
 all_syl_labels_zero_to_n = np.asarray([label_map[syl]
                                         for syl in all_syl_labels])
 #so we can then convert to array of binary / one-hot vectors for training
@@ -144,7 +97,7 @@ validat_labels = all_syl_labels_binary[half_spects:,:]
 #all_syl_labels_shuffled = all_syl_labels_binary[shuffle_ids,:]
 
 #constants for training
-NUM_TRAIN_SAMPLES = 200
+NUM_TRAIN_SAMPLES = 400
 train_spects_subset = train_spects[:NUM_TRAIN_SAMPLES,:,:,:]
 train_labels_subset = train_labels[:NUM_TRAIN_SAMPLES,:]
 
@@ -201,17 +154,10 @@ flatwindow.fit(train_spects_subset,
           callbacks=callbacks_list,
           verbose=1)
 
-spect_params = {
-    'samp_freq' : SAMP_FREQ,
-    'window_size' : WINDOW_SIZE,
-    'window_step' : WINDOW_STEP,
-    'freq_cutoffs' : FREQ_CUTOFFS
-    }
-
 shelve_fname = BIRD_ID + '_' + now_str + num_samples + "_training_set_data"
 with shelve.open(shelve_fname) as shv:
-    shv['max_spect_width'] = MAX_SPECT_WIDTH
-    shv['spect_params'] = spect_params
+    shv['config_file'] = config_file
+    shv['config'] = config_dict
     shv['data_dir'] = DATA_DIR
 #    shv['num_songs_to_use'] = NUM_SONGS_TO_USE
     shv['cbins'] = cbins
@@ -225,12 +171,14 @@ with shelve.open(shelve_fname) as shv:
     shv['validation_labels'] = validat_labels
     shv['label_map'] = label_map
 
-with (BIRD_ID + '_' + now_str + num_samples + "_scaler") as scaler_file:
+scaler_fname = BIRD_ID + '_' + now_str + num_samples + "_scaler"
+with open(scaler_fname,'wb') as scaler_file:
     joblib.dump(spect_scaler,scaler_file)
 
-with (BIRD_ID + '_' + now_str + num_samples + "_train_spects") as tr_spect_file:
+train_spects_fname = BIRD_ID + '_' + now_str + num_samples + "_train_spects"
+with open(train_spects_fname,'wb') as tr_spect_file:
     joblib.dump(train_spects_subset,tr_spect_file)
 
-with (BIRD_ID + '_' + now_str + num_samples + 
-      "_validat_spects") as val_spect_file:
+validat_spects_fname = BIRD_ID + '_' + now_str + num_samples + "_validat_spects"
+with open(validat_spects_fname,'wb') as val_spect_file:
     joblib.dump(validat_spects,val_spect_file)
