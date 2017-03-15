@@ -3,6 +3,8 @@ from scipy.io import wavfile
 from scipy.signal import slepian # AKA DPSS, window used for FFT
 from scipy.signal import spectrogram
 
+from hvc.evfuncs import load_cbin,load_notmat
+
 class song_spect:
     """
     spectrogram object, returned by make_spect.
@@ -112,3 +114,93 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     offsets = offsets[keep_these]    
     
     return onsets,offsets
+
+def extract_syls(cbin,spect_params,labels_to_use='all',samp_freq=32000,
+                 duration=300)
+    """
+    extract syllables from song files using threshold crossings, then return
+    spectrograms of each syllable along with associated label if there
+    are labels
+    
+    Parameters
+    ----------
+    cbin : string
+        .cbin filename
+    spect_params: dictionary
+        with keys 'window_size','window_step','freq_cutoffs'
+    label_to_use : string
+        String of all labels for which associated spectrogram should be made.
+        E.g., if labels_to_use = 'iab' then syllables labeled 'i','a',or 'b'
+        will be extracted and returned, but a syllable labeled 'x' would be
+        ignored. If labels_to_use=='all' then all spectrograms are returned with
+        empty strings for the labels. Default is 'all'.
+    samp_freq : int
+        expected rate, samples per second. Throws an error if actual sampling
+        rate of cbin file does not match expected. Default is 32000 (Hz)
+    duration : int
+        total duration of each spectrogram, given in number of time bins in
+        spectrogram. Default is 300 (assumes a time bin ~ 1 ms).
+
+    Returns
+    -------
+    all_syl_spects : list of 2-d numpy arrays
+        spectrogram
+    all_syl_labels : list of chars
+    """
+
+    if labels != 'all':
+        if type(labels) == str:
+            labels = list(labels)
+        else:
+            ValueError('labels argument should be a string')
+
+    all_syl_labels = []
+    all_syl_spects = []
+    dat, fs = load_cbin(cbin)
+    if fs != samp_freq:
+        raise ValueError(
+            'Sampling frequency for {}, {}, does not match expected sampling '
+            'frequency of {}'.format(cbin,
+                                     fs,
+                                     SAMP_FREQ))
+    dat,fs = load_cbin(cbin)
+    spect_obj = hvc.utils.utils.make_spect(dat,fs,
+                                           size=spect_params['window_size'],
+                                           step=spect_params['window_step'],
+                                           freq_cutoffs=
+                                            spect_params['freq_cutoffs'])
+    spect = spect_obj.spect
+    time_bins = spect_obj.timeBins
+
+    notmat = load_notmat(cbin)
+    labels = notmat['labels']
+    onsets = notmat['onsets'] / 1000.0
+    offsets = notmat['offsets'] / 1000.0
+    onsets_time_bins = [np.argmin(np.abs(time_bins - onset))
+                                for onset in onsets]
+    offsets_time_bins = [np.argmin(np.abs(time_bins - offset))
+                                for offset in offsets]
+    #extract each syllable, but include the "silence" around it
+    for ind,label in enumerate(labels):
+        if label not in LABELS_TO_USE:
+            continue
+        temp_syl_spect = spect[:,onsets_time_bins[ind]:offsets_time_bins[ind]]
+        width_diff = MAX_SPECT_WIDTH - temp_syl_spect.shape[1]
+        # take half of difference between spects and make that the start index
+        # so one half of 'empty' area will be on one side of spect
+        # and the other half will be on other side
+        # i.e., center the spectrogram
+        left_width = int(round(width_diff / 2))
+        right_width = width_diff - left_width
+        if left_width > onsets_time_bins[ind]:
+            left_width = onsets_time_bins[ind]
+            right_width = width_diff - left_width
+        elif offsets_time_bins[ind] + right_width > spect.shape[-1]:
+            right_width = spect.shape[-1] - offsets_time_bins[ind]
+            left_width = width_diff - right_width
+        temp_syl_spect = spect[:,onsets_time_bins[ind]-left_width:
+                                 offsets_time_bins[ind]+right_width]
+        all_syl_labels.append(label)
+        all_syl_spects.append(temp_syl_spect)
+    
+    return all_syl_labels,all_syl_spects

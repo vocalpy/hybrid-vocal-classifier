@@ -257,7 +257,7 @@ def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
 
 
     Input arguments:
-		samples -- m-by-n numpy array, m rows of samples each with n features
+        samples -- m-by-n numpy array, m rows of samples each with n features
         labels -- vector of length m, where each element is a label corresponding
                   to row m of 'samples' array
 
@@ -267,14 +267,14 @@ def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
                        samples belong to the third song. Used to relate number of
 
                        songs to number of samples.  
-    	train_size -- either a float between 0.0 and 1.0, representing the percent
+        train_size -- either a float between 0.0 and 1.0, representing the percent
                      of the songs to put into the train set, or an integer rep-
                      -resenting the number of songs to put into the train set.
                      Returned in 'train_samples' and 'train_labels'
 
-       	test_size -- same as train_size, but for set returned in test_samples and
-       				 test_labels. Default is 0.2, i.e., one-fifth of set for
-       				 5-fold cross-validation
+        test_size -- same as train_size, but for set returned in test_samples and
+                     test_labels. Default is 0.2, i.e., one-fifth of set for
+                     5-fold cross-validation
 
 
     Returns:
