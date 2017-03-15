@@ -5,6 +5,7 @@ BSD License.
 
 ## Why?
 Many software libraries already exist to analyze birdsong in the wild.
+
 In neuroscience, songbirds provide a model system to understand how the brain learns and produces a complex motor skill with many similarities to speech. 
 Songbirds learn their song during a critical period in development from an adult "tutor". Their brains contain a specialized network of areas required for learning and producing song.
 Although this network, known as the song system, is found only in songbird brains, it has evolved on top of the basic floor plan that appears in all vertebrate brains, including humans.
