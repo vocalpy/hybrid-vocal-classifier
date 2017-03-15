@@ -10,7 +10,7 @@ In neuroscience, songbirds provide a model system to understand how the brain le
 Songbirds learn their song during a critical period in development from an adult "tutor". Their brains contain a specialized network of areas required for learning and producing song.
 Although this network, known as the song system, is found only in songbird brains, it has evolved on top of the basic floor plan that appears in all vertebrate brains, including humans.
 By understanding the song system, we can understand more about our own brain.
-(For links to more information, check out http://songbirdscience.com/)
+(For more information, check out http://songbirdscience.com/)
 
 Often neuroscientists carry out behavioral experiments to investigate specific aspects of how the songbird brain learns and produces song. To analyze results from these experiments, the scientists must "label" the element of birdsong by hand.
 
