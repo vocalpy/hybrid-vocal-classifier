@@ -251,34 +251,36 @@ def train_test_song_split(samples,labels,song_IDs,train_size,test_size = 0.2):
             return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
 
 def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
-    """train_test_syllable_split:
+    """
     Splits samples from songs into training and test sets. Different from train_test_song_split
     in that this function returns the same number of training samples for each class
 
+    Parameters
+    ----------
+    samples : m-by-n numpy array
+        m rows of samples each with n features
+    labels : vector of length m
+        where each element is a label corresponding to row m of 'samples' array
 
-    Input arguments:
-        samples -- m-by-n numpy array, m rows of samples each with n features
-        labels -- vector of length m, where each element is a label corresponding
-                  to row m of 'samples' array
+    song_IDs_vec : vector of length m
+        where each element denotes which song
+        that sample m(sub i) belongs to in the samples array.
+        E.g., if elements 15-37 have the value "3", then all those
+        samples belong to the third song. Used to relate number of
+        songs to number of samples.
 
-        song_IDs_vec -- vector of length m, where each element denotes which song
-                       that sample m(sub i) belongs to in the samples array.
-                       E.g., if elements 15-37 have the value "3", then all those
-                       samples belong to the third song. Used to relate number of
+    train_size : either a float between 0.0 and 1.0, representing the percent
+                 of the songs to put into the train set, or an integer rep-
+                 -resenting the number of songs to put into the train set.
+                 Returned in 'train_samples' and 'train_labels'
 
-                       songs to number of samples.  
-        train_size -- either a float between 0.0 and 1.0, representing the percent
-                     of the songs to put into the train set, or an integer rep-
-                     -resenting the number of songs to put into the train set.
-                     Returned in 'train_samples' and 'train_labels'
+    test_size : same as train_size, but for set returned in test_samples and
+                 test_labels. Default is 0.2, i.e., one-fifth of set for
+                 5-fold cross-validation
 
-        test_size -- same as train_size, but for set returned in test_samples and
-                     test_labels. Default is 0.2, i.e., one-fifth of set for
-                     5-fold cross-validation
-
-
-    Returns:
-        train_samples, train_labels, test_samples, test_labels
+    Returns
+    -------
+    train_samples, train_labels, test_samples, test_labels
     """
     uniq_song_IDs = np.unique(song_IDs)
     n_songs = max(uniq_song_IDs)
