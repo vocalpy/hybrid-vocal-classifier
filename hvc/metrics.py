@@ -76,13 +76,12 @@ def average_accuracy(true_labels,pred_labels,labelset):
     avg_acc : scalar
         average accuracy across labels, i.e., numpy.mean(acc_by_label)
     """
-    
+
     acc_by_label = np.zeros((len(labelset)))
     for ind,label in enumerate(labelset):
         label_ids = np.in1d(true_labels,label) #find all occurences of label in test data
         if sum(label_ids) == 0: # if there were no instances of label in labels
             continue
-        import pdb;pdb.set_trace()
         pred_for_that_label = pred_labels[label_ids]
         matches = pred_for_that_label==label
         #sum(matches) is equal to number of true positives
