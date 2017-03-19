@@ -1,3 +1,8 @@
+"""
+trains models that classify birdsong syllables,
+using algorithms and other parameters specified in config file
+"""
+
 #from standard library
 import sys
 import shelve

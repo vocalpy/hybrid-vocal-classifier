@@ -1,32 +1,44 @@
+"""
+predict labels for birdsong syllables,
+using already-trained models specified in config file
+"""
 #from standard library
 import glob
 import sys
 import os
 import shelve
 
-#from Anaconda
 import numpy as np
 import scipy.io as scio # to load matlab files
+import yaml
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn import neighbors
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
 
-#from functions written just for these experiments
-from hvc.utils.finch_helper_funcs import load_from_mat,uniqify_filename_list
+#from hvc
+from hvc.utils import load_from_mat
+import hvc.neuralnet.models
+from evfuncs import load_cbin
 
 # get command line arguments
-args = sys.argv
-if len(args) != 2: # (first element, args[0], is the name of this script)
-    raise ValueError('Script requires one command line arguments, TRAIN_DIR')
+config_file = sys.argv[1]
+with open(config_file,'r') as yaml_to_parse:
+    config_dict = yaml.load(yaml_to_parse)
+global_config = config_dict['global_config']
+features_are_m_files = global_config['features_are_m_files']
 
-TRAIN_DIR = args[1]
-os.chdir(TRAIN_DIR)
+predict_dict = config_dict['predict']
+model_dir = predict_dict['model_dir']
+os.chdir(model_dir)
 
-try:
-    classify_dict = scio.loadmat('.\\classify\\to_classify.mat')
-except FileNotFoundError:
-    print("Did not find required files in the directory supplied as command-line
-          " argument.\nPlease double check directory name.")
+if features_are_m_files:
+    try:
+        classify_dict = scio.loadmat('.\\classify\\to_classify.mat')
+    except FileNotFoundError:
+        print("Did not find required files in the directory supplied as command-line
+              " argument.\nPlease double check directory name.")
     
 classify_dirs = classify_dict['classify_dirs']
 clf_file = classify_dict['clf_file'][0] #[0] because string stored in np array
