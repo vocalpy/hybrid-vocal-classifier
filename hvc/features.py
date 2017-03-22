@@ -50,87 +50,89 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         #extract duration of syllable
         dur = syl.shape[0]/fs
 
-        # spectrogram and cepstrum -------------------
+        # spectrogram and cepstrum
         syl_diff = np.diff(syl) # Tachibana applied a differential filter
         # note that the matlab specgram function returns the STFT by default
-        # whereas the default for the matplotlib.mlab version of specgram returns the PSD.
-        # So to get the behavior of matplotlib.mlab.specgram to match, mode must be set to 'complex'
-        B,F = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
+        # whereas the default for the matplotlib.mlab version of specgra
+        # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
+        # to match, mode must be set to 'complex'
+        power,freqs = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
                        noverlap=overlap,
-                       mode='complex')[0:2]  # don't need time vector
-        B2 = np.vstack((B,np.flipud(B[1:-1,:])))
-        S = 20*np.log10(np.abs(B[1:,:]))
-        import pdb;pdb.set_trace()
-        cc = np.real(np.fft.fft(np.log10(np.abs(B2)), axis=0))
-        # ^ by this step, everything after the decimal point is already difft from what matlab returns
-#        C = cc[2:nfft/2+1,:]
-#        # 5-order delta
-#        if length(syl) < (5*nfft-4*overlap):
-#            SD = np.zeros(spmax,1)
-#            CD = np.zeros(spmax,1)
-#        else:
-#            SD = -2*S[:,1:-4]-1*S[:,2:-3]+1*S[:,4:-1]+2*S[:,5:]
-#            CD = -2*C[:,1:-4]-1*C[:,2:-3]+1*C[:,4:-1]+2*C[:,5:]
+                       mode='complex')[0:2]  # don't keep returned time vector
+        spectrum = 20*np.log10(np.abs(power[1:,:]))
 
-#        # mean 
-#        mS = np.mean(S,2).T
-#        mDS = np.mean(np.abs(SD),2).T
-#        mC = np.mean(C,2).T
-#        mDC = np.mean(np.abs(CD),2).T
+        power2 = np.vstack((power,np.flipud(power[1:-1,:])))
+        cc = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
+        # ^ by this step, everything after the decimal point is already difft 
+        # from what matlab returns
+        cepstrum = cc[1:nfft/2+1,:]
+        # 5-order delta
+        if syl.shape[-1] < (5 * nfft - 4 * overlap):
+            SD = np.zeros(spmax,1)
+            CD = np.zeros(spmax,1)
+        else:
+            SD = -2 * spectrum[:, :-4] - 1 * spectrum[:, 1:-3]+1 * spectrum[:, 4:-1]+2*spectrum[:,5:]
+            CD = -2*cepstrum[:,:-4]-1*cepstrum[:,1:-3]+1*cepstrum[:,4:-1]+2*cepstrum[:,5:]
 
-#        maxq = np.round(fs/minf)*2
-#        minq = np.round(fs/maxf)*2
-#        nr,nc = B.shape
-#        x = repmat(F,1,nc);
-#        # amplitude spectrum
-#        s = np.abs(B)
-#        # probability
-#        p = s / repmat(np.sum(s,1),nr,1)
-#        # 1st moment: centroid (mean of distribution)
-#        m1 = np.sum(x * p,1)
-#        # 2nd moment: variance (ƒÐ^2)
-#        m2 = np.sum((np.power(x-repmat(m1,nr,1),2)) * p, 1)
-#        # 3rd moment
-#        m3 = np.sum((np.power(x-repmat(m1,nr,1),3)) * p, 1)
-#        # 4th moment
-#        m4 = np.sum((np.power(x-repmat(m1,nr,1),4)) * p, 1)
-#        # distribution parameters
-#        SpecCentroid = m1  # mean
-#        SpecSpread = np.power(m2,1/2)  # standard deviation
-#        SpecSkewness = m3 / np.power(m2,3/2)
-#        SpecKurtosis = m4 / np.power(m2,2)
-#        # entropy
-#        SpecFlatness = np.exp(np.mean(np.log(s),1)) / np.mean(s,1)
-#        # slope
-#        SpecSlope = np.zeros((1,nc))
-#        X = np.horzcat((F,np.ones((nr,1))
-#        for n in range(nc):
-#            beta = (X.T*X)\X.T*s[:,n]
-#            SpecSlope[n] = beta[1]
+        # mean 
+        mS = np.mean(S,2).T
+        mDS = np.mean(np.abs(SD),2).T
+        mC = np.mean(C,2).T
+        mDC = np.mean(np.abs(CD),2).T
 
-#        # cepstral pitch and pitch goodness
-#        exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
-#        C = real(fft(log10(exs)));
-#        [mv,mid] = np.max(C(minq:maxq,:));
-#        Pitch = fs./(mid+minq-1);
-#        PitchGoodness = mv;
-#        # amplitude in dB
-#        Amp = 20*log10(sum(s)/nfft);
+        maxq = np.round(fs/minf)*2
+        minq = np.round(fs/maxf)*2
+        nr,nc = B.shape
+        x = repmat(F,1,nc);
+        # amplitude spectrum
+        s = np.abs(B)
+        # probability
+        p = s / repmat(np.sum(s,1),nr,1)
+        # 1st moment: centroid (mean of distribution)
+        m1 = np.sum(x * p,1)
+        # 2nd moment: variance (ƒÐ^2)
+        m2 = np.sum((np.power(x-repmat(m1,nr,1),2)) * p, 1)
+        # 3rd moment
+        m3 = np.sum((np.power(x-repmat(m1,nr,1),3)) * p, 1)
+        # 4th moment
+        m4 = np.sum((np.power(x-repmat(m1,nr,1),4)) * p, 1)
+        # distribution parameters
+        SpecCentroid = m1  # mean
+        SpecSpread = np.power(m2,1/2)  # standard deviation
+        SpecSkewness = m3 / np.power(m2,3/2)
+        SpecKurtosis = m4 / np.power(m2,2)
+        # entropy
+        SpecFlatness = np.exp(np.mean(np.log(s),1)) / np.mean(s,1)
+        # slope
+        SpecSlope = np.zeros((1,nc))
+        X = np.horzcat((F,np.ones((nr,1))
+        for n in range(nc):
+            beta = (X.T*X)\X.T*s[:,n]
+            SpecSlope[n] = beta[1]
 
-#        # 5-order delta
-#        A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
-#                        SpecFlatness.T,SpecSlope.T,Pitch.T,PitchGoodness.T,Amp.T)
-#        d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
+        # cepstral pitch and pitch goodness
+        exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
+        C = real(fft(log10(exs)));
+        [mv,mid] = np.max(C(minq:maxq,:));
+        Pitch = fs./(mid+minq-1);
+        PitchGoodness = mv;
+        # amplitude in dB
+        Amp = 20*log10(sum(s)/nfft);
 
-#        # zerocross (in Hz)
-#        zc = length(find(diff(sign(syl))~=0))/2
-#        ZeroCross = zc/dur
+        # 5-order delta
+        A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
+                        SpecFlatness.T,SpecSlope.T,Pitch.T,PitchGoodness.T,Amp.T)
+        d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
 
-#        # mean
-#        mA = np.horzcat((np.mean(A,1),ZeroCross,np.mean(np.abs(d5A),1))
-#        mA[np.isnan(mA)] = 0
+        # zerocross (in Hz)
+        zc = length(find(diff(sign(syl))~=0))/2
+        ZeroCross = zc/dur
 
-#        # output
-#        features = np.horzcat((mS,mDS,mC,mDC,dur,mA))
+        # mean
+        mA = np.horzcat((np.mean(A,1),ZeroCross,np.mean(np.abs(d5A),1))
+        mA[np.isnan(mA)] = 0
+
+        # output
+        features = np.horzcat((mS,mDS,mC,mDC,dur,mA))
     return features
 
