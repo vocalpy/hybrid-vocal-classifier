@@ -20,14 +20,14 @@ from sklearn.model_selection import StratifiedKFold
 #from hvc
 from hvc.utils import load_from_mat
 import hvc.neuralnet.models
-from evfuncs import load_cbin
+from hvc.evfuncs import load_cbin
 
 # get command line arguments
 config_file = sys.argv[1]
 with open(config_file,'r') as yaml_to_parse:
     config_dict = yaml.load(yaml_to_parse)
 global_config = config_dict['global_config']
-features_are_m_files = global_config['features_are_m_files']
+features_are_m_files = global_config['features_are_m_files'] # Boolean
 
 predict_dict = config_dict['predict']
 model_dir = predict_dict['model_dir']
