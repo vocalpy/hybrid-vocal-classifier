@@ -60,42 +60,44 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
                        noverlap=overlap,
                        mode='complex')[0:2]  # don't keep returned time vector
         spectrum = 20*np.log10(np.abs(power[1:,:]))
+        mean_spectrum = np.mean(spectrum,axis=1)
 
         power2 = np.vstack((power,np.flipud(power[1:-1,:])))
-        cc = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
+        real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
         # ^ by this step, everything after the decimal point is already difft 
         # from what matlab returns
-        cepstrum = cc[1:nfft/2+1,:]
+        really_real_cepstrum = real_cepstrum[1:nfft/2+1,:]
+        mean_cepstrum = np.mean(really_real_cepstrum, axis=1)
+
         # 5-order delta
         if syl.shape[-1] < (5 * nfft - 4 * overlap):
-            SD = np.zeros(spmax,1)
-            CD = np.zeros(spmax,1)
+            delta_spectrum = np.zeros(spmax,1)
+            delta_cepstrum = np.zeros(spmax,1)
         else:
-            SD = -2 * spectrum[:, :-4] - 1 * spectrum[:, 1:-3]+1 * spectrum[:, 4:-1]+2*spectrum[:,5:]
-            CD = -2*cepstrum[:,:-4]-1*cepstrum[:,1:-3]+1*cepstrum[:,4:-1]+2*cepstrum[:,5:]
+            delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
+            delta_spectrum = delta(spectrum)
+            delta_cepstrum = delta(really_real_cepstrum)
 
-        # mean 
-        mS = np.mean(S,2).T
-        mDS = np.mean(np.abs(SD),2).T
-        mC = np.mean(C,2).T
-        mDC = np.mean(np.abs(CD),2).T
+        # mean
+        mean_delta_spectrum = np.mean(np.abs(delta_spectrum),axis=1)
+        mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum),axis=1)
 
         maxq = np.round(fs/minf)*2
         minq = np.round(fs/maxf)*2
-        nr,nc = B.shape
-        x = repmat(F,1,nc);
+        num_rows, num_cols = power.shape
+        mat = np.matlib.repmat(freqs,1,num_cols)
         # amplitude spectrum
-        s = np.abs(B)
+        amplitude_spectrum = np.abs(power)
         # probability
-        p = s / repmat(np.sum(s,1),nr,1)
+        p = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum,1),num_rows,1)
         # 1st moment: centroid (mean of distribution)
-        m1 = np.sum(x * p,1)
+        m1 = np.sum(mat * p,1)
         # 2nd moment: variance (ƒÐ^2)
-        m2 = np.sum((np.power(x-repmat(m1,nr,1),2)) * p, 1)
+        m2 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),2)) * p, 1)
         # 3rd moment
-        m3 = np.sum((np.power(x-repmat(m1,nr,1),3)) * p, 1)
+        m3 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),3)) * p, 1)
         # 4th moment
-        m4 = np.sum((np.power(x-repmat(m1,nr,1),4)) * p, 1)
+        m4 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),4)) * p, 1)
         # distribution parameters
         SpecCentroid = m1  # mean
         SpecSpread = np.power(m2,1/2)  # standard deviation
@@ -105,19 +107,19 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         SpecFlatness = np.exp(np.mean(np.log(s),1)) / np.mean(s,1)
         # slope
         SpecSlope = np.zeros((1,nc))
-        X = np.horzcat((F,np.ones((nr,1))
+        mat2 = np.horzcat((F,np.ones((nr,1))))
         for n in range(nc):
-            beta = (X.T*X)\X.T*s[:,n]
+            beta = np.linalg.solve((mat2.T * mat2), mat2.T*s[:, n])
             SpecSlope[n] = beta[1]
 
         # cepstral pitch and pitch goodness
         exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
-        C = real(fft(log10(exs)));
-        [mv,mid] = np.max(C(minq:maxq,:));
-        Pitch = fs./(mid+minq-1);
-        PitchGoodness = mv;
+        C = real(fft(log10(exs)))
+        [mv,mid] = np.max(C(minq:maxq,:))
+        Pitch = fs./(mid+minq-1)
+        PitchGoodness = mv
         # amplitude in dB
-        Amp = 20*log10(sum(s)/nfft);
+        Amp = 20*log10(sum(s)/nfft)
 
         # 5-order delta
         A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
@@ -125,14 +127,19 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
 
         # zerocross (in Hz)
-        zc = length(find(diff(sign(syl))~=0))/2
-        ZeroCross = zc/dur
+        zc = np.length(np.find(np.diff(sign(syl)) != 0))/2
+        ZeroCross = zc / dur
 
         # mean
         mA = np.horzcat((np.mean(A,1),ZeroCross,np.mean(np.abs(d5A),1))
         mA[np.isnan(mA)] = 0
 
         # output
-        features = np.horzcat((mS,mDS,mC,mDC,dur,mA))
+        features = np.horzcat((mean_spectrum,
+                               mean_delta_spectrum,
+                               mean_cepstrum,
+                               mean_delta_cepstrum,
+                               dur,
+                               mA))
     return features
 
