@@ -85,37 +85,30 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         maxq = np.round(fs/minf)*2
         minq = np.round(fs/maxf)*2
         num_rows, num_cols = power.shape
-        mat = np.matlib.repmat(freqs,1,num_cols)
+        mat = np.tile(freqs[:,np.newaxis],num_cols)
         # amplitude spectrum
         amplitude_spectrum = np.abs(power)
         # probability
-        p = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum,1),num_rows,1)
+        prob = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum, 0), num_rows, 1)
         # 1st moment: centroid (mean of distribution)
-        m1 = np.sum(mat * p,1)
-        # 2nd moment: variance (ƒÐ^2)
-        m2 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),2)) * p, 1)
-        # 3rd moment
-        m3 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),3)) * p, 1)
-        # 4th moment
-        m4 = np.sum((np.power(mat - np.matlib.repmat(m1,nr,1),4)) * p, 1)
-        # distribution parameters
-        SpecCentroid = m1  # mean
-        SpecSpread = np.power(m2,1/2)  # standard deviation
-        SpecSkewness = m3 / np.power(m2,3/2)
-        SpecKurtosis = m4 / np.power(m2,2)
-        # entropy
-        SpecFlatness = np.exp(np.mean(np.log(s),1)) / np.mean(s,1)
-        # slope
-        SpecSlope = np.zeros((1,nc))
-        mat2 = np.horzcat((F,np.ones((nr,1))))
-        for n in range(nc):
+        spectral_centroid = np.sum(mat * prob, 0)  # mean
+        variance = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 2)) * prob, 1)
+        spectral_spread = np.power(variance, 1 / 2)  # standard deviation
+        skewness = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 3)) * prob, 1)
+        spectral_skewness = skewness / np.power(variance, 3 / 2)
+        kurtosis = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 4)) * prob, 1)
+        spectral_kurtosis = kurtosis / np.power(variance, 2)
+        spectral_flatness = np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(amplitude_spectrum, 0)
+        spectral_slope = np.zeros((1, num_cols))
+        mat2 = np.horzcat((freqs,np.ones((num_rows,1))))
+        for n in range(num_cols):
             beta = np.linalg.solve((mat2.T * mat2), mat2.T*s[:, n])
-            SpecSlope[n] = beta[1]
+            spectral_slope[n] = beta[0]
 
         # cepstral pitch and pitch goodness
         exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
         C = real(fft(log10(exs)))
-        [mv,mid] = np.max(C(minq:maxq,:))
+        mv,mid = np.max(C(minq:maxq,:))
         Pitch = fs./(mid+minq-1)
         PitchGoodness = mv
         # amplitude in dB
@@ -124,6 +117,8 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         # 5-order delta
         A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
                         SpecFlatness.T,SpecSlope.T,Pitch.T,PitchGoodness.T,Amp.T)
+
+
         d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
 
         # zerocross (in Hz)
