@@ -1,0 +1,90 @@
+global_config:
+    spect_params :
+        samp_freq : 32000 # Hz
+        window_size : 512
+        window_step : 32
+        freq_cutoffs : [1000,8000]
+
+    syl_spect_width : 300
+
+jobs: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
+    - # i.e. this is dictionary 1
+        bird_ID : gr41rd51
+
+        train :
+            dirs:
+                - C:\DATA\gr41rd51\pre_surgery_baseline\06-21-12
+        test :
+            dirs:
+                - C:\DATA\gr41rd51\pre_surgery_baseline\06-19-12
+                - C:\DATA\gr41rd51\pre_surgery_baseline\06-20-12
+                - C:\DATA\gr41rd51\pre_surgery_baseline\06-22-12
+
+        output_dir: C:\DATA\gr41rd51\
+
+        labelset : iabcdefgjkm
+
+        intro labels : i
+
+        not intro labels : abcdefgjkm
+
+    - #2
+        bird_ID : bl26lb16
+
+        train :
+            dirs:
+                - C:\DATA\bl26lb16\pre_surgery_baseline\041912
+
+        test : 
+            dirs:
+                - C:\DATA\bl26lb16\pre_surgery_baseline\042012
+
+        output_dir: C:\DATA\bl26lb16\
+
+        labelset : iabcdef
+
+        intro labels : i
+
+        not intro labels : abcdef
+
+    - #3
+        bird_ID : gy6or6
+
+        train :
+            dirs:
+                - C:\DATA\gy6or6\032412
+
+        test :
+            dirs:
+                - C:\DATA\gy6or6\032212
+                - C:\DATA\gy6or6\032312
+                - C:\DATA\gy6or6\032512
+
+        output_dir: C:\DATA\gy6or6\
+
+        labelset : iabcdefghjk
+
+        intro labels : i
+
+        not intro labels : abcdefghjk
+
+    - #4
+        bird_ID : or60yw70
+
+        train :
+            dirs:
+                - C:\DATA\or60yw70\baseline\09-29-12
+
+        test :
+            dirs:
+                - C:\DATA\or60yw70\baseline\09-27-12
+                - C:\DATA\or60yw70\baseline\09-28-12
+                - C:\DATA\or60yw70\baseline\09-30-12
+
+        output_dir: C:\DATA\or60yw70\
+
+        labelset : iabcdefg
+
+        intro labels : i
+
+        not intro labels : abcdefg
