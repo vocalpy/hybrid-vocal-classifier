@@ -1,5 +1,5 @@
 # hybrid-vocal-classifier
-Python package for automated classification of songbird syllables.
+Python package to automate classification of birdsong "syllables".
 
 BSD License.
 
