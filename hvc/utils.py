@@ -1,9 +1,17 @@
+#from standard library
+from urllib.error import HTTPError
+
+#from dependencies
 import numpy as np
 from scipy.io import loadmat
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn import neighbors
+
+#from hvc
+from randomdotorg import RandomDotOrg
+
 
 def load_from_mat(fname,ftr_file_type,purpose='train'):
     """
@@ -337,3 +345,73 @@ def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
             continue
         else:
             return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
+
+def grab_n_samples_by_song(sample_song_IDs,song_ID_list,labels,num_samples,
+                           return_popped_songlist=False):
+    """
+    Creates list of sample IDs for training or test set.
+    Grabs samples by song ID from shuffled list of IDs. Keeps drawing IDs until
+    we have more than num_samples, then truncate list at that number of samples.
+    This way we approximate natural distribution of syllables from a random draw
+    of songs while at the same time using a constant # of samples.
+
+    sample_song_IDs -- song ID for each sample in sample set. E.g., if
+    sample_song_IDs[10:20]==31, that means all those samples in the set came from song #31.
+    song_ID_list -- list to shuffle. i.e., numpy.unique(sample_song_IDs)
+    labels -- label for each sample in sample set. Used to verify that randomly
+    drawn subset contains at least 2 examples of each label/class. This is necessary
+    e.g. for using sklearn.StratifiedShuffleSplit
+    (and just to not have totally imbalanced training sets).
+    num_samples -- number of samples to return
+    return_popped_songlist -- if true, return song_ID_list with IDs of songs assigned to  popped off.
+    This is used when creating the test set so that the training set does not contain
+    any songs in the test set.
+    """
+    
+    #make copy of list in case we need it back in loop below after popping off items
+    song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
+    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
+    try:
+        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
+    except HTTPError: # i.e., if random service not available
+        random.seed()
+        random.shuffle(song_ID_list_copy_to_pop)
+
+    #outer while loop to make sure there's more than one sample for each class
+    #see comments in lines 70-72
+    while 1: 
+        sample_IDs = []
+        while 1:
+            curr_song_ID = song_ID_list_copy_to_pop.pop()
+            curr_sample_IDs = np.argwhere(
+                                 sample_song_IDs==curr_song_ID
+                                          ).ravel().tolist()
+            sample_IDs.extend(curr_sample_IDs)
+            if len(sample_IDs) > num_samples:
+                sample_IDs = np.asarray(sample_IDs[:num_samples])
+                break
+        #if training set only contains one example of any syllable, get new set
+        #(can't do c.v. stratified shuffle split with only one sample of a class
+        #The sk-learn stratified shuffle split method is used by grid search for
+        # the SVC.)
+        temp_labels = labels[sample_IDs]
+        #in line below, just keep [1] cuz just want the counts
+        uniq_label_counts = np.unique(temp_labels,return_counts=True)[1]
+        if np.min(uniq_label_counts) > 1:
+            break # but if not, break out of loop and keep current sample set
+        else:
+            #get original list
+            song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
+            # shuffle again so this time we hopefully get a set
+            # where there's >1 sample of each syllable class
+            try:
+                # initial shuffle, happens in place
+                interwebz_random.shuffle(song_ID_list_copy_to_pop)
+            except HTTPError: # i.e., if random service not available
+                random.seed()
+                random.shuffle(song_ID_list_copy_to_pop) 
+
+    if return_popped_songlist:
+        return sample_IDs,song_ID_list_copy_to_pop
+    else:
+        return sample_IDs
