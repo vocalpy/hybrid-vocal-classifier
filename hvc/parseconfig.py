@@ -1,4 +1,9 @@
+#from standard library
+import os
+
+#from dependencies
 import yaml
+
 
 def _validate(key,val):
     """
@@ -7,9 +12,13 @@ def _validate(key,val):
     """
 
     #valid keys are listed in alphabetical order
-    if key==
-    
-
+    if key=='bird_ID':
+        if type(val) != str:
+            raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
+                             ' should be a string'.format(val,type(val))    
+        else
+            return
+            
     elif key=='knn':
     
 
@@ -38,14 +47,20 @@ def _validate(key,val):
 
     elif key=='svm':
     
-
-    elif key=='test':
     
-    elif key=='train':
-    
+    elif key=='test' or key=='train':
+        if type(val) != list:
+            raise ValueError('Value for key \'train\' should be a list of '
+                             'directories but instead it is of type {}'.format(
+                             type(val))
+        else:
+            for dir_name in val:
+                if not os.path.isdir(dir_name):
+                    raise NotADirectoryError('{} in directory list for \'{}\' '
+                                             'key is not a valid directory.'
+                                             .format(dir_name,key))
 
-
-    else:
+    else: # if key is not found in list
         raise KeyError('key {] in config_file {} is an invalid key'.
                         format(key,config_file))
 
