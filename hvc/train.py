@@ -13,105 +13,34 @@ import pickle
 import random
 import copy
 
-version = sys.version_info
-if version[0] < 3:
-    from urllib2 import HTTPError
-else:
-    from urllib.error import HTTPError
-
-#from Anaconda
+#from dependencies
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn import neighbors
 
-from utils.randomdotorg import RandomDotOrg
-
-#from functions written just for these experiments
-from utils.finch_helper_funcs import filter_samples,grid_search, find_best_k
+#from hvc
+from utils import filter_samples, grid_search, find_best_k
 from utils.matlab import load_ftr_files
 from generate_summary import generate_summary_results_files
 
-def shuffle_then_grab_n_samples_by_song_ID(sample_song_IDs,song_ID_list,labels,
-                                           num_samples,return_popped_songlist=False):
-    """
-    Creates list of sample IDs for training or test set.
-    Grabs samples by song ID from shuffled list of IDs. Keeps drawing IDs until
-    we have more than num_samples, then truncate list at that number of samples.
-    This way we approximate natural distribution of syllables from a random draw
-    of songs while at the same time using a constant # of samples.
-
-    sample_song_IDs -- song ID for each sample in sample set. E.g., if
-    sample_song_IDs[10:20]==31, that means all those samples in the set came from song #31.
-    song_ID_list -- list to shuffle. i.e., numpy.unique(sample_song_IDs)
-    labels -- label for each sample in sample set. Used to verify that randomly
-    drawn subset contains at least 2 examples of each label/class. This is necessary
-    e.g. for using sklearn.StratifiedShuffleSplit
-    (and just to not have totally imbalanced training sets).
-    num_samples -- number of samples to return
-    return_popped_songlist -- if true, return song_ID_list with IDs of songs assigned to  popped off.
-    This is used when creating the test set so that the training set does not contain
-    any songs in the test set.
-    """
-    
-    #make copy of list in case we need it back in loop below after popping off items
-    song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
-    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
-    try:
-        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-    except HTTPError: # i.e., if random service not available
-        random.seed()
-        random.shuffle(song_ID_list_copy_to_pop)
-
-    #outer while loop to make sure there's more than one sample for each class
-    #see comments in lines 70-72
-    while 1: 
-        sample_IDs = []
-        while 1:
-            curr_song_ID = song_ID_list_copy_to_pop.pop()
-            curr_sample_IDs = np.argwhere(sample_song_IDs==curr_song_ID).ravel().tolist()
-            sample_IDs.extend(curr_sample_IDs)
-            if len(sample_IDs) > num_samples:
-                sample_IDs = np.asarray(sample_IDs[:num_samples])
-                break
-        #if training set only contains one example of any syllable, get new set
-        #(can't do c.v. stratified shuffle split with only one sample of a class.
-        #The sk-learn stratified shuffle split method is used by grid search for the SVC.)
-        temp_labels = labels[sample_IDs]
-        uniq_label_counts = np.unique(temp_labels,return_counts=True)[1] # [1] cuz just want the counts
-        if np.min(uniq_label_counts) > 1:
-            break # but if not, break out of loop and keep current sample set
-        else:
-            #get original list
-            song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
-            # shuffle again so this time we hopefully get a set
-            # where there's >1 sample of each syllable class
-            try:
-                interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-            except HTTPError: # i.e., if random service not available
-                random.seed()
-                random.shuffle(song_ID_list_copy_to_pop) 
-
-    if return_popped_songlist:
-        return sample_IDs,song_ID_list_copy_to_pop
-    else:
-        return sample_IDs
-
 # get command line arguments
 args = sys.argv
-if len(args) != 3: # first element is the name of this script + 2 arguments
-    raise ValueError('Script requires two command line arguments, DATADIR and LABELS')
+config_file = args[1]
+config_dict = parseconfig(config_file)
 
 #constants
 HOME_DIR = os.getcwd()
-DATA_DIR = os.path.join(args[1],'train')
-if not os.path.isdir(DATA_DIR):
-    os.mkdir(DATA_DIR)
-os.chdir(DATA_DIR)
-RESULTS_DIR = os.path.join(DATA_DIR,'svmrbf_knn_results')
-if not os.path.isdir(RESULTS_DIR):
-    os.mkdir(RESULTS_DIR)
-RESULTS_SHELVE_BASE_FNAME = os.path.join(RESULTS_DIR,'svmrbf_knn_results_')
+#DATA_DIR = os.path.join(args[1],'train')
+#if not os.path.isdir(DATA_DIR):
+#    os.mkdir(DATA_DIR)
+#os.chdir(DATA_DIR)
+#RESULTS_DIR = os.path.join(DATA_DIR,'svmrbf_knn_results')
+#if not os.path.isdir(RESULTS_DIR):
+#    os.mkdir(RESULTS_DIR)
+#RESULTS_SHELVE_BASE_FNAME = os.path.join(RESULTS_DIR,'svmrbf_knn_results_')
+
+jobs = config_dict['jobs']
 
 # scalers from scikit used in main loop
 svm_scaler = StandardScaler()
@@ -162,11 +91,11 @@ num_songs = np.max(svm_song_IDs)
 song_ID_list = list(range(1,num_songs+1))
 
 #create test set, pop those IDs off the song_ID_list so test set does not contain samples in train set
-test_sample_IDs,song_ID_list = shuffle_then_grab_n_samples_by_song_ID(svm_song_IDs,
-                                                                    song_ID_list,
-                                                                    svm_labels,
-                                                                    num_samples_in_test_set,
-                                                                    return_popped_songlist=True)
+test_sample_IDs,song_ID_list = grab_n_samples_by_song(svm_song_IDs,
+                                                      song_ID_list,
+                                                      svm_labels,
+                                                      num_samples_in_test_set,
+                                                      return_popped_songlist=True)
 svm_test_samples = svm_samples[test_sample_IDs]
 knn_test_samples = knn_samples[test_sample_IDs]
 test_labels = svm_labels[test_sample_IDs]      
