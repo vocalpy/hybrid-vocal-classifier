@@ -6,7 +6,14 @@ It is a painfully dry document that exists to guide the project code,
    [intro notes](intro_notes.md) and
 [writing HVC config files](writing_config_files.md).
 
-Config files consist of two main sections, a "global config" section and a "jobs" section.
+Essentially, each config file specifies a list of `jobs`. Each `job` in
+a list will typically correspond to data files from one bird.
+
+Config files consist of three sections:
+
+ 1. `global_config`: parameters that apply to all `jobs`
+ 2. `model_selection`: list of `jobs` for selecting machine learning models
+ 3. `prediction`: list of `jobs` that apply models to unclassified data
 
 ## global_config
 As the name implies, parameters in the `global_config` section apply to all jobs.
@@ -25,21 +32,28 @@ global_config:
         syl_spect_width : 300
 ```
 
-## jobs
+## `model_selection`
 
-`jobs` is a list of dictionaries. Items in the `jobs` list are marked
-with an empty dash. Below each empty dash appear the keys and values that
-make up the dictionary. Hence each dictionary is a `job`.
-A `job` **must** include the following keys:
- - `bird_ID` : alphanumeric string to identify bird
+`model_selection` is a list of `jobs`. Each `job` is a dictionary.
+ Hence `model_selection` is a list of dictionaries.
+
+Each `job`, i.e. each item in the list, is marked with an empty dash.
+Below each empty dash appear the keys and values that
+make up the dictionary.
+
+A `job` in the 'model_selection` section **must** include the following
+keys:
+ - `bird_ID` : string, alphanumeric, identifies bird
  - `train` : dictionary with parameters for training dataset
  - `test` : dictionary with parameters for testing dataset
    - both `train` and `test` contain a list `dirs`. Each item in `dirs`
      is a string, and that string **must** be a path to a directory of
      audio files (expected to contain song from the bird `bird_ID`).
- - `output_dir`
- - `labelset` : only syllables with the labels in `labelset` will be
-   included in the training and testing datasets.
+ - `output_dir` : string, directory where output will be saved. HVC
+ creates a new subfolder in the given directory.
+ - `labelset` : string, labels used for syllabes. Only syllables with
+ the labels in `labelset` will be included in the training and testing
+  datasets.
 
 **If a parameter is defined in `global_config` and then defined again in
 a `job`, the value defined in the `job` takes precedence over the
@@ -47,7 +61,7 @@ a `job`, the value defined in the `job` takes precedence over the
 
 Example:
 ``` yaml
-jobs: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
+model_selection: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
     - # i.e. this is dictionary 1
         bird_ID : gr41rd51
 
@@ -63,6 +77,31 @@ jobs: # list of dictionaries, dash without key next to is a list item so each di
         output_dir: C:\DATA\gr41rd51\
 
         labelset : iabcdefgjkm
+
+        spect_params : # not required, but will take precedence over spect_params in global_config
+            samp_freq : 32000 # Hz
+            window_size : 512
+            window_step : 32
+            freq_cutoffs : [1000,10000]
+
+```
+
+## `prediction`
+
+Like `model_selection`, the `prediction` section is a list of `job`
+dictionaries.
+
+A `job` in the 'prediction` section **must** include the following keys:
+ - `bird_ID` : string, alphanumeric, identifies bird
+ - `model_file` : string, a file name. Either a scikit-learn model that
+ has been `pickle`d or `dump`ed by joblib, or an hdf5 model output by
+ Keras.
+
+``` yaml
+prediction:
+    -
+      bird_ID : gr41rd51
+      model_file : gr41rd51_svm.pkl
 ```
 
 ## parameters
