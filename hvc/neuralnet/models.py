@@ -8,24 +8,24 @@ from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import TimeDistributed
 from keras.optimizers import SGD, Adam
 
-import theano.tensor as T
+#import theano.tensor as T
 
 def conv_out_size(w,f,p,s): return (w-f+2*p) / s + 1
 def pool_out_size(w,f,s): return (w - f) / s + 1
 
-def Koumura_crossentropy(silent_gap_label_onehot):
-    """
-    conditional crossentropy that ignores "silent gap" label
-    """
-    
-    #closure so I can have value for silent_gap_label_onehot inside loss function
-    def calc(y_true,y_pred):
-        y_true_not_silent_gap_inds = np.where((y_true!=silent_gap_label_onehot)).any(axis=1)
-        y_true_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
-        y_pred_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
-        return T.nnet.categorical_crossentropy(y_pred,y_true)
-
-    return calc
+# def Koumura_crossentropy(silent_gap_label_onehot):
+#     """
+#     conditional crossentropy that ignores "silent gap" label
+#     """
+#
+#     #closure so I can have value for silent_gap_label_onehot inside loss function
+#     def calc(y_true,y_pred):
+#         y_true_not_silent_gap_inds = np.where((y_true!=silent_gap_label_onehot)).any(axis=1)
+#         y_true_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
+#         y_pred_no_silent_gaps = y_true[y_true_not_silent_gap_inds,:]
+#         return T.nnet.categorical_crossentropy(y_pred,y_true)
+#
+#     return calc
 
 def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
     """

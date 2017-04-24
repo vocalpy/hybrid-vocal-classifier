@@ -8,6 +8,15 @@ global_config:
     syl_spect_width : 300
 
 model_selection: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
+  models:
+    - knn
+    - svm
+  num_replicates: 5
+  num_samples:
+    start : 100
+    stop : 1000
+    step : 100
+  jobs:
     - # i.e. this is dictionary 1
         bird_ID : gr41rd51
 
