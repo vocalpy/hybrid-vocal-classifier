@@ -1,4 +1,5 @@
 """
+model selection:
 trains models that classify birdsong syllables,
 using algorithms and other parameters specified in config file
 """
@@ -17,28 +18,21 @@ config_file = args[1]
 config = parse(config_file)
 
 global_config = config['global_config']
-if 'feature_extraction' in config:
-    feature_extraction = config['feature_extraction']
-if 'model_selection' in config:
-    model_selection = config['model_selection']
-    #imports here
-if 'prediction' in config:
-    prediction = config['prediction']
+if 'select' not in config:
+    raise KeyError('select not defined in config file \'{}\''.format(config_file))
+else:
+    select = config['select']
     #imports here
 
-# if no feature_files provided, extract feature_files automatically
-if 'model_selection' in locals() and 'feature_files' not in model_selection:
-    auto_extract_features = True
+# # if no feature_files provided, extract feature_files automatically
+# if 'model_selection' in locals() and 'feature_files' not in model_selection:
+#     auto_extract_features = True
+#
+# if auto_extract_features:
+#     import hvc.extract
+#     hvc.extract('')
 
-if 'feature_extraction' in locals() or auto_extract_features:
-    jobs = feature_extraction['jobs']
-    for job in jobs:
-        dirs = job['dirs']
-        for dir in dirs:
-            os.chdir(dir)
-            #run feature extraction script
-
-if 'model_selection' in locals():
+if 'select' in locals():
     #from scikit-learn
     from sklearn.preprocessing import StandardScaler
 
@@ -79,8 +73,3 @@ if 'model_selection' in locals():
             if not np.array_equal(svm_labels, knn_labels):
                 raise ValueError('labels from svm feature files and knn feature files do not match')
                 # (obviously features themselves won't be the same, hence compare labels not samples)
-
-if 'prediction' in locals():
-    jobs = prediction['jobs']
-    for job in jobs:
-        model_file = jobs['model_file']

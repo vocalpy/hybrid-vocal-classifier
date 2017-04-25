@@ -76,7 +76,7 @@ if not np.array_equal(svm_labels,knn_labels):
 # (obviously features themselves won't be the same, hence compare labels not samples)
 
 # get max number of train samples and use that for number of samples in test set
-num_samples_in_test_set = np.max(NUM_SAMPLES_TO_TRAIN_WITH)
+num_samples_in_test_set = np.max(N UM_SAMPLES_TO_TRAIN_WITH)
 # make sure we're not using a tiny test set
 total_num_samples = svm_song_IDs.shape[0]
 two_times_max = num_samples_in_test_set * 2

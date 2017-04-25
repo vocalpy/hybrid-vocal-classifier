@@ -29,6 +29,11 @@ with open(config_file,'r') as yaml_to_parse:
 global_config = config_dict['global_config']
 features_are_m_files = global_config['features_are_m_files'] # Boolean
 
+if 'prediction' in locals():
+    jobs = prediction['jobs']
+    for job in jobs:
+        model_file = jobs['model_file']
+
 predict_dict = config_dict['predict']
 model_dir = predict_dict['model_dir']
 os.chdir(model_dir)
