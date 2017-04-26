@@ -27,7 +27,8 @@ introduction to writing the files, please see
     </tr>
     <tr>
       <td>feature_list</td>
-      <td align="left">list, named features. See the <a href="named_features.md">list of named features here</a></td>
+      <td align="left">list, named features. See the
+       <a href="named_features.md">list of named features here</a></td>
     </tr>
     <tr>
       <td>feature_group</td>
@@ -38,11 +39,14 @@ introduction to writing the files, please see
       <td align="left">list of dictionaries, 'jobs' to run. Typically data from one subject.
       Each dictionary in the list must define the following fields:
         <ul>
-            <li>output_dir : string, directory name in which to save output, the extracted feature files</li1>
             <li>subject_ID : string, alphanumeric.</li>
-            <li>labelset : string, labels of syllables from which features should be extracted.
-            Provide the set as a single string, e.g., `iabcdefg`. If a label appears in the labeled data but
+            <li>dirs : list of strings, names of directories with
+            audio files from which to exract features</li>
+            <li>labelset : string, labels of syllables from which
+            features should be extracted. Provide the set as a single
+            string, e.g., `iabcdefg`. If a label appears in the labeled data but
             does not appear in this string, it will be ignored.</li>
+            <li>output_dir : string, directory name in which to save output, the extracted feature files</li>
         </ul>
     </td>
     </tr>
