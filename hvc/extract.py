@@ -15,20 +15,46 @@ config_file = args[1]
 config = parse(config_file)
 
 if 'extract' not in config:
-    raise KeyError('')
+    raise KeyError('extract not defined in config')
 else:
     extract = config['extract']
 
-format = feature_extraction['format']
+if 'feature_list' in extract:
+    feature_list = extract['feature_list']
+elif 'feature_group' in extract:
+    feature_group = extract['feature_group']
+
+format = extract['format']
 if format=='evtaf':
     import hvc.evfuncs
 elif format=='koumura':
     import hvc.koumura
-jobs = feature_extraction['jobs']
-for job in jobs:
-    dirs = job['dirs']
+
+todo_list = extract['todo_list']
+for todo in todo_list:
+    dirs = todo['dirs']
+    output_dir = todo['output_dir']
+    labelset = todo['labelset']
+
     for dir in dirs:
         os.chdir(dir)
-        #run feature extraction script
+
+        if format == 'evtaf':
+            notmats = glob.glob('*.not.mat')
+            features_from_each_file = []
+            for notmat in notmats:
+                cbin = notmat[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
+                syls, labels = hvc.evfuncs.get_syls(cbin,spect_params,labelset)
+                features = extract_features(format, labelset)
+                features_from_each_file.append(features)
+
+        elif format == 'koumura':
+            annot_xml = glob.glob('Annotation.xml')
+            if annot_xml==[]:
+                raise ValueError('no Annotation.xml file found in directory {}'.format(dir))
+            elif len(annot_xml) > 1:
+                raise ValueError('more than one Annotation.xml file found in directory {}'.format(dir))
+            else:
+                seq_list = hvc.koumura.parse_xml(annot_xml[0])
 
 # save yaml file for select.py with output_dir in it!!!
