@@ -5,3 +5,4 @@ MANIFEST
 *.pyc
 .ipynb_checkpoints
 dir_names.txt
+.idea/
