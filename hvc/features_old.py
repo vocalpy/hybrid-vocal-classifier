@@ -1,76 +1,6 @@
 import numpy as np
 from matplotlib.mlab import specgram
 
-def dur(syl,fs):
-    """
-    duration
-    """
-
-    return syl.shape[0] / fs
-
-def mean_spectrum_Tach(power):
-    """
-    mean spectrum, as calculated in [1]
-    
-    Arguments
-    ---------
-    power : numpy array, power spectrum for each time obtained by generating spectrogram of raw signal
-    
-    Returns
-    -------
-    mean of power spectrum across time
-    """
-
-    spectrum = 20 * np.log10(np.abs(power[1:, :]))
-    return np.mean(spectrum, axis=1)
-
-def mean_cepstrum(power,nfft=256):
-    """
-    mean cepstrum, as calculated in [1]
-    
-    Arguments
-    ---------
-    power : numpy array, power spectrum for each time obtained by generating spectrogram of raw signal
-    nfft : integer, number of samples used for each Fast Fourier Transform. Default (used by [1]) is 256
-    """
-    power2 = np.vstack((power, np.flipud(power[1:-1, :])))
-    real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
-    really_real_cepstrum = real_cepstrum[1:nfft / 2 + 1, :]
-    return np.mean(really_real_cepstrum, axis=1)
-
-def mean_delta_spectrum(power,nfft=256,overlap=192,spmax=128):
-    """
-    mean of 5-order delta of spectrum
-    """
-    # 5-order delta
-    if syl.shape[-1] < (5 * nfft - 4 * overlap):
-        delta_spectrum = np.zeros(spmax, 1)
-    else:
-        delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
-        delta_spectrum = delta(spectrum)
-        delta_cepstrum = delta(really_real_cepstrum)
-
-    # mean
-    mean_delta_spectrum = np.mean(np.abs(delta_spectrum), axis=1)
-    mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum), axis=1)
-
-def mean_delta_cepstrum(power,spmax=128):
-    """
-    mean of 5-order delta of spectrum
-    """
-    # 5-order delta
-    if syl.shape[-1] < (5 * nfft - 4 * overlap):
-        delta_spectrum = np.zeros(spmax, 1)
-        delta_cepstrum = np.zeros(spmax, 1)
-    else:
-        delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
-        delta_spectrum = delta(spectrum)
-        delta_cepstrum = delta(really_real_cepstrum)
-
-    # mean
-    mean_delta_spectrum = np.mean(np.abs(delta_spectrum), axis=1)
-    mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum), axis=1)
-
 def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
                          maxf=6000):
     """
@@ -117,10 +47,8 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         #make sure syl is a numpy array
         syl = np.asarray(syl)
         
-
-
-        # for below, need to have a 'filter' option in extract files
-        # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
+        #extract duration of syllable
+        dur = syl.shape[0]/fs
 
         # spectrogram and cepstrum
         syl_diff = np.diff(syl) # Tachibana applied a differential filter
@@ -131,9 +59,28 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         power,freqs = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
                        noverlap=overlap,
                        mode='complex')[0:2]  # don't keep returned time vector
+        spectrum = 20*np.log10(np.abs(power[1:,:]))
+        mean_spectrum = np.mean(spectrum,axis=1)
 
+        power2 = np.vstack((power,np.flipud(power[1:-1,:])))
+        real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
+        # ^ by this step, everything after the decimal point is already difft 
+        # from what matlab returns
+        really_real_cepstrum = real_cepstrum[1:nfft/2+1,:]
+        mean_cepstrum = np.mean(really_real_cepstrum, axis=1)
 
+        # 5-order delta
+        if syl.shape[-1] < (5 * nfft - 4 * overlap):
+            delta_spectrum = np.zeros(spmax,1)
+            delta_cepstrum = np.zeros(spmax,1)
+        else:
+            delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
+            delta_spectrum = delta(spectrum)
+            delta_cepstrum = delta(really_real_cepstrum)
 
+        # mean
+        mean_delta_spectrum = np.mean(np.abs(delta_spectrum),axis=1)
+        mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum),axis=1)
 
         maxq = np.round(fs/minf)*2
         minq = np.round(fs/maxf)*2
@@ -168,8 +115,8 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         Amp = 20*log10(sum(s)/nfft)
 
         # 5-order delta
-        A = np.horzcat((spectral_centroid.T,spectral_spread.T,spectral_skewness.T,spectral_kurtosis.T,
-                        spectral_flatness.T,spectral_slope.T,pitch.T,PitchGoodness.T,Amp.T)
+        A = np.horzcat((SpecCentroid.T,SpecSpread.T,SpecSkewness.T,SpecKurtosis.T,
+                        SpecFlatness.T,SpecSlope.T,Pitch.T,PitchGoodness.T,Amp.T)
 
 
         d5A = -2*A[1:-4,:]-1*A[2:-3,:]+1*A[4:-1,:]+2*A[5:,:]
