@@ -3,8 +3,12 @@ ev_funcs
 Python implementations of functions used with EvTAF and evsonganaly.m
 """
 
+#from third-party
 import numpy as np
 from scipy.io import loadmat
+
+#from hvc
+import hvc.audio
 
 def readrecf(filename):
     """
@@ -199,7 +203,7 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
                                      fs,
                                      spect_params['samp_freq']))
     dat, fs = load_cbin(cbin)
-    spect_obj = make_spect(dat, fs, size=spect_params['window_size'],
+    spect_obj = hvc.audio.make_spect(dat, fs, size=spect_params['window_size'],
                            step=spect_params['window_step'],
                            freq_cutoffs=spect_params['freq_cutoffs'])
     spect = spect_obj.spect
