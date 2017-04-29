@@ -1,0 +1,6 @@
+svm:
+  - mean spectrum
+  - mean delta spectrum
+  - mean cepstrum
+  - mean delta cepstrum
+  - duration

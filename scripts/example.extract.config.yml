@@ -1,24 +1,15 @@
-model_selection: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
-  spect_params :
-      samp_freq : 32000 # Hz
-      window_size : 512
-      window_step : 32
-      freq_cutoffs : [1000,8000]
-
-  num_replicates: 5
-  num_samples:
-    start : 100
-    stop : 1000
-    step : 100
-
-  models:
-    - {model: knn, feature_group: knn}
-    - {model: svm, feture_group: svm}
+extract:
+  spect_params:
+      samp_freq: 32000 # Hz
+      window_size: 512
+      window_step: 32
+      freq_cutoffs: [1000,8000]
 
   todo_list:
     -
-      bird_ID : gr41rd51
-
+      bird_ID: gr41rd51
+      format: evtaf
+      feature_group: knn
       data_dirs:
         - C:\DATA\gr41rd51\pre_surgery_baseline\06-21-12
         - C:\DATA\gr41rd51\pre_surgery_baseline\06-19-12
@@ -38,10 +29,10 @@ model_selection: # list of dictionaries, dash without key next to is a list item
 
       output_dir: C:\DATA\bl26lb16\
 
-      labelset : iabcdef
+      labelset: iabcdef
 
     - #3
-      bird_ID : gy6or6
+      bird_ID: gy6or6
 
       data_dirs:
         - C:\DATA\gy6or6\032412
@@ -51,10 +42,10 @@ model_selection: # list of dictionaries, dash without key next to is a list item
 
       output_dir: C:\DATA\gy6or6\
 
-      labelset : iabcdefghjk
+      labelset: iabcdefghjk
 
     - #4
-      bird_ID : or60yw70
+      bird_ID: or60yw70
 
       data_dirs:
         - C:\DATA\or60yw70\baseline\09-29-12
@@ -64,4 +55,4 @@ model_selection: # list of dictionaries, dash without key next to is a list item
 
       output_dir: C:\DATA\or60yw70\
 
-      labelset : iabcdefg
+      labelset: iabcdefg

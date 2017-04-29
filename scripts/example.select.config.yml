@@ -1,9 +1,4 @@
-model_selection: # list of dictionaries, dash without key next to is a list item so each dictionary is an item in the list
-  spect_params :
-      samp_freq : 32000 # Hz
-      window_size : 512
-      window_step : 32
-      freq_cutoffs : [1000,8000]
+select:
 
   num_replicates: 5
   num_samples:
@@ -18,15 +13,8 @@ model_selection: # list of dictionaries, dash without key next to is a list item
   todo_list:
     -
       bird_ID : gr41rd51
-
-      data_dirs:
-        - C:\DATA\gr41rd51\pre_surgery_baseline\06-21-12
-        - C:\DATA\gr41rd51\pre_surgery_baseline\06-19-12
-        - C:\DATA\gr41rd51\pre_surgery_baseline\06-20-12
-        - C:\DATA\gr41rd51\pre_surgery_baseline\06-22-12
-
+      format : evtaf
       output_dir: C:\DATA\gr41rd51\
-
       labelset : iabcdefgjkm
 
     - #2
