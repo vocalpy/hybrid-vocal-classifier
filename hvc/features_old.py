@@ -82,8 +82,6 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         mean_delta_spectrum = np.mean(np.abs(delta_spectrum),axis=1)
         mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum),axis=1)
 
-        maxq = np.round(fs/minf)*2
-        minq = np.round(fs/maxf)*2
         num_rows, num_cols = power.shape
         mat = np.tile(freqs[:,np.newaxis],num_cols)
         # amplitude spectrum
@@ -92,11 +90,11 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
         prob = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum, 0), num_rows, 1)
         # 1st moment: centroid (mean of distribution)
         spectral_centroid = np.sum(mat * prob, 0)  # mean
-        variance = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 2)) * prob, 1)
+        variance = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 2)) * prob, 0)
         spectral_spread = np.power(variance, 1 / 2)  # standard deviation
-        skewness = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 3)) * prob, 1)
+        skewness = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 3)) * prob, 0)
         spectral_skewness = skewness / np.power(variance, 3 / 2)
-        kurtosis = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 4)) * prob, 1)
+        kurtosis = np.sum((np.power(mat - np.matlib.repmat(spectral_centroid, num_rows, 1), 4)) * prob, 0)
         spectral_kurtosis = kurtosis / np.power(variance, 2)
         spectral_flatness = np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(amplitude_spectrum, 0)
         spectral_slope = np.zeros((1, num_cols))
@@ -106,9 +104,11 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
             spectral_slope[n] = beta[0]
 
         # cepstral pitch and pitch goodness
-        exs = np.vertcat((s,repmat(s(end,:),nfft,1),flipud(s(2:end-1,:)))
-        C = real(fft(log10(exs)))
-        mv,mid = np.max(C(minq:maxq,:))
+        exs = np.vertcat((s,repmat(s(end,:),nfft,1),np.flipud(s(2:end-1,:))))
+        C = np.real(np.fft(np.log10(exs)))
+        maxq = np.round(fs/minf)*2
+        minq = np.round(fs/maxf)*2
+        mv,mid = np.max(C[minq:maxq,:])
         Pitch = fs./(mid+minq-1)
         PitchGoodness = mv
         # amplitude in dB

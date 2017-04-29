@@ -12,8 +12,8 @@ def mean_spectrum_Tach(power):
     """
     mean spectrum, as calculated in [1]
     
-    Arguments
-    ---------
+    Parameters
+    ----------
     power : numpy array, power spectrum for each time obtained by generating spectrogram of raw signal
     
     Returns
@@ -28,31 +28,45 @@ def mean_cepstrum(power,nfft=256):
     """
     mean cepstrum, as calculated in [1]
     
-    Arguments
-    ---------
+    Parameters
+    ----------
     power : numpy array, power spectrum for each time obtained by generating spectrogram of raw signal
     nfft : integer, number of samples used for each Fast Fourier Transform. Default (used by [1]) is 256
+    
+    Returns
+    -------
+    mean_cepstrum : 1d numpy array, mean of cepstrum (i.e. take mean across columns of spectrogram)
     """
     power2 = np.vstack((power, np.flipud(power[1:-1, :])))
     real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
-    really_real_cepstrum = real_cepstrum[1:nfft / 2 + 1, :]
+    really_real_cepstrum = real_cepstrum[1:nfft // 2 + 1, :]
     return np.mean(really_real_cepstrum, axis=1)
 
 def mean_delta_spectrum(power,nfft=256,overlap=192,spmax=128):
     """
     mean of 5-order delta of spectrum
+    
+    Parameters
+    ----------
+    power
+    nfft
+    overlap
+    spmax
+
+    Returns
+    -------
+    mean_deltra_spectrum : 
     """
+
     # 5-order delta
     if syl.shape[-1] < (5 * nfft - 4 * overlap):
         delta_spectrum = np.zeros(spmax, 1)
     else:
         delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
         delta_spectrum = delta(spectrum)
-        delta_cepstrum = delta(really_real_cepstrum)
 
     # mean
-    mean_delta_spectrum = np.mean(np.abs(delta_spectrum), axis=1)
-    mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum), axis=1)
+    return np.mean(np.abs(delta_spectrum), axis=1)
 
 def mean_delta_cepstrum(power,spmax=128):
     """
@@ -60,16 +74,121 @@ def mean_delta_cepstrum(power,spmax=128):
     """
     # 5-order delta
     if syl.shape[-1] < (5 * nfft - 4 * overlap):
-        delta_spectrum = np.zeros(spmax, 1)
         delta_cepstrum = np.zeros(spmax, 1)
     else:
         delta = lambda x: -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
-        delta_spectrum = delta(spectrum)
         delta_cepstrum = delta(really_real_cepstrum)
 
     # mean
-    mean_delta_spectrum = np.mean(np.abs(delta_spectrum), axis=1)
-    mean_delta_cepstrum = np.mean(np.abs(delta_cepstrum), axis=1)
+    return np.mean(np.abs(delta_cepstrum), axis=1)
+
+def _convert_spect_to_probability(power):
+    """
+    converts spectrogram to "probability distribution" by taking sum of power for each column
+    and then dividing power of each bin in that column by sum for that column
+    
+    Arguments
+    ---------
+    power : 2d numpy array, spectrogram where each element is power for that frequency and time bin
+    
+    Returns
+    -------
+    prob : 2d numpy array, same size as power; spectrogram converted to probability
+    mat : 2d numpy array, tiled frequency bins with same number of columns as power
+    num_rows :
+    num_cols :
+    """
+    num_rows, num_cols = power.shape
+    mat = np.tile(freqs[:, np.newaxis], num_cols)
+    # amplitude spectrum
+    amplitude_spectrum = np.abs(power)
+    # probability
+    prob = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum, 0), num_rows, 1)
+    return prob, mat, num_rows, num_cols
+
+def _spectral_centroid(prob,mat):
+    """
+    spectral centroid
+    """
+
+    # 1st moment: centroid (mean of distribution)
+    return np.sum(mat * prob, 0)  # mean
+
+def _variance(mat,spect_centroid,num_rows,prob):
+    """
+    
+    Parameters
+    ----------
+    mat
+    spect_centroid
+    num_rows
+    prob
+
+    Returns
+    -------
+
+    """
+
+    return np.sum((np.power(mat - np.matlib.repmat(spect_centroid, num_rows, 1), 2)) * prob, 0)
+
+def spectral_centroid(power):
+    """
+    
+    Parameters
+    ----------
+    power
+
+    Returns
+    -------
+
+    """
+    prob, mat = _convert_spect_to_probability(power)[:2]
+    return _spectral_centroid(prob,mat)
+
+def spectral_spread(power):
+    """
+    spectral spread
+    """
+    prob, mat, num_rows = _convert_spect_to_probability(power)[:3]
+    spect_centroid = _spectral_centroid(prob,mat)
+    variance = _variance(mat,spect_centroid,num_rows,prob)
+    return np.power(variance, 1 / 2)  # standard deviation
+
+def spectral_skewness(power):
+    """
+    spectral skewness
+    
+    Parameters
+    ----------
+    power
+
+    Returns
+    -------
+
+    """
+    prob, mat, num_rows = _convert_spect_to_probability(power)[:3]
+    spect_centroid = _spectral_centroid(prob,mat)
+    variance = _variance(mat,spect_centroid,num_rows,prob)
+    skewness = np.sum((np.power(mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob, 0)
+    return skewness / np.power(variance, 3 / 2)
+
+def spectral_kurtosis(power):
+    """
+    spectral kurtosis
+    
+    Parameters
+    ----------
+    power
+
+    Returns
+    -------
+
+    """
+    prob, mat, num_rows = _convert_spect_to_probability(power)[:3]
+    spect_centroid = _spectral_centroid(prob,mat)
+    variance = _variance(mat,spect_centroid,num_rows,prob)
+    kurtosis = np.sum((np.power(mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob, 0)
+    return kurtosis / np.power(variance, 2)
 
 def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
                          maxf=6000):
