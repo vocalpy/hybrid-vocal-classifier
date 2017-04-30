@@ -1,4 +1,8 @@
-Tachibana:
+valid_file_formats:
+  - evtaf
+  - koumura
+
+valid_features:
   - mean spectrum
   - mean delta spectrum
   - mean cepstrum
