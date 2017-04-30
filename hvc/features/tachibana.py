@@ -707,15 +707,15 @@ def extract_svm_features(syls,fs,nfft=256,spmax=128,overlap=192,minf=500,
      machine." PloS one 9.3 (2014): e92584.
 
     """
-        # for below, need to have a 'filter' option in extract files
-        # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
+    # for below, need to have a 'filter' option in extract files
+    # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
 
-        # spectrogram and cepstrum
-        syl_diff = np.diff(syl) # Tachibana applied a differential filter
-        # note that the matlab specgram function returns the STFT by default
-        # whereas the default for the matplotlib.mlab version of specgra
-        # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
-        # to match, mode must be set to 'complex'
-        power,freqs = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
-                       noverlap=overlap,
-                       mode='complex')[0:2]  # don't keep returned time vector
+    # spectrogram and cepstrum
+    syl_diff = np.diff(syl) # Tachibana applied a differential filter
+    # note that the matlab specgram function returns the STFT by default
+    # whereas the default for the matplotlib.mlab version of specgra
+    # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
+    # to match, mode must be set to 'complex'
+    power,freqs = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
+                   noverlap=overlap,
+                   mode='complex')[0:2]  # don't keep returned time vector
