@@ -1,6 +1,24 @@
-svm:
+Tachibana:
   - mean spectrum
   - mean delta spectrum
   - mean cepstrum
   - mean delta cepstrum
   - duration
+  - mean spectral centroid
+  - mean spectral spread
+  - mean spectral skewness
+  - mean spectral kurtosis
+  - mean spectral flatness
+  - mean spectral slope
+  - mean pitch
+  - mean pitch goodness
+  - mean delta spectral centroid
+  - mean delta spectral spread
+  - mean delta spectral skewness
+  - mean delta spectral kurtosis
+  - mean delta spectral flatness
+  - mean delta spectral slope
+  - mean delta pitch
+  - mean delta pitch goodness
+  - zero crossings
+  - amplitude
