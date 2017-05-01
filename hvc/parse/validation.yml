@@ -2,6 +2,17 @@ valid_file_formats:
   - evtaf
   - koumura
 
+required_todo_list_keys:
+  - bird_ID
+  - file_format
+  - data_dirs
+  - output_dir
+  - labelset
+
+additional_todo_list_keys:
+  - feature_group
+  - feature_list
+
 valid_features:
   - mean spectrum
   - mean delta spectrum

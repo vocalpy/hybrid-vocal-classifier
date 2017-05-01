@@ -4,10 +4,13 @@ import os
 #from dependencies
 import yaml
 
-with open('./validation.yml') as val_yaml:
+path = os.path.abspath(__file__)
+dir_path = os.path.dirname(path)
+
+with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
-with open('./feature_groups.yml') as ftr_grp_yaml:
+with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
     feature_groups_dict = yaml.load(ftr_grp_yaml)
 
 def _convert_feature_group_to_list(feature_group):
@@ -36,6 +39,24 @@ def _validate_todo_list_dict(todo_list_dict,index):
     -------
     todo_list_dict : dictionary after validation, may have new keys added if necessary
     """
+
+    required_todo_list_keys = set(validate_dict['required_todo_list_keys'])
+    # if required_todo_list_keys is not a subset of todo_list_dict,
+    # i.e., if not all required keys are in todo_list_dict
+    if not set(todo_list_dict.keys()) > required_todo_list_keys:
+        raise KeyError('not all required keys in todo_list item #{}'.format(index))
+    else:
+        additional_keys = set(todo_list_dict.keys()) - required_todo_list_keys
+        for extra_key in additional_keys:
+            if extra_key not in validate_dict['additional_todo_list_keys']:
+                raise KeyError('key {} in todo_list item #{} is not recognized'
+                               .format(extra_key,index))
+
+    if 'feature_group' not in todo_list_dict:
+        if 'feature_list' not in todo_list_dict:
+            raise ValueError('todo_list item #{} does not include feature_group or feature_list'
+                             .format(index))
+
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
         if key == 'bird_ID':
@@ -43,12 +64,14 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
-        if key=='data_dirs':
-            if val != list:
+        elif key=='data_dirs':
+            if type(val) != list:
                 raise ValueError('data_dirs should be a list')
-            else for item in val:
-                if not os.path.isdir(item):
-                    raise ValueError('directory {} in {} is not a valid directory'.)
+            else:
+                for item in val:
+                    if not os.path.isdir(item):
+                        raise ValueError('directory {} in {} is not a valid directory.'
+                                         .format(item,key))
 
         elif key == 'feature_group':
             if type(val) != str and type(val) != list:
@@ -59,7 +82,8 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
                 else:
-                    todo_list_dict['feature_list'] = feature_groups_dict[val]
+                    if 'feature_list' not in todo_list_dict:
+                        todo_list_dict['feature_list'] = feature_groups_dict[val]
             elif type(val) == list:
                 # if more than one feature group, than return a list of lists
                 feature_list_lists = []
@@ -92,7 +116,12 @@ def _validate_todo_list_dict(todo_list_dict,index):
             else:
                 label_list = list(val)
                 label_list = [ord(label) for label in label_list]
-                dict_to_validate['label_list'] = label_list
+                todo_list_dict[key] = label_list
+
+        elif key=='output_dir':
+            if type(val) != str:
+                raise ValueError('output_dirs should be a string but it parsed as a {}'
+                                 .format(type(val)))
 
         else: # if key is not found in list
             raise KeyError('key {} in todo_list_dict is an invalid key'.
@@ -111,6 +140,7 @@ def _validate_extract_config(extract_config_yaml):
     -------
     extract_config_dict : dictionary, after validation of all keys
     """
+
     for key, val in extract_config_yaml.items():
         if key == 'spect_params':
             if type(val) != dict:
@@ -126,7 +156,7 @@ def _validate_extract_config(extract_config_yaml):
             else:
                 for sp_key, sp_val in val.items():
                     if sp_key=='samp_freq' or sp_key=='window_size' or sp_key=='window_step':
-                        if sp_val != type(int):
+                        if type(sp_val) != int:
                             raise ValueError('{} in spect_params should be an integer'.format(sp_key))
                     elif sp_key=='freq_cutoffs':
                         if len(sp_val) != 2:
@@ -147,20 +177,29 @@ def _validate_extract_config(extract_config_yaml):
                     else:
                         val[index] = _validate_todo_list_dict(item,index)
             extract_config_yaml['todo_list'] = val # re-assign because feature list is added
+
+        else: # if key is not found in list
+            raise KeyError('key {} in extract is an invalid key'.
+                            format(key))
+
     return extract_config_yaml
 
 def parse_extract_config(extract_config_file):
     """
+    parse config file for extracting features
     
     Parameters
     ----------
-    extract_config_file
+    extract_config_file : string, file name of a YAML file
 
     Returns
     -------
-
+    extract_config : dictionary, parsed and validated
     """
-    with open(config_file) as yaml_to_parse:
+    with open(extract_config_file) as yaml_to_parse:
         extract_config_yaml = yaml.load(yaml_to_parse)
-        extract_config = _validate_extract_config(extract_config_yaml)
+        if 'extract' not in extract_config_yaml:
+            raise KeyError('extract not defined in config file')
+        else:
+            extract_config = _validate_extract_config(extract_config_yaml['extract'])
     return extract_config

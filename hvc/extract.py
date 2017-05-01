@@ -7,12 +7,12 @@ import sys
 import glob
 
 #from hvc
-from parseconfig import parse
+import hvc.parse.extract
 
 # get command line arguments
 args = sys.argv
 config_file = args[1]
-config = parse(config_file)
+config = hvc.parse.extract.parse_extract_config(config_file)
 
 if 'extract' not in config:
     raise KeyError('extract not defined in config')
