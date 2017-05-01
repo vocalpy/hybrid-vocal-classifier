@@ -14,19 +14,6 @@ with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
 with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
     feature_groups_dict = yaml.load(ftr_grp_yaml)
 
-def _convert_feature_group_to_list(feature_group):
-    """
-    
-    Parameters
-    ----------
-    feature_group
-
-    Returns
-    -------
-    feature_list
-    """
-    return feature_groups_dict[feature_group]
-
 def _validate_todo_list_dict(todo_list_dict,index):
     """
     validates to-do lists
