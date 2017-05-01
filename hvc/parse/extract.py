@@ -1,5 +1,6 @@
 #from standard library
 import os
+import copy
 
 #from dependencies
 import yaml
@@ -57,6 +58,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
             raise ValueError('todo_list item #{} does not include feature_group or feature_list'
                              .format(index))
 
+    validated_todo_list_dict = copy.deepcopy(todo_list_dict)
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
         if key == 'bird_ID':
@@ -83,7 +85,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                     raise ValueError('{} not found in valid feature groups'.format(val))
                 else:
                     if 'feature_list' not in todo_list_dict:
-                        todo_list_dict['feature_list'] = feature_groups_dict[val]
+                        validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
             elif type(val) == list:
                 # if more than one feature group, than return a list of lists
                 feature_list_lists = []
@@ -92,7 +94,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                         raise ValueError('{} not found in valid feature groups'.format(val))
                     else:
                         feature_list_lists.append(feature_groups_dict[ftr_grp])
-                todo_list_dict['feature_list'] = feature_list_lists
+                validated_todo_list_dict['feature_list'] = feature_list_lists
 
         elif key== 'feature_list':
             if type(val) != list:
@@ -116,7 +118,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
             else:
                 label_list = list(val)
                 label_list = [ord(label) for label in label_list]
-                todo_list_dict[key] = label_list
+                validated_todo_list_dict[key] = label_list
 
         elif key=='output_dir':
             if type(val) != str:
@@ -141,6 +143,7 @@ def _validate_extract_config(extract_config_yaml):
     extract_config_dict : dictionary, after validation of all keys
     """
 
+    validated_extract_config = copy.deepcopy(extract_config_yaml)
     for key, val in extract_config_yaml.items():
         if key == 'spect_params':
             if type(val) != dict:
@@ -176,13 +179,13 @@ def _validate_extract_config(extract_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item,index)
-            extract_config_yaml['todo_list'] = val # re-assign because feature list is added
+            validated_extract_config['todo_list'] = val # re-assign because feature list is added
 
         else: # if key is not found in list
             raise KeyError('key {} in extract is an invalid key'.
                             format(key))
 
-    return extract_config_yaml
+    return validated_extract_config
 
 def parse_extract_config(extract_config_file):
     """
