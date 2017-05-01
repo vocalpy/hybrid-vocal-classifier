@@ -9,7 +9,9 @@ extract:
     -
       bird_ID: gr41rd51
       file_format: evtaf
-      feature_group: knn, svm
+      feature_group:
+        - knn
+        - svm
       data_dirs:
         - C:\DATA\gr41rd51\pre_surgery_baseline\06-21-12
         - C:\DATA\gr41rd51\pre_surgery_baseline\06-19-12
