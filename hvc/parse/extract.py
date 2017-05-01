@@ -128,7 +128,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
         else: # if key is not found in list
             raise KeyError('key {} in todo_list_dict is an invalid key'.
                             format(key))
-    return todo_list_dict
+    return validated_todo_list_dict
 
 def _validate_extract_config(extract_config_yaml):
     """
