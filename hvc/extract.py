@@ -8,21 +8,12 @@ import glob
 
 #from hvc
 import hvc.parse.extract
+import hvc.features
 
 # get command line arguments
 args = sys.argv
 config_file = args[1]
-config = hvc.parse.extract.parse_extract_config(config_file)
-
-if 'extract' not in config:
-    raise KeyError('extract not defined in config')
-else:
-    extract = config['extract']
-
-if 'feature_list' in extract:
-    feature_list = extract['feature_list']
-elif 'feature_group' in extract:
-    feature_group = extract['feature_group']
+extract_config = hvc.parse.extract.parse_extract_config(config_file)
 
 format = extract['format']
 if format=='evtaf':

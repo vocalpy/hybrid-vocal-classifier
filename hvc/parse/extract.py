@@ -5,6 +5,10 @@ import copy
 #from dependencies
 import yaml
 
+#from hvc
+from hvc.features.feature_dict import feature_switch_case_dict
+VALID_FEATURES = feature_switch_case_dict.keys()
+
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 
@@ -88,7 +92,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('feature_list should be a list but parsed as a {}'.format(type(val)))
             else:
                 for feature in val:
-                    if feature not in validate_dict['valid_features']:
+                    if feature not in VALID_FEATURES:
                         raise ValueError('feature {} not found in valid feature list'.format(feature))
 
         elif key=='file_format':
