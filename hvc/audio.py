@@ -21,7 +21,7 @@ class song_spect:
         self.timeBins = time_bins
         self.sampFreq = sampfreq
 
-def make_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
+def make_song_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
     """
     Computes spectogram of raw song waveform using FFT.
     Defaults to FFT parameters from Koumura Okanoya 2016.
@@ -30,19 +30,22 @@ def make_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
     axis) so that when plotted the lower frequencies of the spectrogram are 
     at 0 on the y axis.
 
-    Inputs:
-        wav_file -- filename of .wav file corresponding to song
-        size -- of FFT window, default is 512 samples
-        step -- number of samples between the start of each window, default is 32
-            i.e. if size == step then there will be no overlap of windows
-        freq_range -- range of frequencies to return. Two-element list; frequencies
-                      less than the first element or greater than the second are discarded.
-    Returns:
-        spect -- spectrogram, log transformed
-        time_bins -- vector assigning time values to each column in spect
-            e.g. [0,8,16] <-- 8 ms time bins
-        freq_bins -- vector assigning frequency values to each row in spect
-            e.g. [0,100,200] <-- 100 Hz frequency bins
+    Parameters
+    ----------
+    wav_file : string, filename of .wav file corresponding to song
+    size: integer, size of FFT window, default is 512 samples
+    step: integer, number of samples between the start of each window, default is 32
+        i.e. if size == step then there will be no overlap of windows
+    freq_range: 2-element list, range of frequencies to return. Frequencies
+                less than the first element or greater than the second are discarded.
+
+    Returns
+    -------
+    spect -- spectrogram, log transformed
+    time_bins -- vector assigning time values to each column in spect
+        e.g. [0,8,16] <-- 8 ms time bins
+    freq_bins -- vector assigning frequency values to each row in spect
+        e.g. [0,100,200] <-- 100 Hz frequency bins
     """
     win_dpss = slepian(size, 4/size)
     fft_overlap = size - step
@@ -114,3 +117,73 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     offsets = offsets[keep_these]    
     
     return onsets,offsets
+
+class syl_spect:
+    """
+    syllable spectrogram object, returned by make_syl_spect.
+    Properties:
+        spect -- 2-d m by n numpy array, spectrogram as computed by make_song_spect.
+                 Each of the m rows is a frequency bin, and each of the n columns is a time bin.
+        time_bins -- 1d vector, values are times represented by each bin in s
+        freq_bins -- 1d vector, values are power spectral density in each frequency bin
+        sampfreq -- sampling frequency in Hz as determined by scipy.io.wavfile function
+    """
+    def __init__(self,
+                 syl_audio,
+                 samp_freq,
+                 power,
+                 nfft,
+                 overlap,
+                 freq_bins,
+                 time_bins):
+        self.sylAudio = syl_audio
+        self.sampFreq = samp_freq
+        self.power = power
+        self.nfft = nfft
+        self.overlap = overlap
+        self.freqBins = freq_bins
+        self.timeBins = time_bins
+
+def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,minf=500,maxf=6000):
+    """
+    makes spectrograms as in [1]_.
+
+    Parameters
+    ----------
+    syl_audio : 1d numpy array, raw audio waveform of a segmented syllable
+    samp_freq : integer, sampling frequency
+    nfft : integer, number of samples for each Fast Fourier Transform (FFT)
+           in spectrogram. Default is 256.
+    overlap : integer, number of overlapping samples in each FFT. Default is 192.
+    minf : integer, minimum frequency in FFT
+    maxf : integer, maximum frequency in FFT
+
+    Returns
+    -------
+    syl_spect : object with properties as defined in the syl class
+
+    References
+    ----------
+    .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
+    automatic classification of birdsong elements using a linear support vector
+     machine." PloS one 9.3 (2014): e92584.
+
+    """
+    # for below, need to have a 'filter' option in extract files
+    # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
+
+    # spectrogram and cepstrum
+    syl_diff = np.diff(syl) # Tachibana applied a differential filter
+    # note that the matlab specgram function returns the STFT by default
+    # whereas the default for the matplotlib.mlab version of specgra
+    # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
+    # to match, mode must be set to 'complex'
+    power,freq_bins,time_bins = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
+                                         noverlap=overlap,mode='complex')
+    return syl_spect(syl_audio,
+                     samp_freq,
+                     power,
+                     nfft,
+                     overlap,
+                     freq_bins,
+                     time_bins)
