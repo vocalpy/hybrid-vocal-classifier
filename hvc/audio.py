@@ -118,15 +118,26 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     
     return onsets,offsets
 
-class syl_spect:
+class syllable:
     """
-    syllable spectrogram object, returned by make_syl_spect.
-    Properties:
-        spect -- 2-d m by n numpy array, spectrogram as computed by make_song_spect.
-                 Each of the m rows is a frequency bin, and each of the n columns is a time bin.
-        time_bins -- 1d vector, values are times represented by each bin in s
-        freq_bins -- 1d vector, values are power spectral density in each frequency bin
-        sampfreq -- sampling frequency in Hz as determined by scipy.io.wavfile function
+    syllable object, returned by make_syl_spect.
+    Properties
+    ----------
+    syl_audio : 1-d numpy array
+        raw waveform from audio file
+    sampfreq : integer
+        sampling frequency in Hz as determined by scipy.io.wavfile function
+    power : 2-d m by n numpy array
+        spectrogram as computed by make_song_spect. Each of the m rows is a frequency bin, 
+        and each of the n columns is a time bin. Value in each bin is power at that frequency and time.
+    nfft : integer
+        number of samples used for each FFT
+    overlap : integer
+        number of samples that each consecutive FFT window overlapped
+    time_bins : 1d vector
+        values are times represented by each bin in s
+    freq_bins : 1d vector
+        values are power spectral density in each frequency bin
     """
     def __init__(self,
                  syl_audio,
@@ -146,7 +157,8 @@ class syl_spect:
 
 def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,minf=500,maxf=6000):
     """
-    makes spectrograms as in [1]_.
+    makes spectrograms.
+    Defaults are as in [1]_.
 
     Parameters
     ----------

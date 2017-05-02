@@ -1,1 +1,1 @@
-from . import extract_features
+from . import extract

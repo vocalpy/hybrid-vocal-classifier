@@ -24,3 +24,6 @@ feature_switch_case_dict = {
     'mean amplitude' : tachibana.mean_amplitude,
     'mean delta amplitude' : tachibana.mean_delta_amplitude
 }
+
+def extract_feature_from_syllable(feature,syllable):
+    feature_switch_case_dict[feature](syllable)
