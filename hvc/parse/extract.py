@@ -6,7 +6,7 @@ import copy
 import yaml
 
 #from hvc
-from hvc.features.feature_dict import feature_switch_case_dict
+from hvc.features.extract import feature_switch_case_dict
 VALID_FEATURES = feature_switch_case_dict.keys()
 
 path = os.path.abspath(__file__)
