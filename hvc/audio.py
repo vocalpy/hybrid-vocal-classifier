@@ -2,6 +2,7 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import slepian # AKA DPSS, window used for FFT
 from scipy.signal import spectrogram
+from matplotlib.mlab import specgram
 
 from hvc.evfuncs import load_cbin,load_notmat
 
@@ -155,7 +156,7 @@ class syllable:
         self.freqBins = freq_bins
         self.timeBins = time_bins
 
-def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,minf=500,maxf=6000):
+def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,min_freq=500,max_freq=6000):
     """
     makes spectrograms.
     Defaults are as in [1]_.
@@ -167,8 +168,8 @@ def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,minf=500,maxf=6000):
     nfft : integer, number of samples for each Fast Fourier Transform (FFT)
            in spectrogram. Default is 256.
     overlap : integer, number of overlapping samples in each FFT. Default is 192.
-    minf : integer, minimum frequency in FFT
-    maxf : integer, maximum frequency in FFT
+    min_freq : integer, minimum frequency in FFT
+    max_freq : integer, maximum frequency in FFT
 
     Returns
     -------
@@ -185,14 +186,28 @@ def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,minf=500,maxf=6000):
     # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
 
     # spectrogram and cepstrum
-    syl_diff = np.diff(syl) # Tachibana applied a differential filter
+    syl_diff = np.diff(syl_audio) # Tachibana applied a differential filter
     # note that the matlab specgram function returns the STFT by default
     # whereas the default for the matplotlib.mlab version of specgra
     # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
     # to match, mode must be set to 'complex'
-    power,freq_bins,time_bins = specgram(syl_diff,NFFT=nfft,Fs=fs,window=np.hanning(nfft),
-                                         noverlap=overlap,mode='complex')
-    return syl_spect(syl_audio,
+    power,freq_bins,time_bins = specgram(syl_diff,
+                                         NFFT=nfft,
+                                         Fs=samp_freq,
+                                         window=np.hanning(nfft),
+                                         noverlap=overlap,
+                                         mode='complex')
+
+    f_inds = np.nonzero((freq_bins >= min_freq) &
+                        (freq_bins < max_freq))[0] #returns tuple
+    freq_bins = freq_bins[f_inds]
+    power = power[f_inds,:]
+    power = np.log10(power) # log transform to increase range
+
+    #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
+    power = np.flipud(power)
+    freq_bins = np.flipud(freq_bins)
+    return syllable(syl_audio,
                      samp_freq,
                      power,
                      nfft,

@@ -107,9 +107,8 @@ def _validate_todo_list_dict(todo_list_dict,index):
             if type(val) != str:
                 raise ValueError('Labelset should be a string, e.g., \'iabcde\'.')
             else:
-                label_list = list(val)
-                label_list = [ord(label) for label in label_list]
-                validated_todo_list_dict[key] = label_list
+                validated_todo_list_dict[key] = list(val) # convert from string to list of chars
+                validated_todo_list_dict['labelset_int'] = [ord(label) for label in list(val)]
 
         elif key=='output_dir':
             if type(val) != str:
@@ -142,8 +141,8 @@ def _validate_extract_config(extract_config_yaml):
                                  'not parse as a dictionary of parameters. Check '
                                  'file formatting.')
             spect_param_keys = set(['samp_freq',
-                                    'window_size',
-                                    'window_step',
+                                    'nperseg',
+                                    'noverlap',
                                     'freq_cutoffs'])
             if set(val.keys()) != spect_param_keys:
                 raise KeyError('unrecognized keys in spect_params dictionary')

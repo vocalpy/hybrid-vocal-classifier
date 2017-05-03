@@ -1,8 +1,8 @@
 extract:
   spect_params:
       samp_freq: 32000 # Hz
-      window_size: 512
-      window_step: 32
+      nperseg: 512
+      noverlap: 480
       freq_cutoffs: [1000,8000]
 
   todo_list:
