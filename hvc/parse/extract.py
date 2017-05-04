@@ -77,6 +77,13 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 else:
                     if 'feature_list' not in todo_list_dict:
                         validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
+            elif type(val)==list and len(val)==1: # if user entered list with just one element
+                val = val[0]
+                if val not in feature_groups_dict:
+                    raise ValueError('{} not found in valid feature groups'.format(val))
+                else:
+                    if 'feature_list' not in todo_list_dict:
+                        validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
             elif type(val) == list:
                 # if more than one feature group, than return a list of lists
                 feature_list_lists = []

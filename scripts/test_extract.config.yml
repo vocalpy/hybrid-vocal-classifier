@@ -10,7 +10,6 @@ extract:
       bird_ID : bl26lb16
       file_format: evtaf
       feature_group:
-        - knn
         - svm
       data_dirs:
         - C:\Data\bl26lb16\041912

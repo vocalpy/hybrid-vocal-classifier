@@ -130,7 +130,7 @@ def mean_delta_spectrum(syllable):
     mean_deltra_spectrum 
     """
 
-    if syllable.syl_audio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
+    if syllable.sylAudio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
     # if number of time bins will be less than 5
         spect_width = syllable.nfft / 2
         # return a "delta spectrum" of 0
@@ -153,7 +153,7 @@ def mean_delta_cepstrum(syllable):
     mean delta spectrum
     """
 
-    if syllable.syl_audio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
+    if syllable.sylAudio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
     # if number of time bins will be less than 5
         spect_width = syllable.nfft / 2
         # return a "delta cepstrum" of 0
@@ -239,8 +239,8 @@ def mean_spectral_centroid(syllable):
     -------
     mean_spectral_centroid : scalar, mean of spectral centroid across syllable
     """
-    prob, freqs_mat = _convert_spect_to_probability(syllable.power)[:2]
-    spect_centroid = _spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat = _convert_spect_to_probability(syllable.power,syllable.freqBins)[:2]
+    spect_centroid = spectral_centroid(prob,freqs_mat)
     return np.mean(spect_centroid)
 
 def mean_delta_spectral_centroid(syllable):
@@ -256,12 +256,12 @@ def mean_delta_spectral_centroid(syllable):
     mean_delta_spectral_centroid : scalar
     """
 
-    prob, freqs_mat = _convert_spect_to_probability(syllable.power)[:2]
-    spect_centroid = _spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat = _convert_spect_to_probability(syllable.power,syllable.freqBins)[:2]
+    spect_centroid = spectral_centroid(prob,freqs_mat)
     delta_spect_centroid = _five_point_delta(spect_centroid)
     return np.mean(delta_spect_centroid)
 
-def spectral_spread(power):
+def spectral_spread(power,freqBins):
     """
     spectral spread, variance of normalized amplitude spectrum
     
@@ -273,9 +273,9 @@ def spectral_spread(power):
     -------
     spectral spread
     """
-    prob, freqs_mat, num_rows = _convert_spect_to_probability(power)[:3]
-    spect_centroid = _spectral_centroid(prob,freqs_mat)
-    variance = _variance(mat,spect_centroid,num_rows,prob)
+    prob, freqs_mat, num_rows = _convert_spect_to_probability(power,freqBins)[:3]
+    spect_centroid = spectral_centroid(prob,freqs_mat)
+    variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
     return np.power(variance, 1 / 2)
 
 def mean_spectral_spread(syllable):
@@ -291,7 +291,7 @@ def mean_spectral_spread(syllable):
     -------
     mean_spectral_spread : scalar, mean of spectral spread across syllable
     """
-    return np.mean(spectral_spread(syllable.power))
+    return np.mean(spectral_spread(syllable.power,syllable.freqBins))
 
 def mean_delta_spectral_spread(syllable):
     """
@@ -306,9 +306,9 @@ def mean_delta_spectral_spread(syllable):
     mean_delta_spectral_spread : scalar
     """
 
-    return np.mean(_five_point_delta(spectral_spread(syllable.power)))
+    return np.mean(_five_point_delta(spectral_spread(syllable.power, syllable.freqBins)))
 
-def spectral_skewness(power):
+def spectral_skewness(power, freqBins):
     """
     spectral skewness, measure of asymmetry of normalized amplitude spectrum around mean
     
@@ -321,10 +321,10 @@ def spectral_skewness(power):
     spectral skewness
     """
 
-    prob, freqs_mat, num_rows = _convert_spect_to_probability(power)[:3]
-    spect_centroid = _spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat, num_rows = _convert_spect_to_probability(power, freqBins)[:3]
+    spect_centroid = spectral_centroid(prob,freqs_mat)
     variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
-    skewness = np.sum((np.power(mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob, 0)
+    skewness = np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob, 0)
     return skewness / np.power(variance, 3 / 2)
 
 def mean_spectral_skewness(syllable):
@@ -341,7 +341,7 @@ def mean_spectral_skewness(syllable):
     mean spectral skewness : scalar, mean of spectral skewness across syllable
     """
 
-    return np.mean(spectral_skewness(syllable.power))
+    return np.mean(spectral_skewness(syllable.power, syllable.freqBins))
 
 def mean_delta_spectral_skewness(syllable):
     """
@@ -356,9 +356,9 @@ def mean_delta_spectral_skewness(syllable):
     mean_delta_spectral_skewness : scalar
     """
 
-    return np.mean(_five_point_delta(spectral_skewness(syllable.power)))
+    return np.mean(_five_point_delta(spectral_skewness(syllable.power, syllable.freqBins)))
 
-def spectral_kurtosis(power):
+def spectral_kurtosis(power, freqBins):
     """
     spectral kurtosis, measure of flatness of normalized amplitude spectrum
     
@@ -371,8 +371,8 @@ def spectral_kurtosis(power):
     spectral kurtosis
     """
 
-    prob, freqs_mat, num_rows = _convert_spect_to_probability(power)[:3]
-    spect_centroid = _spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat, num_rows = _convert_spect_to_probability(power,freqBins)[:3]
+    spect_centroid = spectral_centroid(prob,freqs_mat)
     variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
     kurtosis = np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob, 0)
     return kurtosis / np.power(variance, 2)
@@ -391,7 +391,7 @@ def mean_spectral_kurtosis(syllable):
     mean_spectral_kurtosis
     """
 
-    return np.mean(spectral_kurtosis(syllable.power))
+    return np.mean(spectral_kurtosis(syllable.power, syllable.freqBins))
 
 def mean_delta_spectral_kurtosis(syllable):
     """
@@ -406,7 +406,50 @@ def mean_delta_spectral_kurtosis(syllable):
     mean_delta_spectral_kurtosis
     """
 
-    return np.mean(_five_point_delta(spectral_kurtosis(syllable.power)))
+    return np.mean(_five_point_delta(spectral_kurtosis(syllable.power, syllable.freqBins)))
+
+def spectral_flatness(power):
+    """
+    spectral flatness
+    
+    Parameters
+    ----------
+    power
+
+    Returns
+    -------
+    spectral flatness
+    """
+    amplitude_spectrum = np.abs(power)
+    return np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(amplitude_spectrum, 0)
+
+def mean_spectral_flatness(syllable):
+    """
+    mean of spectral flatness across syllable
+    
+    Parameters
+    ----------
+    syllable
+
+    Returns
+    -------
+
+    """
+    return np.mean(spectral_flatness(syllable.power))
+
+def mean_delta_spectral_flatness(syllable):
+    """
+    mean delta spectral flatness
+    
+    Parameters
+    ----------
+    syllable
+
+    Returns
+    -------
+    mean delta spectral flatness
+    """
+    return np.mean(_five_point_delta(spectral_flatness(syllable.power)))
 
 def spectral_slope(power,freq_bins):
     """
@@ -415,7 +458,7 @@ def spectral_slope(power,freq_bins):
     Parameters
     ----------
     power : 2d array,
-    freqs : 1d array, frequency bins as returned by spectrogram
+    freqBins : 1d array, frequency bins as returned by spectrogram
 
     Returns
     -------
