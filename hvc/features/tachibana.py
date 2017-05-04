@@ -467,8 +467,8 @@ def spectral_slope(power,freq_bins):
 
     amplitude_spectrum = np.abs(power)
     num_rows, num_cols = amplitude_spectrum.shape
-    spect_slope = np.zeros((1, num_cols))
-    mat2 = np.stack((freq_bins, np.ones((num_rows, 1))),axis=-1)
+    spect_slope = np.zeros((num_cols,))
+    mat2 = np.stack((freq_bins, np.ones((num_rows,))),axis=-1)
     for n in range(num_cols):
         beta = np.linalg.solve(np.dot(mat2.T,mat2),
                                np.dot(mat2.T,amplitude_spectrum[:, n]))
@@ -507,7 +507,7 @@ def mean_delta_spectral_slope(syllable):
 
     return np.mean(_five_point_delta(spectral_slope(syllable.power, syllable.freqBins)))
 
-def _cepstrum_for_pitch(power,freqs,nfft,samp_freq,min_freq,max_freq):
+def _cepstrum_for_pitch(power,nfft,samp_freq,min_freq,max_freq):
     """
     cepstrum as computed in Tachibana et al. 2014
     for the purposes of calculating pitch and pitch goodness
@@ -515,7 +515,6 @@ def _cepstrum_for_pitch(power,freqs,nfft,samp_freq,min_freq,max_freq):
     Parameters
     ----------
     power
-    freqs
     nfft
     samp_freq
     min_freq
@@ -527,9 +526,10 @@ def _cepstrum_for_pitch(power,freqs,nfft,samp_freq,min_freq,max_freq):
     mid
     min_quef
     """
+    amplitude_spectrum = np.abs(power)
 
-    max_quef = np.round(samp_freq / min_freq) * 2
-    min_quef = np.round(samp_freq / max_freq) * 2
+    max_quef = np.round(samp_freq / min_freq).astype(int) * 2
+    min_quef = np.round(samp_freq / max_freq).astype(int) * 2
 
     exs = np.vstack((amplitude_spectrum,
                      np.matlib.repmat(amplitude_spectrum[-1, :], nfft, 1),
@@ -556,12 +556,11 @@ def pitch(syllable,min_freq=500,max_freq=6000):
     """
 
     max_val, max_id, min_quef = _cepstrum_for_pitch(syllable.power,
-                                                    syllable.freqBins,
                                                     syllable.nfft,
-                                                    syllable.samp_freq,
+                                                    syllable.sampFreq,
                                                     min_freq,
                                                     max_freq)
-    return syllable.samp_freq / (max_id + min_quef - 1)
+    return syllable.sampFreq / (max_id + min_quef - 1)
 
 def mean_pitch(syllable):
     """
@@ -589,7 +588,7 @@ def mean_delta_pitch(syllable):
     -------
     mean_delta_pitch
     """
-    return mean(_five_point_delta(pitch(syllable)))
+    return np.mean(_five_point_delta(pitch(syllable)))
 
 def pitch_goodness(syllable,min_freq=500,max_freq=6000):
     """
@@ -607,9 +606,8 @@ def pitch_goodness(syllable,min_freq=500,max_freq=6000):
     """
 
     return _cepstrum_for_pitch(syllable.power,
-                               syllable.freqBins,
                                syllable.nfft,
-                               syllable.samp_freq,
+                               syllable.sampFreq,
                                min_freq,
                                max_freq)[0]
 
@@ -639,7 +637,7 @@ def mean_delta_pitch_goodness(syllable):
     -------
     mean_delta_pitch_goodness
     """
-    return mean(_five_point_delta(pitch_goodness(syllable)))
+    return np.mean(_five_point_delta(pitch_goodness(syllable)))
 
 def amplitude(syllable):
     """
@@ -701,6 +699,14 @@ def zero_crossings(syllable):
     zero_crossings : scalar
     """
 
-    zero_crosses = np.length(np.find(np.diff(sign(syllable.sylAudio)) != 0)) / 2
+    #to find zero crossings:
+    #   convert raw signal to sign, either +1 or -1
+    #   then take difference at each point: [signal[1]-signal[0],signal[2]-signal[1],...]
+    #   then find all the points where the difference is not zero
+    #       because sign changed from -1 to 1 or from 1 to -1
+    #   Not sure why it was divided in two but I notice by looking at examples that
+    #   they are often right next to each other.
+    #   One zero crossing should only result in one non-zero index though
+    zero_crosses = np.where(np.diff(np.sign(syllable.sylAudio)) != 0)[0].shape[-1] / 2
     dur = duration(syllable.sylAudio, syllable.sampFreq)
     return zero_crosses / dur
