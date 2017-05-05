@@ -1,3 +1,6 @@
+import collections
+import warnings
+
 import numpy as np
 
 from . import tachibana
@@ -29,7 +32,27 @@ feature_switch_case_dict = {
     'mean delta amplitude' : tachibana.mean_delta_amplitude
     }
 
-def _actually_extract_features(feature_list,syllable):
+def _flatten(list_to_flatten):
+    """
+    flattens list of extracted features.
+    Acts as a generator.
+
+    Parameters
+    ----------
+    list_to_flatten
+
+    Returns
+    -------
+    flattened list. Note this is a generator function.
+    """
+
+    for element in list_to_flatten:
+        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+            yield from flatten(element)
+        else:
+            yield element
+
+def _extract_features(feature_list,syllable):
     """
     helper function
     
@@ -40,13 +63,19 @@ def _actually_extract_features(feature_list,syllable):
 
     Returns
     -------
-
+    feature_arr : nd-array
+        list of extracted features, flattened and converted to numpy array
     """
-    feature_arr = []
+    extracted_features = []
     for feature in feature_list:
-        feature_arr.append(feature_switch_case_dict[feature](syllable))
-    import pdb;pdb.set_trace()
-    return np.ravel(feature_arr)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error')
+            try:
+                extracted_features.append(feature_switch_case_dict[feature](syllable))
+            except Warning as e:
+                print('error found:', e)
+                import pdb;pdb.set_trace()
+    return np.asarray(_flatten(extracted_features))
 
 def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
     """
@@ -75,7 +104,7 @@ def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
         # if feature_list is a list of lists
         features_dict = {}
         for ftr_grp,ftr_list in zip(feature_groups,feature_list):
-            features_dict[ftr_grp] = _actually_extract_features(ftr_list,syllable)
+            features_dict[ftr_grp] = _extract_features(ftr_list,syllable)
         return features_dict
     else:
-        return _actually_extract_features(feature_list,syllable)
+        return _extract_features(feature_list,syllable)

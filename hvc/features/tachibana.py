@@ -115,7 +115,16 @@ def _five_point_delta(x):
     if len(x.shape) > 1:
         return -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
     else: # if 1d vector, e.g. spectral slope
-        return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
+        if x.shape[0] < 5:
+            # if length of 1d vector is less than five, can't take five-point
+            # delta--would return empty array that then raises warning when
+            # you take mean. So instead return array of zeros.
+            # Original MATLAB code solved this by replacing NaNs
+            # in feature array with zeros, so this code produces the same
+            # behavior / features.
+            return np.zeros((x.shape[0],))
+        else:
+            return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
 
 def mean_delta_spectrum(syllable):
     """
@@ -130,15 +139,17 @@ def mean_delta_spectrum(syllable):
     mean_deltra_spectrum 
     """
 
-    if syllable.sylAudio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
-    # if number of time bins will be less than 5
-        spect_width = syllable.nfft / 2
-        # return a "delta spectrum" of 0
-        delta_spectrum = np.zeros((spect_width,1))
+    if syllable.power.shape[-1] < 5:
+        #can't take five point delta if less than five time bins
+        # so return zeros instead, as original code did.
+        # Return vector of length = number of frequency bins - 1
+        # Originally done to remove "DC component", first coefficient
+        # of FFT.
+        return np.zeros((syllable.power.shape[0],))
     else:
         spect = _spectrum(syllable.power)
         delta_spectrum = _five_point_delta(spect)
-    return np.mean(np.abs(delta_spectrum), axis=1)
+        return np.mean(np.abs(delta_spectrum), axis=1)
 
 def mean_delta_cepstrum(syllable):
     """
@@ -153,15 +164,17 @@ def mean_delta_cepstrum(syllable):
     mean delta spectrum
     """
 
-    if syllable.sylAudio.shape[-1] < (5 * syllable.nfft - 4 * syllable.overlap):
-    # if number of time bins will be less than 5
-        spect_width = syllable.nfft / 2
-        # return a "delta cepstrum" of 0
-        delta_cepstrum = np.zeros((spect_width, 1))
+    if syllable.power.shape[-1] < 5:
+        #can't take five point delta if less than five time bins
+        # so return zeros instead, as original code did.
+        # Return vector of length = number of frequency bins - 1
+        # Originally done to remove "DC component", first coefficient
+        # of FFT.
+        return np.zeros((syllable.power.shape[0],))
     else:
         cepst = _cepstrum_for_mean(syllable.power,syllable.nfft)
         delta_cepstrum = _five_point_delta(cepst)
-    return np.mean(np.abs(delta_cepstrum), axis=1)
+        return np.mean(np.abs(delta_cepstrum), axis=1)
 
 def _convert_spect_to_probability(power,freqs):
     """

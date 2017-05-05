@@ -25,7 +25,8 @@ def run(config_file):
     extract_config = parse.extract.parse_extract_config(config_file)
     print('Parsed extract config.')
     todo_list = extract_config['todo_list']
-    for todo in todo_list:
+    for ind, todo in enumerate(todo_list):
+        print('Completing item {} in to-do list'.format(ind))
         file_format = todo['file_format']
         if file_format == 'evtaf':
             if 'evfuncs' not in sys.modules:
@@ -46,12 +47,15 @@ def run(config_file):
 
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
+            print('Changing to data directory: {}'.format(data_dir))
             os.chdir(data_dir)
 
             if file_format == 'evtaf':
                 notmats = glob.glob('*.not.mat')
+                num_notmats = len(notmats)
                 features_from_each_file = []
-                for notmat in notmats:
+                for notmat_num, notmat in enumerate(notmats):
+                    print('Processing audio file {} of {}.'.format(notmat_num,num_notmats))
                     cbin = notmat[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
                     syls, labels = evfuncs.get_syls(cbin,
                                                     extract_config['spect_params'],
