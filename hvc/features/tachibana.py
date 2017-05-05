@@ -654,7 +654,7 @@ def amplitude(syllable):
     """
 
     amplitude_spectrum = np.abs(syllable.power)
-    return 20 * np.log10(np.sum(amplitude_spectrum) / syllable.nfft)
+    return 20 * np.log10(np.sum(amplitude_spectrum,0) / syllable.nfft)
 
 def mean_amplitude(syllable):
     """
@@ -708,5 +708,5 @@ def zero_crossings(syllable):
     #   they are often right next to each other.
     #   One zero crossing should only result in one non-zero index though
     zero_crosses = np.where(np.diff(np.sign(syllable.sylAudio)) != 0)[0].shape[-1] / 2
-    dur = duration(syllable.sylAudio, syllable.sampFreq)
+    dur = duration(syllable)
     return zero_crosses / dur

@@ -21,7 +21,8 @@ svm:
   - mean delta pitch
   - mean delta pitch goodness
   - zero crossings
-  - amplitude
+  - mean amplitude
+  - mean delta amplitude
 
 knn:
   - one feature
