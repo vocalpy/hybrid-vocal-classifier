@@ -6,6 +6,11 @@ feature extraction
 import sys
 import os
 import glob
+from datetime import datetime
+
+#from dependencies
+import numpy as np
+from sklearn.externals import joblib
 
 #from hvc
 from . import parse
@@ -24,8 +29,12 @@ def run(config_file):
     """
     extract_config = parse.extract.parse_extract_config(config_file)
     print('Parsed extract config.')
+
     todo_list = extract_config['todo_list']
     for ind, todo in enumerate(todo_list):
+
+        timestamp = datetime.now().strftime('%y%m%d_%H%M')
+
         print('Completing item {} in to-do list'.format(ind))
         file_format = todo['file_format']
         if file_format == 'evtaf':
@@ -45,6 +54,9 @@ def run(config_file):
         else:
             is_ftr_list_of_lists = False # for sanity check when debugging
 
+        output_dir = todo['output_dir'] + 'extract_output_' + timestamp
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
             print('Changing to data directory: {}'.format(data_dir))
@@ -53,13 +65,14 @@ def run(config_file):
             if file_format == 'evtaf':
                 notmats = glob.glob('*.not.mat')
                 num_notmats = len(notmats)
-                features_from_each_file = []
+                all_labels = []
                 for notmat_num, notmat in enumerate(notmats):
-                    print('Processing audio file {} of {}.'.format(notmat_num,num_notmats))
+                    print('Processing audio file {} of {}.'.format(notmat_num+1,num_notmats))
                     cbin = notmat[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
                     syls, labels = evfuncs.get_syls(cbin,
                                                     extract_config['spect_params'],
                                                     todo['labelset'])
+                    all_labels.extend(labels)
                     for syl in syls:
                         if is_ftr_list_of_lists:
                             ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
@@ -68,8 +81,16 @@ def run(config_file):
                         else:
                             ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
                                                                                           syl)
-                        features_from_each_file.append(ftrs)
-                import pdb;pdb.set_trace()
+
+                        if 'features_from_all_files' in locals():
+                            # note have to add dimension with newaxis because np.concat requires
+                            # same number of dimensions, but extract_features returns 1d.
+                            # Decided to keep it explicit that we go to 2d here.
+                            features_from_all_files = np.concatenate((features_from_all_files,
+                                                                         ftrs[np.newaxis,:]))
+                        else:
+                            features_from_all_files = ftrs[np.newaxis,:]
+
             elif file_format == 'koumura':
                 annot_xml = glob.glob('Annotation.xml')
                 if annot_xml==[]:
@@ -78,6 +99,31 @@ def run(config_file):
                     raise ValueError('more than one Annotation.xml file found in directory {}'.format(dir))
                 else:
                     seq_list = hvc.koumura.parse_xml(annot_xml[0])
+                for seq in seq_list:
+                    for syl in seq.syls:
+                        ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
+                                                                               syl)
+                    if 'features_from_each_file' in locals():
+                        np.append(features_from_each_file, ftrs)
+                    else:
+                        features_from_each_file = ftrs
 
+            # get dir name without the rest of path so it doesn't have separators in the name
+            # because those can't be in filename
+            just_dir_name = os.getcwd().split(os.path.sep)[-1]
+            output_filename = os.path.join(output_dir,
+                                           'features_from_' + just_dir_name + '_created_' + timestamp)
+            output_dict = {
+                'feature_list' : todo['feature_list'],
+                'features' : features_from_all_files,
+                'labels' : all_labels,
+                'spect_params' : extract_config['spect_params'],
+                'labelset' : todo['labelset'],
+                'file_format' : todo['file_format'],
+                'bird_ID' : todo['bird_ID']
+            }
+            joblib.dump(output_dict,
+                        output_filename,
+                        compress=3)
         # save yaml file for select.py with output_dir in it!!!
-        output_dir = todo['output_dir']
+

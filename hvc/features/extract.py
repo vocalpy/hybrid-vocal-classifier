@@ -32,26 +32,6 @@ feature_switch_case_dict = {
     'mean delta amplitude' : tachibana.mean_delta_amplitude
     }
 
-def _flatten(list_to_flatten):
-    """
-    flattens list of extracted features.
-    Acts as a generator.
-
-    Parameters
-    ----------
-    list_to_flatten
-
-    Returns
-    -------
-    flattened list. Note this is a generator function.
-    """
-
-    for element in list_to_flatten:
-        if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
-            yield from flatten(element)
-        else:
-            yield element
-
 def _extract_features(feature_list,syllable):
     """
     helper function
@@ -66,16 +46,14 @@ def _extract_features(feature_list,syllable):
     feature_arr : nd-array
         list of extracted features, flattened and converted to numpy array
     """
-    extracted_features = []
+
     for feature in feature_list:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('error')
-            try:
-                extracted_features.append(feature_switch_case_dict[feature](syllable))
-            except Warning as e:
-                print('error found:', e)
-                import pdb;pdb.set_trace()
-    return np.asarray(_flatten(extracted_features))
+        if 'extracted_features' in locals():
+            extracted_features = np.append(extracted_features,
+                                           feature_switch_case_dict[feature](syllable))
+        else:
+            extracted_features = feature_switch_case_dict[feature](syllable)
+    return extracted_features
 
 def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
     """
