@@ -35,7 +35,7 @@ def run(config_file):
 
         timestamp = datetime.now().strftime('%y%m%d_%H%M')
 
-        print('Completing item {} in to-do list'.format(ind))
+        print('Completing item {} of {} in to-do list'.format(ind+1,len(todo_list)))
         file_format = todo['file_format']
         if file_format == 'evtaf':
             if 'evfuncs' not in sys.modules:
@@ -114,9 +114,9 @@ def run(config_file):
             output_filename = os.path.join(output_dir,
                                            'features_from_' + just_dir_name + '_created_' + timestamp)
             output_dict = {
-                'feature_list' : todo['feature_list'],
                 'features' : features_from_all_files,
                 'labels' : all_labels,
+                'feature_list': todo['feature_list'],
                 'spect_params' : extract_config['spect_params'],
                 'labelset' : todo['labelset'],
                 'file_format' : todo['file_format'],
@@ -125,5 +125,48 @@ def run(config_file):
             joblib.dump(output_dict,
                         output_filename,
                         compress=3)
-        # save yaml file for select.py with output_dir in it!!!
 
+        ##########################################################
+        # after looping through all data_dirs for this todo_item #
+        ##########################################################
+        print('making summary file')
+        os.chdir(output_dir)
+        ftr_output_files = glob.glob('*features_from_*')
+        if len(ftr_output_files) > 1:
+            #make a 'summary' data file
+            list_of_output_dicts = []
+            for output_file in ftr_output_files:
+                list_of_output_dicts.append(joblib.load(output_file))
+
+            summary_output_dict = {}
+            for output_dict in list_of_output_dicts:
+                if 'features' not in summary_output_dict:
+                    summary_output_dict['features'] = output_dict['features']
+                else:
+                    summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
+                                                                     output_dict['features']))
+
+                if 'labels' not in summary_output_dict:
+                    summary_output_dict['labels'] = output_dict['labels']
+                else:
+                    summary_output_dict['labels'] = summary_output_dict['labels'] + output_dict['labels']
+
+                if 'spect_params' not in summary_output_dict:
+                    summary_output_dict['spect_params'] = output_dict['spect_params']
+
+                if 'labelset' not in summary_output_dict:
+                    summary_output_dict['labelset'] = output_dict['labelset']
+
+                if 'file_format' not in summary_output_dict:
+                    summary_output_dict['file_format'] = output_dict['file_format']
+
+                if 'bird_ID' not in summary_output_dict:
+                    summary_output_dict['spect_params'] = output_dict['spect_params']
+
+                if 'feature_list' not in summary_output_dict:
+                    summary_output_dict['feature_list'] = output_dict['feature_list']
+            joblib.dump(summary_output_dict,
+                        'summary_feature_file_created_' + timestamp)
+        else: # if only one feature_file
+            os.rename(ftr_output_files[0],
+                      'summary_feature_file_created_' + timestamp)
