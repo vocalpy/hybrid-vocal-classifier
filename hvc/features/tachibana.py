@@ -64,23 +64,27 @@ def mean_spectrum(syllable):
     spect = _spectrum(syllable.power)
     return np.mean(spect, axis=1)
 
-def _cepstrum_for_mean(power,nfft):
+def _cepstrum_for_mean(power, freq_bin_ID):
     """
     helper function to compute cepstrum
     As computed in Tachibana et al. 2014 to get mean cepstrum
     
     Parameters
     ----------
-    power
+    power : 2d array
+        syllable spectrogram
+    freq_bin_ID : integer
+        index of where to truncate cepstrum after creating,
+        to keep only real component with same frequency bins as spectrum
 
     Returns
     -------
     cepstrum
     
     """
-    power2 = np.vstack((power, np.flipud(power[1:-1, :])))
+    power2 = np.concatenate((power, np.flipud(power[1:-1, :])))
     real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
-    return real_cepstrum[1:nfft // 2 + 1, :]
+    return real_cepstrum[1:freq_bin_ID, :]
 
 
 def mean_cepstrum(syllable):
@@ -97,7 +101,7 @@ def mean_cepstrum(syllable):
     mean_cepstrum : 1d numpy array, mean of cepstrum (i.e. take mean across columns of spectrogram)
     """
 
-    cepst = _cepstrum_for_mean(syllable.power,syllable.nfft)
+    cepst = _cepstrum_for_mean(syllable.power,syllable.freqBins.shape[0])
     return np.mean(cepst, axis=1)
 
 def _five_point_delta(x):
@@ -122,7 +126,7 @@ def _five_point_delta(x):
             # Original MATLAB code solved this by replacing NaNs
             # in feature array with zeros, so this code produces the same
             # behavior / features.
-            return np.zeros((x.shape[0],))
+            return np.zeros((x.shape[0]-1,))
         else:
             return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
 
@@ -145,7 +149,7 @@ def mean_delta_spectrum(syllable):
         # Return vector of length = number of frequency bins - 1
         # Originally done to remove "DC component", first coefficient
         # of FFT.
-        return np.zeros((syllable.power.shape[0],))
+        return np.zeros((syllable.power.shape[0]-1,))
     else:
         spect = _spectrum(syllable.power)
         delta_spectrum = _five_point_delta(spect)
@@ -170,9 +174,9 @@ def mean_delta_cepstrum(syllable):
         # Return vector of length = number of frequency bins - 1
         # Originally done to remove "DC component", first coefficient
         # of FFT.
-        return np.zeros((syllable.power.shape[0],))
+        return np.zeros((syllable.power.shape[0]-1,))
     else:
-        cepst = _cepstrum_for_mean(syllable.power,syllable.nfft)
+        cepst = _cepstrum_for_mean(syllable.power,syllable.freqBins.shape[0])
         delta_cepstrum = _five_point_delta(cepst)
         return np.mean(np.abs(delta_cepstrum), axis=1)
 
