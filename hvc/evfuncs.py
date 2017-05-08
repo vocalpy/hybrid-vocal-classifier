@@ -8,7 +8,7 @@ import numpy as np
 from scipy.io import loadmat
 
 #from hvc
-import hvc.audio
+import hvc.audiofileIO
 
 def readrecf(filename):
     """
@@ -246,12 +246,12 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
                              offset + right_width]
         else:
             syl_audio = dat[onset:offset]
-        syllable = hvc.audio.make_syl_spect(syl_audio,
-                                            samp_freq,
-                                            nfft=spect_params['nperseg'],
-                                            overlap=spect_params['noverlap'],
-                                            min_freq=spect_params['freq_cutoffs'][0],
-                                            max_freq=spect_params['freq_cutoffs'][1])
+        syllable = hvc.audiofileIO.make_syl_spect(syl_audio,
+                                                  samp_freq,
+                                                  nfft=spect_params['nperseg'],
+                                                  overlap=spect_params['noverlap'],
+                                                  min_freq=spect_params['freq_cutoffs'][0],
+                                                  max_freq=spect_params['freq_cutoffs'][1])
         all_syls.append(syllable)
 
     return all_syls, all_labels
@@ -314,11 +314,11 @@ def get_syls_old(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
                                      fs,
                                      spect_params['samp_freq']))
     dat, fs = load_cbin(cbin)
-    spect_obj = hvc.audio.make_spect(dat,
-                                     fs,
-                                     size=spect_params['window_size'],
-                                     step=spect_params['window_step'],
-                                     freq_cutoffs=spect_params['freq_cutoffs'])
+    spect_obj = hvc.audiofileIO.make_spect(dat,
+                                           fs,
+                                           size=spect_params['window_size'],
+                                           step=spect_params['window_step'],
+                                           freq_cutoffs=spect_params['freq_cutoffs'])
     spect = spect_obj.spect
     time_bins = spect_obj.timeBins
 

@@ -16,7 +16,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 import hvc.utils.utils
 import hvc.neuralnet.models
 from hvc.evfuncs import load_cbin, load_notmat
-from hvc.audio import extract_syls
+from hvc.audiofileIO import extract_syls
 
 SHELVE_BASE_FNAME = 'linsvm_svmrbf_knn_results_'
 # constants used in main loop
@@ -52,7 +52,7 @@ for job in jobs:
     cbins = [cbin for cbin in cbins if cbin + '.not.mat' in notmats]
     for cbin_ind, cbin in enumerate(cbins):
         print('extracting syllables from song {} of {}\r'.format(cbin_ind,len(cbins)))
-        syls, labels = hvc.audio.extract_syls(cbin, spect_params, labelset)
+        syls, labels = hvc.audiofileIO.extract_syls(cbin, spect_params, labelset)
         train_syl_labels.extend(labels)
         train_syl_spects.extend(syls)
 
@@ -66,7 +66,7 @@ for job in jobs:
         cbins = [cbin for cbin in cbins if cbin + '.not.mat' in notmats]
         for cbin_ind, cbin in enumerate(cbins):
             print('extracting syllables from song {} of {}\r'.format(cbin_ind,len(cbins)))
-            syls, labels = hvc.audio.extract_syls(cbin, spect_params, labelset)
+            syls, labels = hvc.audiofileIO.extract_syls(cbin, spect_params, labelset)
             test_labels.extend(labels)
             test_syl_spects.extend(syls)
 

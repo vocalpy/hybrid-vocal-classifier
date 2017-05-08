@@ -12,9 +12,9 @@ extract:
       feature_group:
         - svm
       data_dirs:
-        - C:\Data\bl26lb16\041912
-        - C:\Data\bl26lb16\042012
+        - C:\Data\gy6gy6\010217
+        - C:\Data\gy6gy6\010317
 
-      output_dir: C:\Data\bl26lb16\
+      output_dir: C:\Data\gy6gy6\
 
       labelset: iabcdef

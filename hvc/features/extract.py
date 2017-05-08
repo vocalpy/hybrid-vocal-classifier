@@ -3,9 +3,9 @@ import warnings
 
 import numpy as np
 
-from . import tachibana
+from . import tachibana, knn
 
-feature_switch_case_dict = {
+spectral_features_switch_case_dict = {
     'mean spectrum' : tachibana.mean_spectrum,
     'mean delta spectrum' : tachibana.mean_delta_spectrum,
     'mean cepstrum' : tachibana.mean_cepstrum,
@@ -30,7 +30,15 @@ feature_switch_case_dict = {
     'zero crossings' : tachibana.zero_crossings,
     'mean amplitude' : tachibana.mean_amplitude,
     'mean delta amplitude' : tachibana.mean_delta_amplitude
-    }
+}
+
+temporal_features_switch_case_dict = {
+    'duration group' : knn.duration,
+    'preceding syllable duration' : knn.pre_duration,
+    'following syllable duration' : knn.foll_duration,
+    'preceding silent gap duration' : knn.pre_gapdur,
+    'following silent gap duration' : knn.foll_gapdur
+ }
 
 def _extract_features(feature_list,syllable):
     """
@@ -50,9 +58,9 @@ def _extract_features(feature_list,syllable):
     for feature in feature_list:
         if 'extracted_features' in locals():
             extracted_features = np.append(extracted_features,
-                                           feature_switch_case_dict[feature](syllable))
+                                           spectral_features_switch_case_dict[feature](syllable))
         else:
-            extracted_features = feature_switch_case_dict[feature](syllable)
+            extracted_features = spectral_features_switch_case_dict[feature](syllable)
     return extracted_features
 
 def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
@@ -86,3 +94,47 @@ def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
         return features_dict
     else:
         return _extract_features(feature_list,syllable)
+
+def extract_features_from_file(filename,file_format,feature_list):
+    """
+    
+    Parameters
+    ----------
+    filename : string
+    
+    file_format : string
+    
+    feature_list : list of strings
+
+    Returns
+    -------
+    features_arr : numpy array
+    
+    labels : list of chars
+    """
+
+    for feature in feature_list:
+        if feature in spectral_features_switch_case_dict:
+            if 'syls' not in locals():
+                if file_format == 'evtaf':
+                    syls, labels = evfuncs.get_syls(filename,
+                                                    extract_config['spect_params'],
+                                                    todo['labelset'])
+
+                elif file_format == 'koumura':
+                    syls, labels = koumura.get_syls(filename,
+                                                    extract_config['spect_params'],
+                                                    todo['labelset'])
+
+            for syl in syls:
+                if is_ftr_list_of_lists:
+                    ftrs = extract_features_from_syllable(todo['feature_list'],
+                                                                           syl,
+                                                                           feature_groups)
+                else:
+                    ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
+                                                                           syl)
+        elif feature in duration_features_switch_case_dict:
+            ftrs = ftrs.extract.extract_duration_features
+
+        return features_arr,labels

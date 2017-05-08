@@ -5,7 +5,7 @@ import glob
 import numpy as np
 from scipy.io import loadmat
 
-from hvc.audio.load import load_cbin,load_notmat
+from hvc.audiofileIO.load import load_cbin,load_notmat
 from hvc.features import extract_svm_features
 
 with open(sys.argv[1],'r') as argv1_file:

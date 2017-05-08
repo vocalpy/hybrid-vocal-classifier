@@ -16,6 +16,7 @@ Boundaries in the Birdsong with Variable Sequences. PLoS ONE 11(7): e0159188.
 doi:10.1371/journal.pone.0159188
 """
 
+import glob
 import xml.etree.ElementTree as ET
 
 class Syllable:
@@ -102,14 +103,14 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
             syl_length = int(syl.find('Length').text)
             label = syl.find('Label').text
             
-            syl_obj = sequences.Syllable(position = syl_position,
-                                             length = syl_length,
-                                             label = label)
+            syl_obj = Syllable(position = syl_position,
+                               length = syl_length,
+                               label = label)
             syl_list.append(syl_obj)
-        seq_obj = sequences.Sequence(wav_file = wav_file,
-                                         position = position,
-                                         length = length,
-                                         syl_list = syl_list)
+        seq_obj = Sequence(wav_file = wav_file,
+                           position = position,
+                           length = length,
+                           syl_list = syl_list)
         seq_list.append(seq_obj)
         
     if concat_seqs_into_songs:
@@ -358,3 +359,43 @@ def get_trans_mat(seqs,smoothing_constant=1e-4):
                 trans_mat[i,j,:] /= np.sum(trans_mat[i,j,:])
 
     return trans_mat
+
+def load_song_annot(songfile):
+    """
+    
+    Parameters
+    ----------
+    songfile
+
+    Returns
+    -------
+    songfile_dict :
+        with keys onsets, offsets, and labels
+    """
+    annot_file = glob.glob('../Annotation.xml')
+    if len(annot_file) < 1:
+        raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
+                         format(songfile))
+    elif len(annot_file) > 1:
+        raise ValueError('Can\'t open {}, found more than one Annotation.xml file in parent of current directory'.
+                         format(songfile))
+    else:
+        annot_file = annot_file[0]
+
+    seq_list = parse_xml(annot_file,concat_seqs_into_songs=True)
+    wav_files = [seq.wavFile for seq in seq_list]
+    ind = wav_files.index(songfile)
+    this_seq = seq_list[ind]
+    onsets = []
+    offsets = []
+    labels = []
+    for syl in this_seq.syls:
+        onsets.append(this_seq.position + syl.position)
+        offsets.append(this_seq.position + syl.position + syl.length)
+        labels.append(syl.label)
+    songfile_dict = {
+        'onsets' : onsets,
+        'offsets' : offsets,
+        'labels' : labels
+    }
+    return songfile_dict

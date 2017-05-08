@@ -1,4 +1,4 @@
-from . import audio
+from . import audiofileIO
 from . import evfuncs
 from . import koumura
 from . import metrics

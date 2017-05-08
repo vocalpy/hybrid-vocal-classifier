@@ -19,7 +19,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 import hvc.utils.utils
 import hvc.neuralnet.models
 from hvc.evfuncs import load_cbin,load_notmat
-from hvc.audio import extract_syls
+from hvc.audiofileIO import extract_syls
 
 config_file = sys.argv[1]
 with open(config_file) as yaml_to_parse:

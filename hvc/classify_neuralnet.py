@@ -18,7 +18,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger
 import hvc.utils.utils
 import hvc.neuralnet.models
 from hvc.utils import sequences
-from hvc.audio.evfuncs import load_cbin,load_notmat
+from hvc.audiofileIO.evfuncs import load_cbin,load_notmat
 
 # get command line arguments
 args = sys.argv

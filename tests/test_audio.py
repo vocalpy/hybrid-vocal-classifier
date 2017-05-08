@@ -1,6 +1,6 @@
 import numpy as np
 
-import hvc.audio
+import hvc.audiofileIO
 import hvc.evfuncs
 
 class TestAudio:
