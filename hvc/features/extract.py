@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 
 from . import tachibana, knn
+from hvc import audiofileIO
 
 spectral_features_switch_case_dict = {
     'mean spectrum' : tachibana.mean_spectrum,
@@ -32,7 +33,7 @@ spectral_features_switch_case_dict = {
     'mean delta amplitude' : tachibana.mean_delta_amplitude
 }
 
-temporal_features_switch_case_dict = {
+duration_features_switch_case_dict = {
     'duration group' : knn.duration,
     'preceding syllable duration' : knn.pre_duration,
     'following syllable duration' : knn.foll_duration,
@@ -95,7 +96,7 @@ def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
     else:
         return _extract_features(feature_list,syllable)
 
-def extract_features_from_file(filename,file_format,feature_list):
+def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
     """
     
     Parameters
@@ -106,6 +107,10 @@ def extract_features_from_file(filename,file_format,feature_list):
     
     feature_list : list of strings
 
+    spect_params : 
+
+    labels_to_use :
+
     Returns
     -------
     features_arr : numpy array
@@ -113,28 +118,38 @@ def extract_features_from_file(filename,file_format,feature_list):
     labels : list of chars
     """
 
-    for feature in feature_list:
-        if feature in spectral_features_switch_case_dict:
-            if 'syls' not in locals():
-                if file_format == 'evtaf':
-                    syls, labels = evfuncs.get_syls(filename,
-                                                    extract_config['spect_params'],
-                                                    todo['labelset'])
+    song = audiofileIO.song(filename,file_format)
+    use_syl_or_not = [label in labels_to_use for label in song.labels]
 
-                elif file_format == 'koumura':
-                    syls, labels = koumura.get_syls(filename,
-                                                    extract_config['spect_params'],
-                                                    todo['labelset'])
+    features_arr = []
+    for current_feature in feature_list:
+        if current_feature in spectral_features_switch_case_dict:
+            if not hasattr(song, 'syls'):
+                song.get_syls(spect_params, labels_to_use)
+            for use_syl, syl in zip(use_syl_or_not, song.syls):
+                if use_syl:
+                    if 'curr_feature_arr' in locals():
+                        ftr = spectral_features_switch_case_dict[current_feature](syl)
+                        if ftr.shape[-1] > 1:
+                            curr_feature_arr = np.concatenate(curr_feature_arr,
+                                                              ftr,
+                                                              axis=0)
+                        else: # if it's a scalar don't need to use np.concatenate
+                            curr_feature_arr = np.append(curr_feature_arr,ftr)
+                    else:
+                        curr_feature_arr = spectral_features_switch_case_dict[current_feature](syl)
+            if 'features_arr' in locals:
+                features_arr = np.concatenate((features_arr,curr_feature_arr[np.newaxis,:]),
+                                              axis=0)
+            else:
+                features_arr = curr_feature_arr
 
-            for syl in syls:
-                if is_ftr_list_of_lists:
-                    ftrs = extract_features_from_syllable(todo['feature_list'],
-                                                                           syl,
-                                                                           feature_groups)
-                else:
-                    ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
-                                                                           syl)
         elif feature in duration_features_switch_case_dict:
-            ftrs = ftrs.extract.extract_duration_features
-
-        return features_arr,labels
+            curr_feature_arr = duration_features_switch_case_dict(current_feature, song)
+            curr_feature_arr = curr_feature_arr[np.asarray(use_syl_or_not)]
+            if 'features_arr' in locals():
+                features_arr = np.concatenate((features_arr,curr_feature_arr[np.newaxis,:]),
+                                              axis=1)
+            else:
+                features_arr = curr_feature_arr
+    return features_arr,song.labels

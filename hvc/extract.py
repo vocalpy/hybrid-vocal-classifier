@@ -63,50 +63,61 @@ def run(config_file):
             os.chdir(data_dir)
 
             if file_format == 'evtaf':
-                notmats = glob.glob('*.not.mat')
-                num_notmats = len(notmats)
-                all_labels = []
-                for notmat_num, notmat in enumerate(notmats):
-                    print('Processing audio file {} of {}.'.format(notmat_num+1,num_notmats))
-                    cbin = notmat[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
-                    syls, labels = evfuncs.get_syls(cbin,
-                                                    extract_config['spect_params'],
-                                                    todo['labelset'])
-                    all_labels.extend(labels)
-                    for syl in syls:
-                        if is_ftr_list_of_lists:
-                            ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
-                                                                                          syl,
-                                                                                          feature_groups)
-                        else:
-                            ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
-                                                                                          syl)
-
-                        if 'features_from_all_files' in locals():
-                            # note have to add dimension with newaxis because np.concat requires
-                            # same number of dimensions, but extract_features returns 1d.
-                            # Decided to keep it explicit that we go to 2d here.
-                            features_from_all_files = np.concatenate((features_from_all_files,
-                                                                         ftrs[np.newaxis,:]))
-                        else:
-                            features_from_all_files = ftrs[np.newaxis,:]
-
+                songfiles = glob.glob('*.not.mat')
             elif file_format == 'koumura':
-                annot_xml = glob.glob('Annotation.xml')
-                if annot_xml==[]:
-                    raise ValueError('no Annotation.xml file found in directory {}'.format(dir))
-                elif len(annot_xml) > 1:
-                    raise ValueError('more than one Annotation.xml file found in directory {}'.format(dir))
+                songfiles = glob.glob('*.wav')
+            num_songfiles = len(songfiles)
+            all_labels = []
+            for file_num, songfile in enumerate(songfiles):
+                print('Processing audio file {} of {}.'.format(file_num+1,num_songfiles))
+                if file_format == 'evtaf':
+                    songfile = songfile[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
+                features_from_curr_file, labels = features.extract.from_file(songfile,
+                                                                             todo['file_format'],
+                                                                             todo['feature_list'],
+                                                                             extract_config['spect_params'],
+                                                                             todo['labelset'])
+                all_labels.extend(labels)
+                if 'features_from_all_files' in locals():
+                    # note have to add dimension with newaxis because np.concat requires
+                    # same number of dimensions, but extract_features returns 1d.
+                    # Decided to keep it explicit that we go to 2d here.
+                    features_from_all_files = np.concatenate((features_from_all_files,
+                                                              features_from_curr_file))
                 else:
-                    seq_list = hvc.koumura.parse_xml(annot_xml[0])
-                for seq in seq_list:
-                    for syl in seq.syls:
-                        ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
-                                                                               syl)
-                    if 'features_from_each_file' in locals():
-                        np.append(features_from_each_file, ftrs)
-                    else:
-                        features_from_each_file = ftrs
+                    features_from_all_files = features_from_curr_file
+
+
+
+            #         syls, labels = evfuncs.get_syls(cbin,
+            #                                         extract_config['spect_params'],
+            #                                         todo['labelset'])
+            #         for syl in syls:
+            #             if is_ftr_list_of_lists:
+            #                 ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
+            #                                                                               syl,
+            #                                                                               feature_groups)
+            #             else:
+            #                 ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
+            #                                                                               syl)
+            #
+            #
+            # elif file_format == 'koumura':
+            #     annot_xml = glob.glob('Annotation.xml')
+            #     if annot_xml==[]:
+            #         raise ValueError('no Annotation.xml file found in directory {}'.format(dir))
+            #     elif len(annot_xml) > 1:
+            #         raise ValueError('more than one Annotation.xml file found in directory {}'.format(dir))
+            #     else:
+            #         seq_list = hvc.koumura.parse_xml(annot_xml[0])
+            #     for seq in seq_list:
+            #         for syl in seq.syls:
+            #             ftrs = features.extract.extract_features_from_syllable(todo['feature_list'],
+            #                                                                    syl)
+            #         if 'features_from_each_file' in locals():
+            #             np.append(features_from_each_file, ftrs)
+            #         else:
+            #             features_from_each_file = ftrs
 
             # get dir name without the rest of path so it doesn't have separators in the name
             # because those can't be in filename
