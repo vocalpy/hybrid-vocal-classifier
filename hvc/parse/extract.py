@@ -6,8 +6,10 @@ import copy
 import yaml
 
 #from hvc
-from hvc.features.extract import spectral_features_switch_case_dict
-VALID_FEATURES = spectral_features_switch_case_dict.keys()
+from hvc.features.extract import single_syl_features_switch_case_dict
+from hvc.features.extract import multiple_syl_features_switch_case_dict
+VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
+                 list(multiple_syl_features_switch_case_dict.keys())
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
