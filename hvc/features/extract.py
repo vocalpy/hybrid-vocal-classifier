@@ -6,7 +6,7 @@ import numpy as np
 from . import tachibana, knn
 from hvc import audiofileIO
 
-spectral_features_switch_case_dict = {
+single_syl_features_switch_case_dict = {
     'mean spectrum' : tachibana.mean_spectrum,
     'mean delta spectrum' : tachibana.mean_delta_spectrum,
     'mean cepstrum' : tachibana.mean_cepstrum,
@@ -33,7 +33,7 @@ spectral_features_switch_case_dict = {
     'mean delta amplitude' : tachibana.mean_delta_amplitude
 }
 
-duration_features_switch_case_dict = {
+multiple_syl_features_switch_case_dict = {
     'duration group' : knn.duration,
     'preceding syllable duration' : knn.pre_duration,
     'following syllable duration' : knn.foll_duration,
@@ -119,37 +119,51 @@ def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
     """
 
     song = audiofileIO.song(filename,file_format)
-    use_syl_or_not = [label in labels_to_use for label in song.labels]
 
-    features_arr = []
     for current_feature in feature_list:
-        if current_feature in spectral_features_switch_case_dict:
+        if current_feature in single_syl_features_switch_case_dict:
             if not hasattr(song, 'syls'):
                 song.get_syls(spect_params, labels_to_use)
-            for use_syl, syl in zip(use_syl_or_not, song.syls):
-                if use_syl:
-                    if 'curr_feature_arr' in locals():
-                        ftr = spectral_features_switch_case_dict[current_feature](syl)
-                        if ftr.shape[-1] > 1:
-                            curr_feature_arr = np.concatenate(curr_feature_arr,
-                                                              ftr,
-                                                              axis=0)
-                        else: # if it's a scalar don't need to use np.concatenate
-                            curr_feature_arr = np.append(curr_feature_arr,ftr)
+            if 'curr_feature_arr' in locals():
+                del curr_feature_arr
+            for syl in song.syls:
+                ftr = single_syl_features_switch_case_dict[current_feature](syl)
+                if 'curr_feature_arr' in locals():
+                    if np.isscalar(ftr):
+                        curr_feature_arr = np.append(curr_feature_arr, ftr)
                     else:
-                        curr_feature_arr = spectral_features_switch_case_dict[current_feature](syl)
-            if 'features_arr' in locals:
-                features_arr = np.concatenate((features_arr,curr_feature_arr[np.newaxis,:]),
-                                              axis=0)
+                        # note have to add dimension with newaxis because np.concat requires
+                        # same number of dimensions, but extract_features returns 1d.
+                        # Decided to keep it explicit that we go to 2d here.
+                        curr_feature_arr = np.concatenate((curr_feature_arr,
+                                                           ftr[np.newaxis,:]),
+                                                          axis=0)
+                else:
+                    if np.isscalar(ftr):
+                        curr_feature_arr = ftr
+                    else:
+                        curr_feature_arr = ftr[np.newaxis,:] # make 2-d for concatenate
+            if 'features_arr' in locals():
+                if np.isscalar(ftr):
+                    features_arr = np.concatenate((features_arr,
+                                                   curr_feature_arr[np.newaxis, :].T),
+                                                  axis=1)
+                else:
+                    features_arr = np.concatenate((features_arr,
+                                                   curr_feature_arr),
+                                                  axis=1)
             else:
                 features_arr = curr_feature_arr
 
-        elif feature in duration_features_switch_case_dict:
-            curr_feature_arr = duration_features_switch_case_dict(current_feature, song)
+        elif current_feature in multiple_syl_features_switch_case_dict:
+            curr_feature_arr = multiple_syl_features_switch_case_dict(current_feature, song)
             curr_feature_arr = curr_feature_arr[np.asarray(use_syl_or_not)]
             if 'features_arr' in locals():
-                features_arr = np.concatenate((features_arr,curr_feature_arr[np.newaxis,:]),
+                features_arr = np.concatenate((features_arr,
+                                               curr_feature_arr[np.newaxis,:]),
                                               axis=1)
             else:
                 features_arr = curr_feature_arr
-    return features_arr,song.labels
+
+    labels = [label for label in song.labels if label in labels_to_use]
+    return features_arr,labels
