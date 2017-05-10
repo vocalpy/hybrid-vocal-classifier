@@ -2,7 +2,24 @@
 extracts features used with k-Nearest Neighbors algorithm
 """
 
-def duration(onsets,offsets,labelset):
+_duration = lambda onsets, offsets: offsets-onsets
+
+def duration(onsets,offsets,syls_to_use):
+    """
+    
+    Parameters
+    ----------
+    onsets
+    offsets
+    syls_to_use
+    
+    Returns
+    -------
+
+    """
+    return _duration(onsets,offsets)[syls_to_use]
+
+def pre_duration(onsets,offsets,syls_to_use):
     """
     
     Parameters
@@ -14,23 +31,9 @@ def duration(onsets,offsets,labelset):
     -------
 
     """
-
-    return
-
-def pre_duration(onsets,offsets,labelset):
-    """
-    
-    Parameters
-    ----------
-    onsets
-    offsets
-
-    Returns
-    -------
-
-    """
-
-    return
+    pre = np.zeros((onsets.shape[-1],))
+    pre[:-1] = _duration(onsets,offsets)[:-1]
+    return pre[syls_to_use]
 
 def foll_duration(onsets,offsets):
     """
@@ -45,7 +48,9 @@ def foll_duration(onsets,offsets):
 
     """
 
-    return
+    foll = np.zeros((onsets.shape[-1],))
+    foll[1:] = _duration(onsets,offsets)[1:]
+    return foll[syls_to_use]
 
 def pre_gapdur(onsets,offsets,labelset):
     """

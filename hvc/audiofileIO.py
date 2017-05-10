@@ -225,14 +225,52 @@ class song:
         self.file_format = file_format
         if file_format == 'evtaf':
             song_dict = evfuncs.load_notmat(songfile)
+            dat, samp_freq = evfuncs.load_cbin(songfile)
+            self.onsets_s = song_dict['onsets'] / 1000
+            self.offsets_s = song_dict['offsets'] / 1000
+            self.onsets_Hz = np.round(self.onsets_s * samp_freq).astype(int)
+            self.offsets_Hz = np.round(self.offsets_s * samp_freq).astype(int)
+
+            self.labels = song_dict['labels']
         elif file_format == 'koumura':
+            samp_freq, dat = wavfile.read(songfile)
             song_dict = koumura.load_song_annot(songfile)
-        self.onsets = song_dict['onsets']
-        self.offsets = song_dict['offsets']
-        self.labels = song_dict['labels']
+            self.onsets_Hz = song_dict['onsets']
+            self.offsets_Hz = song_dict['offsets']
+            self.onsets_s = self.onsets_Hz / samp_freq
+            self.offsets_s = song_dict['offsets'] / samp_freq
+            self.labels = song_dict['labels']
 
+    def set_syls_to_use(self,labels_to_use='all'):
+        """        
+        Parameters
+        ----------
+        labels_to_use : list or string
+            List or string of all labels for which associated spectrogram should be made.
+            When called by extract, this function takes a list created by the
+            extract config parser. But a user can call the function with a string.
+            E.g., if labels_to_use = 'iab' then syllables labeled 'i','a',or 'b'
+            will be extracted and returned, but a syllable labeled 'x' would be
+            ignored. If labels_to_use=='all' then all spectrograms are returned with
+            empty strings for the labels. Default is 'all'.
+        
+        sets syls_to_use to a numpy boolean that can be used to index e.g. labels, onsets
+        This method must be called before get_syls
+        """
 
-    def get_syls(self, spect_params, labels_to_use='all', syl_spect_width=-1):
+        if labels_to_use != 'all':
+            if type(labels_to_use) != list and type(labels_to_use) != str:
+                raise ValueError('labels_to_use argument should be a list or string')
+            if type(labels_to_use) == str:
+                labels_to_use = list(labels_to_use)
+
+        if labels_to_use == 'all':
+            self.syls_to_use = np.ones((self.onsets.shape),dtype=bool)
+        else:
+            self.syls_to_use = np.in1d(list(self.labels),
+                                       labels_to_use)
+
+    def get_syls(self, spect_params, syl_spect_width=-1):
         """
         Get birdsong syllables from audio files
 
@@ -245,14 +283,6 @@ class song:
             Note that 'samp_freq' is the **expected** sampling frequency and the
             function throws an error if the actual sampling frequency of cbin does
             not match the expected one.
-        labels_to_use : list or string
-            List or string of all labels for which associated spectrogram should be made.
-            When called by extract, this function takes a list created by the
-            extract config parser. But a user can call the function with a string.
-            E.g., if labels_to_use = 'iab' then syllables labeled 'i','a',or 'b'
-            will be extracted and returned, but a syllable labeled 'x' would be
-            ignored. If labels_to_use=='all' then all spectrograms are returned with
-            empty strings for the labels. Default is 'all'.
         syl_spect_duration : int
             Optional parameter to set constant duration for each spectrogram of a
             syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
@@ -267,20 +297,14 @@ class song:
             greater than syl_spect_duration, the function raises an error.
         """
 
-        if labels_to_use != 'all':
-            if type(labels_to_use) != list and type(labels_to_use) != str:
-                raise ValueError('labels_to_use argument should be a list or string')
-            if type(labels_to_use) == str:
-                labels_to_use = list(labels_to_use)
+        if not hasattr(self,'syls_to_use'):
+            raise ValueError('Must set syls_to_use by calling set_syls_to_use method '
+                             'before calling get_syls.')
 
         if self.file_format == 'evtaf':
             dat, samp_freq = evfuncs.load_cbin(self.file)
-            onsets_Hz = np.round((self.onsets / 1000) * samp_freq).astype(int)
-            offsets_Hz = np.round((self.offsets / 1000) * samp_freq).astype(int)
         elif self.file_format == 'koumura':
             samp_freq, dat = wavfile.read(self.file)
-            onsets_Hz = self.onsets # in Koumra Annotation file, onsets given in Hz already
-            offsets_Hz = self.offsets
 
         if samp_freq != spect_params['samp_freq']:
             raise ValueError(
@@ -294,7 +318,7 @@ class song:
 
         all_syls = []
 
-        for ind, (label, onset, offset) in enumerate(zip(self.labels, onsets_Hz, offsets_Hz)):
+        for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
                 syl_duration_in_samples = offset - onset
                 if syl_duration_in_samples < syl_spect_width_Hz:
@@ -303,37 +327,33 @@ class song:
                                      'width specified for all syllable spectrograms.'
                                      .format(ind, label, cbin))
 
-            if labels_to_use == 'all':
-                label = None
-            elif label not in labels_to_use:
-                continue
-
-            if 'syl_spect_width_Hz' in locals():
-                width_diff = syl_spect_width_Hz - syl_duration_in_samples
-                # take half of difference between syllable duration and spect width
-                # so one half of 'empty' area will be on one side of spect
-                # and the other half will be on other side
-                # i.e., center the spectrogram
-                left_width = int(round(width_diff / 2))
-                right_width = width_diff - left_width
-                if left_width > onset:  # if duration before onset is less than left_width
-                    # (could happen with first onset)
-                    left_width = 0
-                    right_width = width_diff - offset
-                elif offset + right_width > dat.shape[-1]:
-                    # if right width greater than length of file
-                    right_width = dat.shape[-1] - offset
-                    left_width = width_diff - right_width
-                syl_audio = dat[:, onset - left_width:
-                offset + right_width]
-            else:
-                syl_audio = dat[onset:offset]
-            syllable = make_syl_spect(syl_audio,
-                                      samp_freq,
-                                      nfft=spect_params['nperseg'],
-                                      overlap=spect_params['noverlap'],
-                                      min_freq=spect_params['freq_cutoffs'][0],
-                                      max_freq=spect_params['freq_cutoffs'][1])
-            all_syls.append(syllable)
+            if self.syls_to_use[ind]:
+                if 'syl_spect_width_Hz' in locals():
+                    width_diff = syl_spect_width_Hz - syl_duration_in_samples
+                    # take half of difference between syllable duration and spect width
+                    # so one half of 'empty' area will be on one side of spect
+                    # and the other half will be on other side
+                    # i.e., center the spectrogram
+                    left_width = int(round(width_diff / 2))
+                    right_width = width_diff - left_width
+                    if left_width > onset:  # if duration before onset is less than left_width
+                        # (could happen with first onset)
+                        left_width = 0
+                        right_width = width_diff - offset
+                    elif offset + right_width > dat.shape[-1]:
+                        # if right width greater than length of file
+                        right_width = dat.shape[-1] - offset
+                        left_width = width_diff - right_width
+                    syl_audio = dat[:, onset - left_width:
+                    offset + right_width]
+                else:
+                    syl_audio = dat[onset:offset]
+                curr_syl = make_syl_spect(syl_audio,
+                                          samp_freq,
+                                          nfft=spect_params['nperseg'],
+                                          overlap=spect_params['noverlap'],
+                                          min_freq=spect_params['freq_cutoffs'][0],
+                                          max_freq=spect_params['freq_cutoffs'][1])
+                all_syls.append(curr_syl)
 
         self.syls = all_syls

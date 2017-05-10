@@ -16,8 +16,12 @@ Boundaries in the Birdsong with Variable Sequences. PLoS ONE 11(7): e0159188.
 doi:10.1371/journal.pone.0159188
 """
 
+#from standard library
 import glob
 import xml.etree.ElementTree as ET
+
+#from dependencies
+import numpy as np
 
 class Syllable:
     """
@@ -386,13 +390,11 @@ def load_song_annot(songfile):
     wav_files = [seq.wavFile for seq in seq_list]
     ind = wav_files.index(songfile)
     this_seq = seq_list[ind]
-    onsets = []
-    offsets = []
-    labels = []
-    for syl in this_seq.syls:
-        onsets.append(this_seq.position + syl.position)
-        offsets.append(this_seq.position + syl.position + syl.length)
-        labels.append(syl.label)
+    onsets = np.asarray([this_seq.position + syl.position
+                         for syl in this_seq.syls])
+    offsets = np.asarray([this_seq.position + syl.position + syl.length
+                          for syl in this_seq.syls])
+    labels = [syl.label for syl in this_seq.syls]
     songfile_dict = {
         'onsets' : onsets,
         'offsets' : offsets,
