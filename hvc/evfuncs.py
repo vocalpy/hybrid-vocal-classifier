@@ -6,6 +6,7 @@ Python implementations of functions used with EvTAF and evsonganaly.m
 #from third-party
 import numpy as np
 from scipy.io import loadmat
+import scipy.signal
 
 #from hvc
 import hvc.audiofileIO
@@ -256,6 +257,53 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
 
     return all_syls, all_labels
 
+def evsmooth(rawsong, samp_freq, spect_params, smooth_win=2):
+    """
+    evsmooth, filters raw audio to smooth signal
+    used to calculate amplitude
+    This is a very literal translation from the Matlab
+    
+    Parameters
+    ----------
+    rawsong
+    samp_freq
+    spect_params
+    smooth_win
+
+    Returns
+    -------
+
+    """
+
+    Nyquist_rate = samp_freq / 2
+    if rawsong.shape[-1] < 387:
+        numtaps = 64
+    elif rawsong.shape[-1] < 771:
+        numtaps = 128
+    elif rawsong.shape[-1] < 1539:
+        numtaps = 256
+    else:
+        numtaps = 512
+    cutoffs = np.asarray([spect_params['freq_cutoffs'][0] / Nyquist_rate,
+                          spect_params['freq_cutoffs'][1] / Nyquist_rate])
+    # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
+    # window to design filter, but default for matlab's fir1
+    # is actually Hamming
+    # note that first parameter for firwin is filter *length*
+    # whereas argument to matlab's fir1 is filter *order*
+    # for linear FIR, filter length is filter order + 1
+    b = scipy.signal.firwin(numtaps + 1, cutoffs,pass_zero=False)
+    a = np.zeros((numtaps+1,))
+    a[0] = 1 # make an "all-zero filter"
+    filtsong = scipy.signal.filtfilt(b, a, rawsong)
+    squared_song = np.power(filtsong, 2)
+    len = np.round(samp_freq * smooth_win / 1000).astype(int)
+    h = np.ones((len,)) / len
+    smooth = np.convolve(squared_song, h)
+    offset = round((smooth.shape[-1] - filtsong.shape[-1]) / 2)
+    smooth = smooth[offset:filtsong.shape[-1] + offset]
+    import pdb;pdb.set_trace()
+    return smooth
 
 def get_syls_old(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     """
