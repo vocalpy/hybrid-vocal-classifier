@@ -294,8 +294,8 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
         numtaps = 256
     else:
         numtaps = 512
-    cutoffs = np.asarray([spect_paramsfreq_cutoffs[0] / Nyquist_rate,
-                          spect_paramsfreq_cutoffs[1] / Nyquist_rate])
+    cutoffs = np.asarray([freq_cutoffs[0] / Nyquist_rate,
+                          freq_cutoffs[1] / Nyquist_rate])
     # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
     # window to design filter, but default for matlab's fir1
     # is actually Hamming

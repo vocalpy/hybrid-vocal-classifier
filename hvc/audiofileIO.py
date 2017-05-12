@@ -194,7 +194,7 @@ def _make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,freq_cutoffs=[500,6
     # spectrogram and cepstrum
     syl_diff = np.diff(syl_audio) # Tachibana applied a differential filter
     # note that the matlab specgram function returns the STFT by default
-    # whereas the default for the matplotlib.mlab version of specgra
+    # whereas the default for the matplotlib.mlab version of specgram
     # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
     # to match, mode must be set to 'complex'
     power,freq_bins,time_bins = specgram(syl_diff,
