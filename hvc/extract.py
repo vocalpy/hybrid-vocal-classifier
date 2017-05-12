@@ -62,6 +62,11 @@ def run(config_file):
             print('Changing to data directory: {}'.format(data_dir))
             os.chdir(data_dir)
 
+            if 'features_from_all_files' in locals():
+                # from last time through loop
+                # (need to re-initialize for each directory)
+                del features_from_all_files
+
             if file_format == 'evtaf':
                 songfiles = glob.glob('*.not.mat')
             elif file_format == 'koumura':

@@ -123,7 +123,8 @@ def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
     for current_feature in feature_list:
         if current_feature in single_syl_features_switch_case_dict:
             if not hasattr(song, 'syls'):
-                song.get_syls(spect_params, labels_to_use)
+                song.set_syls_to_use(labels_to_use)
+                song.make_syl_spects(spect_params)
             if 'curr_feature_arr' in locals():
                 del curr_feature_arr
             for syl in song.syls:

@@ -146,6 +146,7 @@ class syllable:
                  power,
                  nfft,
                  overlap,
+                 freq_cutoffs,
                  freq_bins,
                  time_bins):
         self.sylAudio = syl_audio
@@ -153,23 +154,28 @@ class syllable:
         self.power = power
         self.nfft = nfft
         self.overlap = overlap
+        self.freqCutoffs = freq_cutoffs
         self.freqBins = freq_bins
         self.timeBins = time_bins
 
-def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,min_freq=500,max_freq=6000):
+def _make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,freq_cutoffs=[500,6000]):
     """
-    makes spectrograms.
+    internal function that makes spectrograms for syllables
     Defaults are as in [1]_.
 
     Parameters
     ----------
-    syl_audio : 1d numpy array, raw audio waveform of a segmented syllable
-    samp_freq : integer, sampling frequency
-    nfft : integer, number of samples for each Fast Fourier Transform (FFT)
-           in spectrogram. Default is 256.
-    overlap : integer, number of overlapping samples in each FFT. Default is 192.
-    min_freq : integer, minimum frequency in FFT
-    max_freq : integer, maximum frequency in FFT
+    syl_audio : 1d numpy array
+        raw audio waveform of a segmented syllable
+    samp_freq : integer
+        sampling frequency
+    nfft : integer
+        number of samples for each Fast Fourier Transform (FFT)
+        in spectrogram. Default is 256.
+    overlap : integer
+        number of overlapping samples in each FFT. Default is 192.
+    freq_cutoffs: list
+        two-element list of integers, minimum and maximum frequency in FFT
 
     Returns
     -------
@@ -198,8 +204,8 @@ def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,min_freq=500,max_fre
                                          noverlap=overlap,
                                          mode='complex')
 
-    f_inds = np.nonzero((freq_bins >= min_freq) &
-                        (freq_bins < max_freq))[0] #returns tuple
+    f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) &
+                        (freq_bins < freq_cutoffs[1]))[0] #returns tuple
     freq_bins = freq_bins[f_inds]
     power = power[f_inds,:]
     power = np.log10(power) # log transform to increase range
@@ -208,12 +214,13 @@ def make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,min_freq=500,max_fre
     power = np.flipud(power)
     freq_bins = np.flipud(freq_bins)
     return syllable(syl_audio,
-                     samp_freq,
-                     power,
-                     nfft,
-                     overlap,
-                     freq_bins,
-                     time_bins)
+                    samp_freq,
+                    power,
+                    nfft,
+                    overlap,
+                    freq_cutoffs,
+                    freq_bins,
+                    time_bins)
 
 class song:
     """
@@ -270,9 +277,12 @@ class song:
             self.syls_to_use = np.in1d(list(self.labels),
                                        labels_to_use)
 
-    def get_syls(self, spect_params, syl_spect_width=-1):
+    def make_syl_spects(self, spect_params, syl_spect_width=-1):
         """
-        Get birdsong syllables from audio files
+        Make spectrograms from syllables.
+        This method isolates making spectrograms from selecting syllables
+        to use so that spectrograms can be loaded 'lazily', e.g., if only
+        duration features are being extracted that don't require spectrograms.
 
         Parameters
         ----------
@@ -348,12 +358,11 @@ class song:
                     offset + right_width]
                 else:
                     syl_audio = dat[onset:offset]
-                curr_syl = make_syl_spect(syl_audio,
-                                          samp_freq,
-                                          nfft=spect_params['nperseg'],
-                                          overlap=spect_params['noverlap'],
-                                          min_freq=spect_params['freq_cutoffs'][0],
-                                          max_freq=spect_params['freq_cutoffs'][1])
+                curr_syl = _make_syl_spect(syl_audio,
+                                           samp_freq,
+                                           nfft=spect_params['nperseg'],
+                                           overlap=spect_params['noverlap'],
+                                           freq_cutoffs =spect_params['freq_cutoffs'])
                 all_syls.append(curr_syl)
 
         self.syls = all_syls
