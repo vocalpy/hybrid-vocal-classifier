@@ -30,7 +30,14 @@ single_syl_features_switch_case_dict = {
     'mean delta pitch goodness' : tachibana.mean_delta_pitch_goodness,
     'zero crossings' : tachibana.zero_crossings,
     'mean amplitude' : tachibana.mean_amplitude,
-    'mean delta amplitude' : tachibana.mean_delta_amplitude
+    'mean delta amplitude' : tachibana.mean_delta_amplitude,
+    'mean smoothed rectified amplitude' : knn.mn_amp_smooth_rect,
+    'mean RMS amplitude' : knn.mn_amp_rms,
+    'mean spectral entropy' : knn.mean_spect_entropy,
+    'mean hi lo ratio' : knn.mean_hi_lo_ratio,
+    'delta smoothed rectified amplitude' : knn.delta_amp_smooth_rect,
+    'delta spectral entropy' : knn.delta_entropy,
+    'delta hi lo ratio' : knn.delta_hi_lo_ratio
 }
 
 multiple_syl_features_switch_case_dict = {
@@ -40,61 +47,6 @@ multiple_syl_features_switch_case_dict = {
     'preceding silent gap duration' : knn.pre_gapdur,
     'following silent gap duration' : knn.foll_gapdur
  }
-
-def _extract_features(feature_list,syllable):
-    """
-    helper function
-    
-    Parameters
-    ----------
-    feature_list
-    syllable
-
-    Returns
-    -------
-    feature_arr : nd-array
-        list of extracted features, flattened and converted to numpy array
-    """
-
-    for feature in feature_list:
-        if 'extracted_features' in locals():
-            extracted_features = np.append(extracted_features,
-                                           spectral_features_switch_case_dict[feature](syllable))
-        else:
-            extracted_features = spectral_features_switch_case_dict[feature](syllable)
-    return extracted_features
-
-def extract_features_from_syllable(feature_list,syllable,feature_groups=None):
-    """
-    function called by main feature extraction function, extract, that
-    does the actual work of looping through the feature list and calling
-    the functions that extract the features from the syllable
-    
-    Parameters
-    ----------
-    feature_list : list of strings, or list of list of strings
-        from extract config
-    syllable : syllable object
-    feature_groups : list of strings or ints
-        default is None
-        if feature_list is a list of lists and feature_groups is
-        not None then the function will return features_dict
-        where each key is a feature group and the value associated
-        with that key is the 1d array with all features for
-        that feature group
-        
-    Returns
-    -------
-    either features_dict or feature_arr
-    """
-    if all(isinstance(element, list) for element in feature_list):
-        # if feature_list is a list of lists
-        features_dict = {}
-        for ftr_grp,ftr_list in zip(feature_groups,feature_list):
-            features_dict[ftr_grp] = _extract_features(ftr_list,syllable)
-        return features_dict
-    else:
-        return _extract_features(feature_list,syllable)
 
 def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
     """

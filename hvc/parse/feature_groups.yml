@@ -25,5 +25,12 @@ svm:
   - mean delta amplitude
 
 knn:
-  - one feature
-  - another feature
+  - duration group
+  - preceding syllable duration
+  - following syllable duration
+  - preceding silent gap duration
+  - following silent gap duration
+  - mean smoothed rectified amplitude
+  - mean spectral entropy
+  - mean hi lo ratio
+  - delta smooth rectified amplitude
