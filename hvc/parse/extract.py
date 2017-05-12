@@ -4,6 +4,7 @@ import copy
 
 #from dependencies
 import yaml
+import numpy as np
 
 #from hvc
 from hvc.features.extract import single_syl_features_switch_case_dict
@@ -87,14 +88,19 @@ def _validate_todo_list_dict(todo_list_dict,index):
                     if 'feature_list' not in todo_list_dict:
                         validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
             elif type(val) == list:
-                # if more than one feature group, than return a list of lists
-                feature_list_lists = []
-                for ftr_grp in val:
+                # if a list of feature groups
+                # make feature list that is concatenated feature groups
+                # and also add 'feature_group_id' vector for indexing to config
+                feature_list = []
+                feature_group_id = []
+                for grp_ind, ftr_grp in enumerate(val):
                     if ftr_grp not in feature_groups_dict:
                         raise ValueError('{} not found in valid feature groups'.format(val))
                     else:
-                        feature_list_lists.append(feature_groups_dict[ftr_grp])
-                validated_todo_list_dict['feature_list'] = feature_list_lists
+                        feature_list.extend(feature_groups_dict[ftr_grp])
+                        feature_group_id.extend([grp_ind] * len(feature_groups_dict[ftr_grp]))
+                validated_todo_list_dict['feature_list'] = feature_list
+                validated_todo_list_dict['feature_group_id'] = np.asarray(feature_group_id)
 
         elif key== 'feature_list':
             if type(val) != list:
