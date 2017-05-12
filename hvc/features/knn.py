@@ -4,7 +4,12 @@ extracts features used with k-Nearest Neighbors algorithm
 
 import numpy as np
 
+import hvc.evfuncs
+
+# helper function that calculates syllable durations
 _duration = lambda onsets, offsets: offsets-onsets
+
+# helper function that calculates duration of silent gaps between syllables
 _gapdurs = lambda onsets, offsets: onsets[1:] - offsets[:-1]
 
 def duration(onsets,offsets,syls_to_use):
@@ -90,73 +95,217 @@ def foll_gapdur(onsets,offsets,syls_to_use):
     foll[:-1] = _gapdurs(onsets,offsets)
     return foll[syls_to_use]
 
-def mn_amp_smooth_rect():
+def _smooth_rect_amp(syllable):
     """
+    helper function to calculate smoothed rectified amplitude
     
+    Parameters
+    ----------
+    syllable
+
     Returns
     -------
-
+    smoothed : 1-d numpy array
+        raw audio waveform amplitude,
+        after bandpass filtering, squaring, and  
+        and smoothing with evfuncs.evsmooth
     """
+    return hvc.evfuncs.evsmooth(syllable.sylAudio,
+                                syllable.sampFreq,
+                                syllable.freqCutoffs)
 
-    return
-
-def mn_amp_rms():
+def mn_amp_smooth_rect(syllable):
     """
+    mean of smoothed rectified amplitude
+    **from raw audio waveform**, not spectrogram
     
+    Parameters
+    ----------
+    syllable
+
     Returns
     -------
-
+    mean_smoothed_rectified : scalar
+        np.mean(_smooth_rect_amp(syllable))
     """
 
+    return np.mean(_smooth_rect_amp(syllable))
 
-    return
-
-def mean_spect_entropy():
-    """
-    
-    Returns
-    -------
-
-    """
-
-    return
-
-def mean_hi_lo_ratio():
+def mn_amp_rms(syllable):
     """
     
+    Parameters
+    ----------
+    syllable : syllable object
+
     Returns
     -------
-
+    root_mean_squared : scalar
+        square root of value returned by mn_amp_smooth_rect
     """
 
-    return
+    return np.sqrt(mn_amp_smooth_rect(syllable))
 
-def delta_amp_smooth_rect():
+def _spect_entropy(syllable):
     """
+    helper function that calculates spectral entropy for syllable spectrogram
     
+    Parameters
+    ----------
+    syllable : syllable object
+
     Returns
     -------
-
+    spectral_entropy : 1-d numpy array
+        spectral entropy for each time bin in syllable spectrogram
+        array will have length = number of columns in syllable.power
     """
+    psd = np.power(np.abs(syllable.power),2)
+    psd_pdf = psd / np.sum(psd,axis=0)
+    return -np.sum(psd_pdf * np.log(psd_pdf),axis=0)
 
-    return
-
-def delta_entropy():
+def mean_spect_entropy(syllable):
     """
+    mean of spectral entropy across syllable
     
+    Parameters
+    ----------
+    syllable
+
     Returns
     -------
-
+    mean(_spect_entropy(syllable))
     """
 
-    return
+    return np.mean(_spect_entropy(syllable))
 
-def delta_hi_lo_ratio():
+def _hi_lo_ratio(syllable,middle=5000):
     """
+    helper function to calculate hi/lo ratio
+    hi/lo ratio is ratio of sum of power in "high" frequencies
+    and sum of power in "low" frequencies,
+    where "hi" frequencies are those above "middle"
+    and "low" frequencies are below "middle"
     
+    Parameters
+    ----------
+    syllable : syllable object
+    middle : int
+        defaults to 5000
+
     Returns
     -------
-
+    hi_lo_ratio : 1-d array
+        hi/lo ratio for each time bin in syllable spectrogram
+        array will have length = number of columns in syllable.power        
     """
 
-    return
+    psd = np.power(np.abs(syllable.power),2)
+    hi_ids = syllable.freqBins > middle
+    lo_ids = syllable.freqBins < middle
+    return np.log10(np.sum(psd[hi_ids,:], axis=0) /
+                    np.sum(psd[lo_ids,:], axis=0))
+
+def mean_hi_lo_ratio(syllable):
+    """
+    mean of hi/lo ratio across syllable
+    
+    Parameters
+    ----------
+    syllable
+
+    Returns
+    -------
+    np.mean(_hi_lo_ratio(syllable))
+    """
+
+    return np.mean(_hi_lo_ratio(syllable))
+
+def _delta_inds(syllable,delta_times):
+    """
+    helper function that converts times from percent of duration
+    to seconds, then finds indices of time bins in sylllable
+    spectrogram closest to those times
+    
+    Parameters
+    ----------
+    syllable : syllable object
+    delta_times : list
+        two-element list, early time and later time
+        given in percent total duration of syllable
+
+    Returns
+    -------
+    inds : list
+        two-element list of indices
+    
+    Return values are used with _delta lambda function
+    """
+    dur = syllable.sylAudio.shape[-1] / syllable.sampFreq
+    t_early = dur * delta_times[0]
+    t_late = dur * delta_times[1]
+    return [np.argmin(np.abs(syllable.timeBins - t_early)),
+            np.argmin(np.abs(syllable.timeBins - t_late))]
+
+_delta = lambda vec,inds: vec[inds[0]] - vec[inds[1]]
+
+def delta_amp_smooth_rect(syllable, delta_times = [0.2,0.8]):
+    """
+    change in smoothed rectified amplitude between two time points
+    
+    Parameters
+    ----------
+    syllable : syllable object
+    delta_times : list
+        two-element list, early time and later time
+        given in percent total duration of syllable, default is [0.2,0.8]
+
+    Returns
+    -------
+    delta_amp_smooth_rect : scalar
+        _delta(_smooth_rect_amp(syllable))
+    """
+    inds = _delta_inds(syllable, delta_times)
+    amp = _smooth_rect_amp(syllable)
+    return _delta(amp,inds)
+
+def delta_entropy(syllable, delta_times = [0.2,0.8]):
+    """
+    change in entropy between two time points
+
+    Parameters
+    ----------
+    syllable : syllable object
+    delta_times : list
+        two-element list, early time and later time
+        given in percent total duration of syllable, default is [0.2,0.8]
+
+    Returns
+    -------
+    delta_entropy : scalar
+        _delta(_spect_entropy(syllable))
+    """
+
+    inds = _delta_inds(syllable, delta_times)
+    entropy = _spect_entropy(syllable)
+    return _delta(entropy,inds)
+
+def delta_hi_lo_ratio(syllable, delta_times = [0.2,0.8]):
+    """
+    change in hi/lo ratio between two time points
+
+    Parameters
+    ----------
+    syllable
+    delta_times : list
+        two-element list, early time and later time
+        given in percent total duration of syllable, default is [0.2,0.8]
+
+    Returns
+    -------
+    delta_hi_lo_ratio : scalar
+        _delta(_hi_lo_ratio(syllable))
+    """
+    inds = _delta_inds(syllable, delta_times)
+    hi_lo = _hi_lo_ratio(syllable)
+    return _delta(hi_lo,inds)
