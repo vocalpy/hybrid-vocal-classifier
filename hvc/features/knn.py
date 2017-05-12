@@ -14,46 +14,66 @@ _gapdurs = lambda onsets, offsets: onsets[1:] - offsets[:-1]
 
 def duration(onsets,offsets,syls_to_use):
     """
+    durations of syllables, using onsets and offsets from segmentation
     
     Parameters
     ----------
-    onsets
-    offsets
-    syls_to_use
+    onsets : 1d numpy array
+        syllable onset times as determined by a segmentation algorithm
+    offsets : 1d numpy array
+        syllable offset times as determined by a segmentation algorithm
+    syls_to_use : 1d numpy Boolean array
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
     
     Returns
     -------
-
+    _duration(onsets,offsets)[syls_to_use]
     """
+
     return _duration(onsets,offsets)[syls_to_use]
 
 def pre_duration(onsets,offsets,syls_to_use):
     """
-    
+    duration of preceding syllable
+        
     Parameters
     ----------
-    onsets
-    offsets
-
+    onsets : 1d numpy array
+        syllable onset times as determined by a segmentation algorithm
+    offsets : 1d numpy array
+        syllable offset times as determined by a segmentation algorithm
+    syls_to_use : 1d numpy Boolean array
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+    
     Returns
     -------
-
+    pre[syls_to_use] : 1d numpy array
+        where foll[1:] = _duration(onsets,offsets)[1:] and pre[0]=0
+        (because no syllable precedes the first syllable)
     """
+
     pre = np.zeros((onsets.shape[-1],))
     pre[1:] = _duration(onsets,offsets)[:-1]
     return pre[syls_to_use]
 
 def foll_duration(onsets,offsets,syls_to_use):
     """
-    
+    duration of following syllable
+
     Parameters
     ----------
-    onsets
-    offsets
+    onsets : 1d numpy array
+        syllable onset times as determined by a segmentation algorithm
+    offsets : 1d numpy array
+        syllable offset times as determined by a segmentation algorithm
+    syls_to_use : 1d numpy Boolean array
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
 
     Returns
     -------
-
+    foll[syls_to_use] : 1d numpy array
+        where foll[:-1] = _duration(onsets,offsets)[1:] and foll[-1]=0
+        (because no syllable follows the last syllable)
     """
 
     foll = np.zeros((onsets.shape[-1],))
@@ -62,15 +82,22 @@ def foll_duration(onsets,offsets,syls_to_use):
 
 def pre_gapdur(onsets,offsets,syls_to_use):
     """
-    
+    duration of silent gap between syllable and preceding syllable
+
     Parameters
     ----------
-    onsets
-    offsets
+    onsets : 1d numpy array
+        syllable onset times as determined by a segmentation algorithm
+    offsets : 1d numpy array
+        syllable offset times as determined by a segmentation algorithm
+    syls_to_use : 1d numpy Boolean array
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
 
     Returns
     -------
-
+    pre[syls_to_use] : 1d numpy array
+        where pre[1:] = _gapdurs(onsets,offsets) and pre[0]=0
+        (because no syllable precedes the first syllable)
     """
 
     pre = np.zeros((onsets.shape[-1],))
@@ -79,16 +106,22 @@ def pre_gapdur(onsets,offsets,syls_to_use):
 
 def foll_gapdur(onsets,offsets,syls_to_use):
     """
-    
+    duration of silent gap between syllable and following syllable
+
     Parameters
     ----------
-    onsets
-    offsets
-    labelset
+    onsets : 1d numpy array
+        syllable onset times as determined by a segmentation algorithm
+    offsets : 1d numpy array
+        syllable offset times as determined by a segmentation algorithm
+    syls_to_use : 1d numpy Boolean array
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
 
     Returns
     -------
-
+    foll[syls_to_use] : 1d numpy array
+        where foll[:-1] = _gapdurs(onsets,offsets)[1:] and foll[-1]=0
+        (because no syllable follows the last syllable)
     """
 
     foll = np.zeros((onsets.shape[-1],))
