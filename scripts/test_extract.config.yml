@@ -11,6 +11,7 @@ extract:
       file_format: evtaf
       feature_group:
         - svm
+        - knn
       data_dirs:
         - C:\Data\gy6gy6\010217
         - C:\Data\gy6gy6\010317

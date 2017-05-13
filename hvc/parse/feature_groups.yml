@@ -33,4 +33,4 @@ knn:
   - mean smoothed rectified amplitude
   - mean spectral entropy
   - mean hi lo ratio
-  - delta smooth rectified amplitude
+  - delta smoothed rectified amplitude

@@ -78,8 +78,14 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
                 else:
-                    if 'feature_list' not in todo_list_dict:
-                        validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
+                    if 'feature_list' in todo_list_dict:
+                        raise KeyError('Can\'t have feature_list and feature_gruop in same config')
+                    else:
+                        feature_list = feature_groups_dict[val]
+                        for feature in feature_list:
+                            if feature not in VALID_FEATURES:
+                                raise ValueError('feature {} not found in valid feature list'.format(feature))
+                        validated_todo_list_dict['feature_list'] = feature_list
             elif type(val)==list and len(val)==1: # if user entered list with just one element
                 val = val[0]
                 if val not in feature_groups_dict:
@@ -99,6 +105,9 @@ def _validate_todo_list_dict(todo_list_dict,index):
                     else:
                         feature_list.extend(feature_groups_dict[ftr_grp])
                         feature_group_id.extend([grp_ind] * len(feature_groups_dict[ftr_grp]))
+                for feature in feature_list:
+                    if feature not in VALID_FEATURES:
+                        raise ValueError('feature {} not found in valid feature list'.format(feature))
                 validated_todo_list_dict['feature_list'] = feature_list
                 validated_todo_list_dict['feature_group_id'] = np.asarray(feature_group_id)
 

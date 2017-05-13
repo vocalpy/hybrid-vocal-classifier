@@ -45,14 +45,6 @@ def run(config_file):
                 from . import koumura
 
         feature_list = todo['feature_list']
-        if all(isinstance(element, list) for element in feature_list):
-            is_ftr_list_of_lists = True
-            if 'feature_group' in todo:
-                feature_groups = todo['feature_group']
-            else:
-                feature_groups = range(1,len(feature_list)+1)
-        else:
-            is_ftr_list_of_lists = False # for sanity check when debugging
 
         output_dir = todo['output_dir'] + 'extract_output_' + timestamp
         if not os.path.isdir(output_dir):
@@ -77,7 +69,7 @@ def run(config_file):
                 print('Processing audio file {} of {}.'.format(file_num+1,num_songfiles))
                 if file_format == 'evtaf':
                     songfile = songfile[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
-                features_from_curr_file, labels = features.extract.from_file(songfile,
+                ftrs_from_curr_file, labels, ftr_inds = features.extract.from_file(songfile,
                                                                              todo['file_format'],
                                                                              todo['feature_list'],
                                                                              extract_config['spect_params'],
@@ -85,10 +77,10 @@ def run(config_file):
                 all_labels.extend(labels)
                 if 'features_from_all_files' in locals():
                     features_from_all_files = np.concatenate((features_from_all_files,
-                                                              features_from_curr_file),
+                                                              ftrs_from_curr_file),
                                                              axis=0)
                 else:
-                    features_from_all_files = features_from_curr_file
+                    features_from_all_files = ftrs_from_curr_file
 
             # get dir name without the rest of path so it doesn't have separators in the name
             # because those can't be in filename
@@ -96,7 +88,6 @@ def run(config_file):
             output_filename = os.path.join(output_dir,
                                            'features_from_' + just_dir_name + '_created_' + timestamp)
             output_dict = {
-                'features' : features_from_all_files,
                 'labels' : all_labels,
                 'feature_list': todo['feature_list'],
                 'spect_params' : extract_config['spect_params'],
@@ -104,6 +95,16 @@ def run(config_file):
                 'file_format' : todo['file_format'],
                 'bird_ID' : todo['bird_ID']
             }
+            if 'feature_group_id' in todo:
+                ftrs_dict = {}
+                for grp_ind, ftr_grp in enumerate(todo['feature_group']):
+                    ftrs_from_group = np.where(todo['feature_group_id'] == grp_ind)
+                    group_ftr_inds = np.in1d(ftr_inds,ftrs_from_group)
+                    ftrs_dict[ftr_grp] = features_from_all_files[:,group_ftr_inds]
+                output_dict['features'] = ftrs_dict
+            else:
+                output_dict['features'] = features_from_all_files
+
             joblib.dump(output_dict,
                         output_filename,
                         compress=3)
@@ -125,8 +126,13 @@ def run(config_file):
                 if 'features' not in summary_output_dict:
                     summary_output_dict['features'] = output_dict['features']
                 else:
-                    summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
-                                                                     output_dict['features']))
+                    if type(summary_output_dict['features']) == np.ndarray:
+                        summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
+                                                                         output_dict['features']))
+                    elif type(summary_output_dict['features']) == dict:
+                        for key in output_dict['features'].keys():
+                            summary_output_dict['features'][key] = np.concatenate((summary_output_dict['features'][key],
+                                                                                   output_dict['features'][key]))
 
                 if 'labels' not in summary_output_dict:
                     summary_output_dict['labels'] = output_dict['labels']
