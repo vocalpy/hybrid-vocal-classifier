@@ -1,3 +1,7 @@
+"""
+parse select config files
+"""
+
 #from standard library
 import os
 import copy
@@ -6,22 +10,8 @@ import copy
 import yaml
 import numpy as np
 
-#from hvc
-from hvc.features.extract import single_syl_features_switch_case_dict
-from hvc.features.extract import multiple_syl_features_switch_case_dict
-VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
-                 list(multiple_syl_features_switch_case_dict.keys())
 
-path = os.path.abspath(__file__)
-dir_path = os.path.dirname(path)
-
-with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
-    validate_dict = yaml.load(val_yaml)
-
-with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
-    feature_groups_dict = yaml.load(ftr_grp_yaml)
-
-def _validate_todo_list_dict(todo_list_dict,index):
+def _validate_todo_list_dict(todo_list_dict, index):
     """
     validates to-do lists
 
@@ -45,7 +35,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
         for extra_key in additional_keys:
             if extra_key not in validate_dict['additional_todo_list_keys']:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
-                               .format(extra_key,index))
+                               .format(extra_key, index))
 
     if 'feature_group' not in todo_list_dict:
         if 'feature_list' not in todo_list_dict:
@@ -60,14 +50,14 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
-        elif key=='data_dirs':
+        elif key == 'data_dirs':
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
                 for item in val:
                     if not os.path.isdir(item):
                         raise ValueError('directory {} in {} is not a valid directory.'
-                                         .format(item,key))
+                                         .format(item, key))
 
         elif key == 'feature_group':
             if type(val) != str and type(val) != list:
@@ -86,7 +76,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                             if feature not in VALID_FEATURES:
                                 raise ValueError('feature {} not found in valid feature list'.format(feature))
                         validated_todo_list_dict['feature_list'] = feature_list
-            elif type(val)==list and len(val)==1: # if user entered list with just one element
+            elif type(val) == list and len(val) == 1:  # if user entered list with just one element
                 val = val[0]
                 if val not in feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
@@ -111,7 +101,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 validated_todo_list_dict['feature_list'] = feature_list
                 validated_todo_list_dict['feature_group_id'] = np.asarray(feature_group_id)
 
-        elif key== 'feature_list':
+        elif key == 'feature_list':
             if type(val) != list:
                 raise ValueError('feature_list should be a list but parsed as a {}'.format(type(val)))
             else:
@@ -119,7 +109,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                     if feature not in VALID_FEATURES:
                         raise ValueError('feature {} not found in valid feature list'.format(feature))
 
-        elif key=='file_format':
+        elif key == 'file_format':
             if type(val) != str:
                 raise ValueError('Value {} for key \'file_format\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -127,27 +117,28 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key=='labelset':
+        elif key == 'labelset':
             if type(val) != str:
                 raise ValueError('Labelset should be a string, e.g., \'iabcde\'.')
             else:
-                validated_todo_list_dict[key] = list(val) # convert from string to list of chars
+                validated_todo_list_dict[key] = list(val)  # convert from string to list of chars
                 validated_todo_list_dict['labelset_int'] = [ord(label) for label in list(val)]
 
-        elif key=='output_dir':
+        elif key == 'output_dir':
             if type(val) != str:
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
                                  .format(type(val)))
 
-        else: # if key is not found in list
+        else:  # if key is not found in list
             raise KeyError('key {} in todo_list_dict is an invalid key'.
-                            format(key))
+                           format(key))
     return validated_todo_list_dict
+
 
 def validate_yaml(extract_config_yaml):
     """
     validates config from extract YAML file
-    
+
     Parameters
     ----------
     extract_config_yaml : dictionary, config as loaded with YAML module
@@ -172,16 +163,16 @@ def validate_yaml(extract_config_yaml):
                 raise KeyError('unrecognized keys in spect_params dictionary')
             else:
                 for sp_key, sp_val in val.items():
-                    if sp_key=='samp_freq' or sp_key=='window_size' or sp_key=='window_step':
+                    if sp_key == 'samp_freq' or sp_key == 'window_size' or sp_key == 'window_step':
                         if type(sp_val) != int:
                             raise ValueError('{} in spect_params should be an integer'.format(sp_key))
-                    elif sp_key=='freq_cutoffs':
+                    elif sp_key == 'freq_cutoffs':
                         if len(sp_val) != 2:
                             raise ValueError('freq_cutoffs should be a 2 item list')
                         for freq_cutoff in sp_val:
                             if type(freq_cutoff) != int:
                                 raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
-        elif key=='todo_list':
+        elif key == 'todo_list':
             if type(val) != list:
                 raise TypeError('todo_list did not parse as a list, instead it parsed as {}.'
                                 ' Please check config file formatting.'.format(type(val)))
@@ -192,11 +183,11 @@ def validate_yaml(extract_config_yaml):
                                         'instead it parsed as a {}. Please check config file'
                                         ' formatting'.format(index, type(item)))
                     else:
-                        val[index] = _validate_todo_list_dict(item,index)
-            validated_extract_config['todo_list'] = val # re-assign because feature list is added
+                        val[index] = _validate_todo_list_dict(item, index)
+            validated_extract_config['todo_list'] = val  # re-assign because feature list is added
 
-        else: # if key is not found in list
+        else:  # if key is not found in list
             raise KeyError('key {} in extract is an invalid key'.
-                            format(key))
+                           format(key))
 
     return validated_extract_config

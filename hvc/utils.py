@@ -10,7 +10,7 @@ from sklearn.svm import SVC
 from sklearn import neighbors
 
 #from hvc
-from randomdotorg import RandomDotOrg
+from .randomdotorg import RandomDotOrg
 
 
 def load_from_mat(fname,ftr_file_type,purpose='train'):

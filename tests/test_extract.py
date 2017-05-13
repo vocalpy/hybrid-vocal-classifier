@@ -9,7 +9,7 @@ from sklearn.externals import joblib
 
 class TestExtract:
     import hvc
-    hvc.extract.run('./tests/config_ymls_for_testing/test_extract.config.yml')
+    hvc.featureextract.run('./tests/config_ymls_for_testing/test_extract.config.yml')
     # switch to test dir
     os.chdir(TEST_DIR)
     ftr_files = glob.glob('features_from*')

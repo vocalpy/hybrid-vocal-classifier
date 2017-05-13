@@ -13,10 +13,10 @@ import numpy as np
 from sklearn.externals import joblib
 
 #from hvc
-from . import parse
+from .parseconfig import parse_config
 from . import features
 
-def run(config_file):
+def extract(config_file):
     """
     main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
@@ -27,7 +27,7 @@ def run(config_file):
     config_file : string
         filename of YAML file that configures feature extraction    
     """
-    extract_config = parse.extract.parse_extract_config(config_file)
+    extract_config = parse_config(config_file,'extract')
     print('Parsed extract config.')
 
     todo_list = extract_config['todo_list']
