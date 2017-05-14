@@ -9,12 +9,12 @@ select:
     models:
       -
         model: knn
-        feature_indices: 1,2,3
+        feature_indices: [1,2,3]
         hyperparameters:
           n : 4
       -
         model: svm
-        feature_indices: 1,2,3
+        feature_indices: [1,2,3]
         hyperparameters:
           C : 1
           gamma : 0.01
