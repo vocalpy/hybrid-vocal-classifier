@@ -57,10 +57,10 @@ def _validate_model_list(model_list):
                     raise ValueError('all indices in \'feature_indices\' should be integers')
             elif model_key == 'model':
                 if model_val == 'knn':
-                    if list(model_dict['hyperparameters'].keys()) != ['n']:
+                    if list(model_dict['hyperparameters'].keys()) != ['k']:
                         raise KeyError('invalid keys in \'knn\' hyperparameters')
-                    if type(model_dict['hyperparameters']['n']) != int:
-                        raise ValueError('value for \'n\' should be an integer')
+                    if type(model_dict['hyperparameters']['k']) != int:
+                        raise ValueError('value for \'k\' should be an integer')
                 elif model_val == 'svm':
                     if list(model_dict['hyperparameters'].keys()) != ['C','gamma']:
                         raise KeyError('invalid keys in \'svm\' hyperparameters')
@@ -169,6 +169,16 @@ def validate_yaml(select_config_yaml):
     -------
     select_config_dict : dictionary, after validation of all keys
     """
+
+    for global_key in VALID_GLOBAL_KEYS:
+        if not all([global_key in todo for todo in select_config_yaml['todo_list']]):
+            if global_key not in select_config_yaml['global']:
+                raise KeyError('\'{0}\' not defined for every item in todo_list, '
+                               'but no global {0} is defined. You must either '
+                               'define \'{0}\' in the \'global\' dictionary '
+                               '(that any \'{0}\' in a todo_list item will take '
+                               'precedence over) or you must define \'{0}\' for'
+                               ' every item in the todo_list.'.format(global_key))
 
     validated_select_config = copy.deepcopy(select_config_yaml)
     for key, val in select_config_yaml.items():
