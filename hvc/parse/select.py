@@ -76,7 +76,7 @@ def _validate_model_list(model_list):
 
 VALID_NUM_SAMPLES_KEYS = set(['start','stop','step'])
 REQUIRED_TODO_KEYS = set(['feature_file','output_dir'])
-OPTIONAL_TODO_KEYS = set(['num_samples','num_replicates','models'])
+OPTIONAL_TODO_KEYS = set(['num_test_samples','num_train_samples','num_replicates','models'])
 
 def _validate_todo_list_dict(todo_list_dict, index):
     """
@@ -128,7 +128,11 @@ def _validate_todo_list_dict(todo_list_dict, index):
                 raise ValueError('{} should be an int but parsed as {}'
                                  .format(key, type(val)))
 
-        elif key == 'num_samples':
+        elif key == 'num_test_samples':
+            if type(val) != int:
+                raise ValueError('{} in \'global\' should be an integer'.format(key))
+
+        elif key == 'num_train_samples':
             if type(val) != dict:
                 raise ValueError('{} should be a dict but parsed as {}'
                                  .format(key, type(val)))
@@ -140,7 +144,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
                     num_samples = range(glob_val['start'],
                                         glob_val['stop'],
                                         glob_val['step'])
-                    validated_select_config['num_samples'] = num_samples
+                    validated_select_config['num_train_samples'] = num_samples
 
         elif key == 'output_dir':
             if type(val) != str:
@@ -154,7 +158,8 @@ def _validate_todo_list_dict(todo_list_dict, index):
 
 VALID_SELECT_KEYS = set(['global','todo_list'])
 VALID_GLOBAL_KEYS = set(['num_replicates',
-                         'num_samples',
+                         'num_test_samples',
+                         'num_train_samples',
                          'models'])
 
 def validate_yaml(select_config_yaml):
@@ -198,11 +203,15 @@ def validate_yaml(select_config_yaml):
 
                     elif global_key == 'num_replicates':
                         if type(global_val) != int:
-                            raise ValueError('{} in spect_params should be an integer'.format(global_key))
+                            raise ValueError('{} in \'global\' should be an integer'.format(global_key))
 
-                    elif global_key == 'num_samples':
+                    elif global_key == 'num_test_samples':
+                        if type(global_val) != int:
+                            raise ValueError('{} in \'global\' should be an integer'.format(global_key))
+
+                    elif global_key == 'num_train_samples':
                         if type(global_val) != dict:
-                            raise ValueError('\'num samples\' did not parse as dict. Please check formatting')
+                            raise ValueError('\'num_train_samples\' did not parse as dict. Please check formatting')
                         samples_key_set = set(global_val.keys())
                         if samples_key_set != VALID_NUM_SAMPLES_KEYS:
                             raise KeyError('\'num_samples\' contains invalid keys {}, '
@@ -223,7 +232,7 @@ def validate_yaml(select_config_yaml):
                         num_samples_vals = range(global_val['start'],
                                                  global_val['stop'],
                                                  global_val['step'])
-                        validated_select_config['global']['num_samples'] = num_samples_vals
+                        validated_select_config['global']['num_train_samples'] = num_samples_vals
 
                     else:
                         raise KeyError('invalid key {} found in \'global\''.format(global_key))
