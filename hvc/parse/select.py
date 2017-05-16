@@ -57,12 +57,13 @@ def _validate_model_list(model_list):
                     raise ValueError('all indices in \'feature_indices\' should be integers')
             elif model_key == 'model':
                 if model_val == 'knn':
-                    if list(model_dict['hyperparameters'].keys()) != ['k']:
+                    if set(model_dict['hyperparameters'].keys()) != set(['k']):
                         raise KeyError('invalid keys in \'knn\' hyperparameters')
                     if type(model_dict['hyperparameters']['k']) != int:
                         raise ValueError('value for \'k\' should be an integer')
                 elif model_val == 'svm':
-                    if list(model_dict['hyperparameters'].keys()) != ['C','gamma']:
+                    if set(model_dict['hyperparameters'].keys()) != set(['C','gamma']):
+                        import pdb;pdb.set_trace()
                         raise KeyError('invalid keys in \'svm\' hyperparameters')
                     C = model_dict['hyperparameters']['C']
                     if  type(C) != float and type(C) != int:
