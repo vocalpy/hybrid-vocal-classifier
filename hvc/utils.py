@@ -1,4 +1,6 @@
 #from standard library
+import copy
+import random
 from urllib.error import HTTPError
 
 #from dependencies
@@ -180,29 +182,33 @@ def find_best_k(train_samples,train_labels,test_samples,test_labels):
     return scores, k
 
 def train_test_song_split(samples,labels,song_IDs,train_size,test_size = 0.2):
-    """train_test_song_split:
-    Splits samples from songs into training and test sets
+    """splits samples from songs into training and test sets
 
-    Input arguments:
-		samples -- m-by-n numpy array, m rows of samples each with n features
-        labels -- vector of length m, where each element is a label corresponding
-                  to row m of 'samples' array
-        song_IDs_vec -- vector of length m, where each element denotes which song
-                       that sample m(sub i) belongs to in the samples array.
-                       E.g., if elements 15-37 have the value "3", then all those
-                       samples belong to the third song. Used to relate number of
-                       songs to number of samples.  
-    	train_size -- either a float between 0.0 and 1.0, representing the percent
-                     of the songs to put into the train set, or an integer rep-
-                     -resenting the number of songs to put into the train set.
-                     Returned in 'train_samples' and 'train_labels'
-       	test_size -- same as train_size, but for set returned in test_samples and
-       				 test_labels. Default is 0.2, i.e., one-fifth of set for
-       				 5-fold cross-validation
+    Parameters:
+    samples : m-by-n numpy array
+        m rows of samples each with n features
+    labels : vector of length m
+        where each element is a label corresponding to row m of 'samples' array
+    song_IDs : vector of length m
+        where each element denotes which song
+        that sample m(sub i) belongs to in the samples array.
+        E.g., if elements 15-37 have the value "3", then all those
+        samples belong to the third song. Used to relate number of
+        songs to number of samples.  
+    train_size : float or int
+        either a float between 0.0 and 1.0, representing the percent
+        of the songs to put into the train set, or an integer
+        representing the number of songs to put into the train set.
+        Returned in 'train_samples' and 'train_labels'
+    test_size : float or int
+        same as train_size, but for set returned in test_samples and
+        test_labels. Default is 0.2, i.e., one-fifth of set for
+        5-fold cross-validation
 
     Returns:
         train_samples, train_labels, test_samples, test_labels
     """
+
     uniq_song_IDs = np.unique(song_IDs)
     n_songs = max(uniq_song_IDs)
     if np.asarray(train_size).dtype.kind == 'f':
@@ -346,34 +352,46 @@ def train_test_syllable_split(samples,labels,num_train_samples,test_size = 0.2):
         else:
             return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
 
-def grab_n_samples_by_song(sample_song_IDs,song_ID_list,labels,num_samples,
-                           return_popped_songlist=False):
-    """
-    Creates list of sample IDs for training or test set.
+def grab_n_samples_by_song(song_IDs, labels, num_samples, song_ID_list = None, return_popped_songlist=False):
+    """Creates list of sample IDs for training or test set.
     Grabs samples by song ID from shuffled list of IDs. Keeps drawing IDs until
     we have more than num_samples, then truncate list at that number of samples.
     This way we approximate natural distribution of syllables from a random draw
     of songs while at the same time using a constant # of samples.
 
-    sample_song_IDs -- song ID for each sample in sample set. E.g., if
-    sample_song_IDs[10:20]==31, that means all those samples in the set came from song #31.
-    song_ID_list -- list to shuffle. i.e., numpy.unique(sample_song_IDs)
-    labels -- label for each sample in sample set. Used to verify that randomly
-    drawn subset contains at least 2 examples of each label/class. This is necessary
-    e.g. for using sklearn.StratifiedShuffleSplit
-    (and just to not have totally imbalanced training sets).
-    num_samples -- number of samples to return
-    return_popped_songlist -- if true, return song_ID_list with IDs of songs assigned to  popped off.
-    This is used when creating the test set so that the training set does not contain
-    any songs in the test set.
-    """
+    Parameters:
+    song_IDs : list of ints
+        song ID for each sample in sample set. E.g., if
+        sample_song_IDs[10:20]==31, that means all those samples in the set came from song #31.
+    labels : list of chars
+        label for each sample in sample set. Used to verify that randomly
+        drawn subset contains at least 2 examples of each label/class. This is necessary
+        e.g. for using sklearn.StratifiedShuffleSplit
+        (and just to not have totally imbalanced training sets).
+    num_samples : int
+        number of samples to return
+    song_ID_list : list of ints
+        ID numbers for songs from which to draw randomly.
+        If None, all IDs from song_IDs are used, i.e., np.unique(song_IDs)
+        Default is None.
+    return_popped_songlist : Bool
+        if True, return song_ID_list with IDs of songs assigned popped off.
+        This is used when creating the test set so that the training set does not contain
+        any songs in the test set.
     
+    Returns:
+        sample_IDs, song_ID_list_copy_to_pop
+    """
+
+    song_IDs_arr = np.asarray(song_IDs)
+    if song_ID_list is None:
+        song_ID_list = np.unique(song_IDs).tolist()
     #make copy of list in case we need it back in loop below after popping off items
     song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
     interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
     try:
         interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-    except HTTPError: # i.e., if random service not available
+    except: # i.e., if random service not available
         random.seed()
         random.shuffle(song_ID_list_copy_to_pop)
 
@@ -383,9 +401,7 @@ def grab_n_samples_by_song(sample_song_IDs,song_ID_list,labels,num_samples,
         sample_IDs = []
         while 1:
             curr_song_ID = song_ID_list_copy_to_pop.pop()
-            curr_sample_IDs = np.argwhere(
-                                 sample_song_IDs==curr_song_ID
-                                          ).ravel().tolist()
+            curr_sample_IDs = np.argwhere(song_IDs_arr==curr_song_ID).ravel().tolist()
             sample_IDs.extend(curr_sample_IDs)
             if len(sample_IDs) > num_samples:
                 sample_IDs = np.asarray(sample_IDs[:num_samples])
@@ -394,7 +410,7 @@ def grab_n_samples_by_song(sample_song_IDs,song_ID_list,labels,num_samples,
         #(can't do c.v. stratified shuffle split with only one sample of a class
         #The sk-learn stratified shuffle split method is used by grid search for
         # the SVC.)
-        temp_labels = labels[sample_IDs]
+        temp_labels = np.asarray(labels)[sample_IDs]
         #in line below, just keep [1] cuz just want the counts
         uniq_label_counts = np.unique(temp_labels,return_counts=True)[1]
         if np.min(uniq_label_counts) > 1:
@@ -407,7 +423,7 @@ def grab_n_samples_by_song(sample_song_IDs,song_ID_list,labels,num_samples,
             try:
                 # initial shuffle, happens in place
                 interwebz_random.shuffle(song_ID_list_copy_to_pop)
-            except HTTPError: # i.e., if random service not available
+            except: # e.g., website down / pinged too many times / no web access
                 random.seed()
                 random.shuffle(song_ID_list_copy_to_pop) 
 
