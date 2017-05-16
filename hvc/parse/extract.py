@@ -98,18 +98,18 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 # make feature list that is concatenated feature groups
                 # and also add 'feature_group_id' vector for indexing to config
                 feature_list = []
-                feature_group_id = []
+                feature_group_ID = []
                 for grp_ind, ftr_grp in enumerate(val):
                     if ftr_grp not in feature_groups_dict:
                         raise ValueError('{} not found in valid feature groups'.format(val))
                     else:
                         feature_list.extend(feature_groups_dict[ftr_grp])
-                        feature_group_id.extend([grp_ind] * len(feature_groups_dict[ftr_grp]))
+                        feature_group_ID.extend([grp_ind] * len(feature_groups_dict[ftr_grp]))
                 for feature in feature_list:
                     if feature not in VALID_FEATURES:
                         raise ValueError('feature {} not found in valid feature list'.format(feature))
                 validated_todo_list_dict['feature_list'] = feature_list
-                validated_todo_list_dict['feature_group_id'] = np.asarray(feature_group_id)
+                validated_todo_list_dict['feature_group_ID'] = np.asarray(feature_group_ID)
 
         elif key== 'feature_list':
             if type(val) != list:

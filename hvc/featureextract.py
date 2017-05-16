@@ -100,17 +100,11 @@ def extract(config_file):
                 'labelset' : todo['labelset'],
                 'file_format' : todo['file_format'],
                 'bird_ID' : todo['bird_ID'],
-                'song_IDs' : song_IDs
+                'song_IDs' : song_IDs,
+                'features' : features_from_all_files
             }
-            if 'feature_group_id' in todo:
-                ftrs_dict = {}
-                for grp_ind, ftr_grp in enumerate(todo['feature_group']):
-                    ftrs_from_group = np.where(todo['feature_group_id'] == grp_ind)
-                    group_ftr_inds = np.in1d(ftr_inds,ftrs_from_group)
-                    ftrs_dict[ftr_grp] = features_from_all_files[:,group_ftr_inds]
-                output_dict['features'] = ftrs_dict
-            else:
-                output_dict['features'] = features_from_all_files
+            if 'feature_group_ID' in todo:
+                output_dict['feature_group_ID'] = todo['feature_group_ID']
 
             joblib.dump(output_dict,
                         output_filename,
@@ -125,22 +119,15 @@ def extract(config_file):
         if len(ftr_output_files) > 1:
             #make a 'summary' data file
             list_of_output_dicts = []
-            for output_file in ftr_output_files:
-                list_of_output_dicts.append(joblib.load(output_file))
-
             summary_output_dict = {}
-            for output_dict in list_of_output_dicts:
+            for output_file in ftr_output_files:
+                output_dict = joblib.load(output_file)
+
                 if 'features' not in summary_output_dict:
                     summary_output_dict['features'] = output_dict['features']
                 else:
-                    if type(summary_output_dict['features']) == np.ndarray:
-                        summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
+                    summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
                                                                          output_dict['features']))
-                    elif type(summary_output_dict['features']) == dict:
-                        for key in output_dict['features'].keys():
-                            summary_output_dict['features'][key] = np.concatenate((summary_output_dict['features'][key],
-                                                                                   output_dict['features'][key]))
-
                 if 'labels' not in summary_output_dict:
                     summary_output_dict['labels'] = output_dict['labels']
                 else:
@@ -148,15 +135,31 @@ def extract(config_file):
 
                 if 'spect_params' not in summary_output_dict:
                     summary_output_dict['spect_params'] = output_dict['spect_params']
+                else:
+                    if output_dict['spect_params'] != summary_output_dict['spect_params']:
+                        raise ValueError('mismatch between spect_params in {} '
+                                         'and other feature files'.format(output_file))
 
                 if 'labelset' not in summary_output_dict:
                     summary_output_dict['labelset'] = output_dict['labelset']
+                else:
+                    if output_dict['labelset'] != summary_output_dict['labelset']:
+                        raise ValueError('mismatch between labelset in {} '
+                                         'and other feature files'.format(output_file))
 
                 if 'file_format' not in summary_output_dict:
                     summary_output_dict['file_format'] = output_dict['file_format']
+                else:
+                    if output_dict['file_format'] != summary_output_dict['file_format']:
+                        raise ValueError('mismatch between file_format in {} '
+                                         'and other feature files'.format(output_file))
 
                 if 'bird_ID' not in summary_output_dict:
-                    summary_output_dict['spect_params'] = output_dict['spect_params']
+                    summary_output_dict['bird_ID'] = output_dict['bird_ID']
+                else:
+                    if output_dict['bird_ID'] != summary_output_dict['bird_ID']:
+                        raise ValueError('mismatch between bird_ID in {} '
+                                         'and other feature files'.format(output_file))
 
                 if 'song_IDs' not in summary_output_dict:
                     summary_output_dict['song_IDs'] = output_dict['song_IDs']
@@ -167,6 +170,18 @@ def extract(config_file):
 
                 if 'feature_list' not in summary_output_dict:
                     summary_output_dict['feature_list'] = output_dict['feature_list']
+                else:
+                    if output_dict['feature_list'] != summary_output_dict['feature_list']:
+                        raise ValueError('mismatch between feature_list in {} '
+                                         'and other feature files'.format(output_file))
+
+                if 'feature_group_ID' not in summary_output_dict:
+                    summary_output_dict['feature_group_ID'] = output_dict['feature_group_ID']
+                else:
+                    if any(output_dict['feature_group_ID'] != summary_output_dict['feature_group_ID']):
+                        raise ValueError('mismatch between feature_group_ID in {} '
+                                         'and other feature files'.format(output_file))
+
             joblib.dump(summary_output_dict,
                         'summary_feature_file_created_' + timestamp)
         else: # if only one feature_file
