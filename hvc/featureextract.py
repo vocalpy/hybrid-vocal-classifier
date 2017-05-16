@@ -49,6 +49,7 @@ def extract(config_file):
         output_dir = todo['output_dir'] + 'extract_output_' + timestamp
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
+
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
             print('Changing to data directory: {}'.format(data_dir))
@@ -65,6 +66,8 @@ def extract(config_file):
                 songfiles = glob.glob('*.wav')
             num_songfiles = len(songfiles)
             all_labels = []
+            song_IDs = []
+            song_ID_counter = 0
             for file_num, songfile in enumerate(songfiles):
                 print('Processing audio file {} of {}.'.format(file_num+1,num_songfiles))
                 if file_format == 'evtaf':
@@ -75,6 +78,9 @@ def extract(config_file):
                                                                              extract_config['spect_params'],
                                                                              todo['labelset'])
                 all_labels.extend(labels)
+                song_IDs.extend([song_ID_counter] * len(labels))
+                song_ID_counter += 1
+
                 if 'features_from_all_files' in locals():
                     features_from_all_files = np.concatenate((features_from_all_files,
                                                               ftrs_from_curr_file),
@@ -93,7 +99,8 @@ def extract(config_file):
                 'spect_params' : extract_config['spect_params'],
                 'labelset' : todo['labelset'],
                 'file_format' : todo['file_format'],
-                'bird_ID' : todo['bird_ID']
+                'bird_ID' : todo['bird_ID'],
+                'song_IDs' : song_IDs
             }
             if 'feature_group_id' in todo:
                 ftrs_dict = {}
@@ -150,6 +157,13 @@ def extract(config_file):
 
                 if 'bird_ID' not in summary_output_dict:
                     summary_output_dict['spect_params'] = output_dict['spect_params']
+
+                if 'song_IDs' not in summary_output_dict:
+                    summary_output_dict['song_IDs'] = output_dict['song_IDs']
+                else:
+                    curr_last_ID = summary_output_dict['song_IDs'][-1]
+                    tmp_song_IDs = [el + curr_last_ID + 1 for el in output_dict['song_IDs']]
+                    summary_output_dict['song_IDs'].extend(tmp_song_IDs)
 
                 if 'feature_list' not in summary_output_dict:
                     summary_output_dict['feature_list'] = output_dict['feature_list']
