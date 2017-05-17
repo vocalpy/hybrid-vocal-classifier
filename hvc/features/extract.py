@@ -142,4 +142,4 @@ def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
             else:
                 features_arr = curr_feature_arr
     labels = [label for label in song.labels if label in labels_to_use]
-    return features_arr,labels, np.asarray(feature_inds)
+    return features_arr, labels, np.asarray(feature_inds)

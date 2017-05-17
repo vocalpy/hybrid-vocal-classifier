@@ -105,6 +105,7 @@ def extract(config_file):
             }
             if 'feature_group_ID' in todo:
                 output_dict['feature_group_ID'] = todo['feature_group_ID']
+                output_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
             joblib.dump(output_dict,
                         output_filename,
@@ -182,8 +183,16 @@ def extract(config_file):
                         raise ValueError('mismatch between feature_group_ID in {} '
                                          'and other feature files'.format(output_file))
 
+                if 'feature_group_ID_dict' not in summary_output_dict:
+                    summary_output_dict['feature_group_ID_dict'] = output_dict['feature_group_ID_dict']
+                else:
+                    if output_dict['feature_group_ID_dict'] != summary_output_dict['feature_group_ID_dict']:
+                        raise ValueError('mismatch between feature_group_ID_dict in {} '
+                                         'and other feature files'.format(output_file))
+
             joblib.dump(summary_output_dict,
                         'summary_feature_file_created_' + timestamp)
         else: # if only one feature_file
             os.rename(ftr_output_files[0],
                       'summary_feature_file_created_' + timestamp)
+

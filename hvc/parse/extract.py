@@ -19,7 +19,7 @@ with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
 with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
-    feature_groups_dict = yaml.load(ftr_grp_yaml)
+    valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
 
 def _validate_todo_list_dict(todo_list_dict,index):
     """
@@ -75,41 +75,44 @@ def _validate_todo_list_dict(todo_list_dict,index):
                                 ' either a string or a list. Please check config'
                                 ' file formatting.'.format(type(val)))
             elif type(val) == str:
-                if val not in feature_groups_dict:
+                if val not in valid_feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
                 else:
                     if 'feature_list' in todo_list_dict:
                         raise KeyError('Can\'t have feature_list and feature_gruop in same config')
                     else:
-                        feature_list = feature_groups_dict[val]
+                        feature_list = valid_feature_groups_dict[val]
                         for feature in feature_list:
                             if feature not in VALID_FEATURES:
                                 raise ValueError('feature {} not found in valid feature list'.format(feature))
                         validated_todo_list_dict['feature_list'] = feature_list
             elif type(val)==list and len(val)==1: # if user entered list with just one element
                 val = val[0]
-                if val not in feature_groups_dict:
+                if val not in valid_feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
                 else:
                     if 'feature_list' not in todo_list_dict:
-                        validated_todo_list_dict['feature_list'] = feature_groups_dict[val]
+                        validated_todo_list_dict['feature_list'] = valid_feature_groups_dict[val]
             elif type(val) == list:
                 # if a list of feature groups
                 # make feature list that is concatenated feature groups
                 # and also add 'feature_group_id' vector for indexing to config
                 feature_list = []
                 feature_group_ID = []
+                ftr_grp_ID_dict = {}
                 for grp_ind, ftr_grp in enumerate(val):
-                    if ftr_grp not in feature_groups_dict:
+                    if ftr_grp not in valid_feature_groups_dict:
                         raise ValueError('{} not found in valid feature groups'.format(val))
                     else:
-                        feature_list.extend(feature_groups_dict[ftr_grp])
-                        feature_group_ID.extend([grp_ind] * len(feature_groups_dict[ftr_grp]))
+                        feature_list.extend(valid_feature_groups_dict[ftr_grp])
+                        feature_group_ID.extend([grp_ind] * len(valid_feature_groups_dict[ftr_grp]))
+                        ftr_grp_ID_dict[ftr_grp] = grp_ind
                 for feature in feature_list:
                     if feature not in VALID_FEATURES:
                         raise ValueError('feature {} not found in valid feature list'.format(feature))
                 validated_todo_list_dict['feature_list'] = feature_list
                 validated_todo_list_dict['feature_group_ID'] = np.asarray(feature_group_ID)
+                validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_ID_dict
 
         elif key== 'feature_list':
             if type(val) != list:
