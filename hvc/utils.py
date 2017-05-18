@@ -181,7 +181,13 @@ def find_best_k(train_samples,train_labels,test_samples,test_labels):
     print("best k was {} with accuracy of {}".format(k,np.max(scores)))
     return scores, k
 
-def grab_n_samples_by_song(song_IDs, labels, num_samples, song_ID_list = None, return_popped_songlist=False):
+def grab_n_samples_by_song(song_IDs,
+                           labels,
+                           num_samples,
+                           song_ID_list = None,
+                           seed=42,
+                           return_popped_songlist=False,
+                           use_random_dot_org=False):
     """Creates list of sample IDs for training or test set.
     Grabs samples by song ID from shuffled list of IDs. Keeps drawing IDs until
     we have more than num_samples, then truncate list at that number of samples.
@@ -203,10 +209,15 @@ def grab_n_samples_by_song(song_IDs, labels, num_samples, song_ID_list = None, r
         ID numbers for songs from which to draw randomly.
         If None, all IDs from song_IDs are used, i.e., np.unique(song_IDs)
         Default is None.
+    seed : int
+        seed for random number generator. Default is 42.
     return_popped_songlist : Bool
         if True, return song_ID_list with IDs of songs assigned popped off.
         This is used when creating the test set so that the training set does not contain
         any songs in the test set.
+    use_random_dot_org : Bool
+        if True, use random.org API to get truly random numbers for shuffling song IDs.
+        default is False. When True, can slow down script if website hangs.
     
     Returns:
         sample_IDs, song_ID_list_copy_to_pop
@@ -218,14 +229,18 @@ def grab_n_samples_by_song(song_IDs, labels, num_samples, song_ID_list = None, r
     #make copy of list in case we need it back in loop below after popping off items
     song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
     interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
-    try:
-        interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-    except: # i.e., if random service not available
-        random.seed()
+    if use_random_dot_org:
+        try:
+            interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
+        except (HTTPError, URLError): # i.e., if random service not available
+            print('random.org service not working. Defaulting to Python random module')
+            random.seed(seed)
+            random.shuffle(song_ID_list_copy_to_pop)
+    else:
+        random.seed(seed)
         random.shuffle(song_ID_list_copy_to_pop)
 
     #outer while loop to make sure there's more than one sample for each class
-    #see comments in lines 70-72
     while 1: 
         sample_IDs = []
         while 1:
@@ -245,16 +260,21 @@ def grab_n_samples_by_song(song_IDs, labels, num_samples, song_ID_list = None, r
         if np.min(uniq_label_counts) > 1:
             break # but if not, break out of loop and keep current sample set
         else:
+            print('training set only contains one example of any syllable')
             #get original list
             song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
             # shuffle again so this time we hopefully get a set
             # where there's >1 sample of each syllable class
-            try:
-                # initial shuffle, happens in place
-                interwebz_random.shuffle(song_ID_list_copy_to_pop)
-            except: # e.g., website down / pinged too many times / no web access
-                random.seed()
-                random.shuffle(song_ID_list_copy_to_pop) 
+            if use_random_dot_org:
+                try:
+                    interwebz_random.shuffle(song_ID_list_copy_to_pop)  # initial shuffle, happens in place
+                except (HTTPError, URLError):  # i.e., if random service not available
+                    print('random.org service not working. Defaulting to Python random module')
+                    random.seed(seed)
+                    random.shuffle(song_ID_list_copy_to_pop)
+            else:
+                random.seed(seed)
+                random.shuffle(song_ID_list_copy_to_pop)
 
     if return_popped_songlist:
         return sample_IDs,song_ID_list_copy_to_pop
