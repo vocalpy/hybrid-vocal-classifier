@@ -3,9 +3,9 @@ select:
     num_replicates: 5
     num_train_samples:
       start : 100
-      stop : 1000
+      stop : 400
       step : 100
-    num_test_samples: 1000
+    num_test_samples: 400
 
     models:
       -
@@ -22,5 +22,5 @@ select:
 
   todo_list:
     - #1
-      feature_file : C:\Data\gy6gy6\extract_output_170516_1523\summary_feature_file_created_170516_1523
+      feature_file : C:\Data\gy6gy6\extract_output_170516_1935\summary_feature_file_created_170516_1935
       output_dir: C:\Data\gy6gy6\
