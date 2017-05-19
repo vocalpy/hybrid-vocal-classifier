@@ -16,6 +16,63 @@ from sklearn.externals import joblib
 from .parseconfig import parse_config
 from . import features
 
+SELECT_TEMPLATE = """select:
+  global:
+    num_replicates: None
+    num_train_samples:
+      start : None
+      stop : None
+      step : None
+    num_test_samples: None
+
+  models:"""
+
+MODELS_TEMPLATE = """
+    -
+      model: {0}
+      feature_indices: {1}
+      hyperparameters:
+
+"""
+
+TODO_TEMPLATE = """  todo_list:
+    -
+      feature_file : {0}
+      output_dir: {1}"""
+
+def dump_select_config(summary_output_dict,
+                       timestamp,
+                       summary_filename,
+                       output_dir):
+    """dumps summary output dict from extract to a config file for select
+    
+    Parameters
+    ----------
+    summary_output_dict : dictionary
+        as defined in featureextract.extract
+    timestamp : string
+        time stamp from feature files, added to select config filename
+    summary_filename : string
+        name of summary feature file
+    output_dir : string
+        name of output directory -- assumes it will be the same as it was for extract.yml
+
+    Returns
+    -------
+    None
+    
+    Doesn't return anything, just saves .yml file
+    """
+
+    select_config_filename = 'select.config.from_extract_output_' + timestamp + '.yml'
+    with open(select_config_filename, 'w') as yml_outfile:
+        yml_outfile.write(SELECT_TEMPLATE)
+        for model_name, model_ID in summary_output_dict['feature_group_ID_dict'].items():
+            inds = np.flatnonzero(summary_output_dict['feature_group_ID']==model_ID).tolist()
+            inds = ', '.join(str(ind) for ind in inds)
+            yml_outfile.write(MODELS_TEMPLATE.format(model_name,inds))
+        yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
+                                               output_dir))
 def extract(config_file):
     """
     main function that runs feature extraction.
@@ -29,6 +86,8 @@ def extract(config_file):
     """
     extract_config = parse_config(config_file,'extract')
     print('Parsed extract config.')
+
+    home_dir = os.getcwd()
 
     todo_list = extract_config['todo_list']
     for ind, todo in enumerate(todo_list):
@@ -116,6 +175,7 @@ def extract(config_file):
         ##########################################################
         print('making summary file')
         os.chdir(output_dir)
+        summary_filename = os.path.join(output_dir, 'summary_feature_file_created_' + timestamp)
         ftr_output_files = glob.glob('*features_from_*')
         if len(ftr_output_files) > 1:
             #make a 'summary' data file
@@ -190,9 +250,14 @@ def extract(config_file):
                         raise ValueError('mismatch between feature_group_ID_dict in {} '
                                          'and other feature files'.format(output_file))
 
+
             joblib.dump(summary_output_dict,
-                        'summary_feature_file_created_' + timestamp)
+                        summary_filename)
         else: # if only one feature_file
             os.rename(ftr_output_files[0],
-                      'summary_feature_file_created_' + timestamp)
-
+                      summary_filename)
+        dump_select_config(summary_output_dict,
+                           timestamp,
+                           summary_filename,
+                           output_dir)
+    os.chdir(home_dir)
