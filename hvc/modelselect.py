@@ -117,7 +117,7 @@ def select(config_file):
                         clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
                                                              'distance')
 
-                    if model_dict['model'] is not 'neuralnet':
+                    if model_dict['model'] in ['svm','knn']:
                         #use 'advanced indexing' to get only sample rows and only feature models
                         features_train = feature_file['features'][train_IDs[:,np.newaxis],
                                                                   model_dict['feature_indices']]
