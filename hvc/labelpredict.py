@@ -53,7 +53,7 @@ def predict(config_file):
         try:
             classify_dict = scio.loadmat('.\\classify\\to_classify.mat')
         except FileNotFoundError:
-            print("Did not find required files in the directory supplied as command-line
+            print("Did not find required files in the directory supplied as command-line "
                   " argument.\nPlease double check directory name.")
 
     classify_dirs = classify_dict['classify_dirs']
