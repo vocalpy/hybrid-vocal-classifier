@@ -1,5 +1,5 @@
 """
-parse select config files
+YAML parser for select config files
 """
 
 #from standard library
@@ -7,7 +7,6 @@ import os
 import copy
 
 #from dependencies
-import yaml
 import numpy as np
 from sklearn.externals import joblib
 
@@ -47,14 +46,23 @@ def _validate_model_list(model_list):
 
     validated_model_list = copy.deepcopy(model_list)
 
-    for model_dict in model_list:
+    for ind, model_dict in enumerate(model_list):
+        validated_model_dict = copy.deepcopy(model_dict)
         for model_key, model_val in model_dict.items():
             if model_key == 'feature_indices':
-                if type(model_val) != list:
-                    raise ValueError('\'feature_indices\' should be a list but parsed as a {}'
+                if type(model_val) != list and type(model_val) != str:
+                    raise ValueError('\'feature_indices\' should be a list or string but parsed as a {}'
                                      .format(type(model_val)))
+                if type(model_val) == str:
+                    try:
+                        model_val = [int(num) for num in model_val.split(',')]
+                    except ValueError:
+                        raise ValueError('feature_indices parsed as a string '
+                                         'but could not convert following to list of ints: {}'
+                                         .format(model_val))
                 if not all([type(item_val) is int for item_val in model_val]):
                     raise ValueError('all indices in \'feature_indices\' should be integers')
+                validated_model_dict[model_key] = model_val
             elif model_key == 'model':
                 if model_val == 'knn':
                     if set(model_dict['hyperparameters'].keys()) != set(['k']):
@@ -63,7 +71,6 @@ def _validate_model_list(model_list):
                         raise ValueError('value for \'k\' should be an integer')
                 elif model_val == 'svm':
                     if set(model_dict['hyperparameters'].keys()) != set(['C','gamma']):
-                        import pdb;pdb.set_trace()
                         raise KeyError('invalid keys in \'svm\' hyperparameters')
                     C = model_dict['hyperparameters']['C']
                     if  type(C) != float and type(C) != int:
@@ -71,8 +78,7 @@ def _validate_model_list(model_list):
                     gamma = model_dict['hyperparameters']['gamma']
                     if  type(gamma) != float and type(gamma) != int:
                         raise ValueError('gamma value for svm should be float or int')
-
-    # currently validation does not actually change any of the values in the dictionary
+        validated_model_list[ind] = validated_model_dict
     return validated_model_list
 
 VALID_NUM_SAMPLES_KEYS = set(['start','stop','step'])
@@ -115,7 +121,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
                 raise ValueError('Value {} for key \'feature_file\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
             if not os.path.isfile(val):
-                raise OSError('{} is not recognized as a file'.format(val))
+                raise OSError('{} is not found as a file'.format(val))
             try:
                 joblib.load(val)
             except:

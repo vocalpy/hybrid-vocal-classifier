@@ -25,13 +25,13 @@ SELECT_TEMPLATE = """select:
       step : None
     num_test_samples: None
 
-  models:"""
+    models:"""
 
 MODELS_TEMPLATE = """
     -
       model: {0}
       feature_indices: {1}
-      hyperparameters:
+      hyperparameters: {2}
 
 """
 
@@ -39,6 +39,13 @@ TODO_TEMPLATE = """  todo_list:
     -
       feature_file : {0}
       output_dir: {1}"""
+
+SVM_HYPERPARAMS = """            C : None
+            gamma : None
+"""
+
+KNN_HYPERPARAMS = """            K : None
+"""
 
 def dump_select_config(summary_output_dict,
                        timestamp,
@@ -70,7 +77,13 @@ def dump_select_config(summary_output_dict,
         for model_name, model_ID in summary_output_dict['feature_group_ID_dict'].items():
             inds = np.flatnonzero(summary_output_dict['feature_group_ID']==model_ID).tolist()
             inds = ', '.join(str(ind) for ind in inds)
-            yml_outfile.write(MODELS_TEMPLATE.format(model_name,inds))
+            if model_name == 'svm':
+                hyperparams = SVM_HYPERPARAMS
+            elif model_name == 'knn':
+                hyperparams = KNN_HYPERPARAMS
+            yml_outfile.write(MODELS_TEMPLATE.format(model_name,
+                                                     inds,
+                                                     hyperparams))
         yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
                                                output_dir))
 def extract(config_file):

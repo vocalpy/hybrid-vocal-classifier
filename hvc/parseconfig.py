@@ -10,6 +10,7 @@ from . import parse
 parser_dict = {
     'extract' : parse.extract.validate_yaml,
     'select' : parse.select.validate_yaml,
+    'predict' : parse.predict.validate_yaml
 }
 
 def _parse_helper(config_type,config_file,config_yaml):

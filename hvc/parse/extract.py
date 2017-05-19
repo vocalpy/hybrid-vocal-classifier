@@ -1,3 +1,7 @@
+"""
+YAML parser for extract config files
+"""
+
 #from standard library
 import os
 import copy

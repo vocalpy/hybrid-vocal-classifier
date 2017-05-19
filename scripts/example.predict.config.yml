@@ -1,0 +1,9 @@
+predict:
+  todo_list:
+    - #1
+      bird_ID: gr41rd51
+      model_file : C:\Data\gy6gy6\extract_output_170516_1935\summary_feature_file_created_170516_1935
+      file_format: evtaf
+      data_dirs:
+        - C:\Data\gy6gy6\010417
+        - C:\Data\gy6gy6\010517
