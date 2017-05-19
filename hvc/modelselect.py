@@ -20,8 +20,8 @@ from .parseconfig import parse_config
 from .utils import filter_samples, grab_n_samples_by_song, get_acc_by_label
 
 def select(config_file):
-    """
-    main function that runs model selection
+    """main function that runs model selection.
+    Doesn't return anything, saves model files and summary file.
     
     Parameters
     ----------

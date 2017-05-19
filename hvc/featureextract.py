@@ -87,8 +87,7 @@ def dump_select_config(summary_output_dict,
         yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
                                                output_dir))
 def extract(config_file):
-    """
-    main function that runs feature extraction.
+    """main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
     and extracts features.
     
