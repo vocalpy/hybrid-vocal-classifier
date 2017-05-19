@@ -272,5 +272,5 @@ def extract(config_file):
         dump_select_config(summary_output_dict,
                            timestamp,
                            summary_filename,
-                           output_dir)
+                           todo['output_dir'])
     os.chdir(home_dir)
