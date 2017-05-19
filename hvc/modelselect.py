@@ -42,6 +42,7 @@ def select(config_file):
         output_dir = todo['output_dir'] + 'select_output_' + timestamp
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
+        output_filename = os.path.join(output_dir,'select_output_' + timestamp)
 
         if 'models' in todo:
             model_list = todo['models']
@@ -91,6 +92,9 @@ def select(config_file):
                                     len(range(num_replicates)),
                                     len(model_list)),
                                    dtype='O')
+        train_IDs_arr = np.empty((len(num_train_samples_list),
+                                    len(range(num_replicates))),
+                                   dtype='O')
 
         for num_samples_ind, num_train_samples in enumerate(num_train_samples_list):
             for replicate in range(num_replicates):
@@ -100,6 +104,7 @@ def select(config_file):
                                                    feature_file['labels'],
                                                    num_train_samples,
                                                    song_ID_list=train_song_ID_list)
+                train_IDs_arr[num_samples_ind, replicate] = train_IDs
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
                     if model_dict['model'] == 'svm':
@@ -134,7 +139,7 @@ def select(config_file):
                                                                  pred_labels,
                                                                  feature_file['labelset'])
                         print('average accuracy on test set: {}'.format(avg_acc))
-
+                        avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
                         model_output_dir = os.path.join(output_dir,model_dict['model'])
                         if not os.path.isdir(model_output_dir):
                             os.mkdir(model_output_dir)
@@ -143,3 +148,18 @@ def select(config_file):
                                                                                replicate)
                         model_filename = os.path.join(model_output_dir,model_fname_str)
                         joblib.dump(clf,model_filename)
+
+        # after looping through all samples + replicates
+        output_dict = {
+            'config_file': config_file,
+            'feature_file': todo['feature_file'],
+            'num_train_samples_list': num_train_samples_list,
+            'num_replicates': num_replicates,
+            'model_dict' : model_dict,
+            'test_IDs': test_IDs,
+            'train_IDs_arr': train_IDs_arr,
+            'score_arr' : score_arr,
+            'avg_acc_arr' : avg_acc_arr,
+            'pred_labels_arr' : pred_labels_arr,
+        }
+        joblib.dump(output_dict,output_filename)
