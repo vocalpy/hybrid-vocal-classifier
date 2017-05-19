@@ -106,6 +106,15 @@ def filter_samples(samples,labels,labels_to_filter,song_ID_vec=None,remove=False
         filtered_song_IDs = song_ID_vec[indices]
         return filtered_samples, filtered_labels,filtered_song_IDs
 
+def filter_labels(labels,labelset):
+    """
+    filter_labels(labels,labelset)
+    returns labels with any elements removed that are not in labelset
+    """
+    labels_to_keep = np.in1d(labels,labelset) #returns boolean vector, True where label is in labelset
+    labels = labels[labels_to_keep]
+    return labels
+
 def grid_search(X,y):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector classifier.
