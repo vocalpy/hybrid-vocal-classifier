@@ -150,8 +150,13 @@ def select(config_file):
                         model_feature_list = [feature_file['feature_list'][ind]
                                               for ind in model_dict['feature_indices']]
                         model_output_dict = {
-                            'model_feature_list' : model_feature_list,
-                            'model' : clf
+                            'model_feature_list': model_feature_list,
+                            'model': clf,
+                            'config_file': config_file,
+                            'feature_file': todo['feature_file'],
+                            'test_IDs': test_IDs,
+                            'train_IDs' : train_IDs,
+                            'scaler' : scaler
                         }
                         joblib.dump(model_output_dict,
                                     model_filename)

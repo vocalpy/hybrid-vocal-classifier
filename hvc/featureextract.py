@@ -86,6 +86,7 @@ def dump_select_config(summary_ftr_file_dict,
                                                      hyperparams))
         yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
                                                output_dir))
+
 def extract(config_file):
     """main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
@@ -132,22 +133,24 @@ def extract(config_file):
                 del features_from_all_files
 
             if file_format == 'evtaf':
-                songfiles = glob.glob('*.not.mat')
+                songfiles_list = glob.glob('*.not.mat')
             elif file_format == 'koumura':
-                songfiles = glob.glob('*.wav')
-            num_songfiles = len(songfiles)
+                songfiles_list = glob.glob('*.wav')
+
+            num_songfiles = len(songfiles_list)
             all_labels = []
             song_IDs = []
             song_ID_counter = 0
-            for file_num, songfile in enumerate(songfiles):
-                print('Processing audio file {} of {}.'.format(file_num+1,num_songfiles))
+            for file_num, songfile in enumerate(songfiles_list):
+                print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
                 if file_format == 'evtaf':
-                    songfile = songfile[:-8] # remove .not.mat extension from filename to get name of associated .cbin file
+                    songfile = songfile[
+                               :-8]  # remove .not.mat extension from filename to get name of associated .cbin file
                 ftrs_from_curr_file, labels, ftr_inds = features.extract.from_file(songfile,
-                                                                             todo['file_format'],
-                                                                             todo['feature_list'],
-                                                                             extract_config['spect_params'],
-                                                                             todo['labelset'])
+                                                                                   todo['file_format'],
+                                                                                   todo['feature_list'],
+                                                                                   extract_config['spect_params'],
+                                                                                   todo['labelset'])
                 all_labels.extend(labels)
                 song_IDs.extend([song_ID_counter] * len(labels))
                 song_ID_counter += 1
