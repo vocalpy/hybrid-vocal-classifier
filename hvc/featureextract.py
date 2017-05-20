@@ -31,8 +31,15 @@ MODELS_TEMPLATE = """
     -
       model: {0}
       feature_indices: {1}
-      hyperparameters: {2}
+      hyperparameters:
+        {2}
+"""
 
+SVM_HYPERPARAMS = """C : None
+        gamma : None
+"""
+
+KNN_HYPERPARAMS = """k : None
 """
 
 TODO_TEMPLATE = """  todo_list:
@@ -40,14 +47,7 @@ TODO_TEMPLATE = """  todo_list:
       feature_file : {0}
       output_dir: {1}"""
 
-SVM_HYPERPARAMS = """            C : None
-            gamma : None
-"""
-
-KNN_HYPERPARAMS = """            K : None
-"""
-
-def dump_select_config(summary_output_dict,
+def dump_select_config(summary_ftr_file_dict,
                        timestamp,
                        summary_filename,
                        output_dir):
@@ -55,7 +55,7 @@ def dump_select_config(summary_output_dict,
     
     Parameters
     ----------
-    summary_output_dict : dictionary
+    summary_ftr_file_dict : dictionary
         as defined in featureextract.extract
     timestamp : string
         time stamp from feature files, added to select config filename
@@ -74,8 +74,8 @@ def dump_select_config(summary_output_dict,
     select_config_filename = 'select.config.from_extract_output_' + timestamp + '.yml'
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
-        for model_name, model_ID in summary_output_dict['feature_group_ID_dict'].items():
-            inds = np.flatnonzero(summary_output_dict['feature_group_ID']==model_ID).tolist()
+        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
+            inds = np.flatnonzero(summary_ftr_file_dict['feature_group_ID']==model_ID).tolist()
             inds = ', '.join(str(ind) for ind in inds)
             if model_name == 'svm':
                 hyperparams = SVM_HYPERPARAMS
@@ -162,9 +162,9 @@ def extract(config_file):
             # get dir name without the rest of path so it doesn't have separators in the name
             # because those can't be in filename
             just_dir_name = os.getcwd().split(os.path.sep)[-1]
-            output_filename = os.path.join(output_dir,
+            feature_file = os.path.join(output_dir,
                                            'features_from_' + just_dir_name + '_created_' + timestamp)
-            output_dict = {
+            feature_file_dict = {
                 'labels' : all_labels,
                 'feature_list': todo['feature_list'],
                 'spect_params' : extract_config['spect_params'],
@@ -175,11 +175,11 @@ def extract(config_file):
                 'features' : features_from_all_files
             }
             if 'feature_group_ID' in todo:
-                output_dict['feature_group_ID'] = todo['feature_group_ID']
-                output_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
+                feature_file_dict['feature_group_ID'] = todo['feature_group_ID']
+                feature_file_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
-            joblib.dump(output_dict,
-                        output_filename,
+            joblib.dump(feature_file_dict,
+                        feature_file,
                         compress=3)
 
         ##########################################################
@@ -192,83 +192,83 @@ def extract(config_file):
         if len(ftr_output_files) > 1:
             #make a 'summary' data file
             list_of_output_dicts = []
-            summary_output_dict = {}
-            for output_file in ftr_output_files:
-                output_dict = joblib.load(output_file)
+            summary_ftr_file_dict = {}
+            for feature_file in ftr_output_files:
+                feature_file_dict = joblib.load(feature_file)
 
-                if 'features' not in summary_output_dict:
-                    summary_output_dict['features'] = output_dict['features']
+                if 'features' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['features'] = feature_file_dict['features']
                 else:
-                    summary_output_dict['features'] = np.concatenate((summary_output_dict['features'],
-                                                                         output_dict['features']))
-                if 'labels' not in summary_output_dict:
-                    summary_output_dict['labels'] = output_dict['labels']
+                    summary_ftr_file_dict['features'] = np.concatenate((summary_ftr_file_dict['features'],
+                                                                         feature_file_dict['features']))
+                if 'labels' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['labels'] = feature_file_dict['labels']
                 else:
-                    summary_output_dict['labels'] = summary_output_dict['labels'] + output_dict['labels']
+                    summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] +feature_file_dict['labels']
 
-                if 'spect_params' not in summary_output_dict:
-                    summary_output_dict['spect_params'] = output_dict['spect_params']
+                if 'spect_params' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
                 else:
-                    if output_dict['spect_params'] != summary_output_dict['spect_params']:
+                    if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
                         raise ValueError('mismatch between spect_params in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'labelset' not in summary_output_dict:
-                    summary_output_dict['labelset'] = output_dict['labelset']
+                if 'labelset' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['labelset'] = feature_file_dict['labelset']
                 else:
-                    if output_dict['labelset'] != summary_output_dict['labelset']:
+                    if feature_file_dict['labelset'] != summary_ftr_file_dict['labelset']:
                         raise ValueError('mismatch between labelset in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'file_format' not in summary_output_dict:
-                    summary_output_dict['file_format'] = output_dict['file_format']
+                if 'file_format' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['file_format'] = feature_file_dict['file_format']
                 else:
-                    if output_dict['file_format'] != summary_output_dict['file_format']:
+                    if feature_file_dict['file_format'] != summary_ftr_file_dict['file_format']:
                         raise ValueError('mismatch between file_format in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'bird_ID' not in summary_output_dict:
-                    summary_output_dict['bird_ID'] = output_dict['bird_ID']
+                if 'bird_ID' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['bird_ID'] = feature_file_dict['bird_ID']
                 else:
-                    if output_dict['bird_ID'] != summary_output_dict['bird_ID']:
+                    if feature_file_dict['bird_ID'] != summary_ftr_file_dict['bird_ID']:
                         raise ValueError('mismatch between bird_ID in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'song_IDs' not in summary_output_dict:
-                    summary_output_dict['song_IDs'] = output_dict['song_IDs']
+                if 'song_IDs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
                 else:
-                    curr_last_ID = summary_output_dict['song_IDs'][-1]
-                    tmp_song_IDs = [el + curr_last_ID + 1 for el in output_dict['song_IDs']]
-                    summary_output_dict['song_IDs'].extend(tmp_song_IDs)
+                    curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
+                    tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
+                    summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
 
-                if 'feature_list' not in summary_output_dict:
-                    summary_output_dict['feature_list'] = output_dict['feature_list']
+                if 'feature_list' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
                 else:
-                    if output_dict['feature_list'] != summary_output_dict['feature_list']:
+                    if feature_file_dict['feature_list'] != summary_ftr_file_dict['feature_list']:
                         raise ValueError('mismatch between feature_list in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'feature_group_ID' not in summary_output_dict:
-                    summary_output_dict['feature_group_ID'] = output_dict['feature_group_ID']
+                if 'feature_group_ID' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_group_ID'] = feature_file_dict['feature_group_ID']
                 else:
-                    if any(output_dict['feature_group_ID'] != summary_output_dict['feature_group_ID']):
+                    if any(feature_file_dict['feature_group_ID'] != summary_ftr_file_dict['feature_group_ID']):
                         raise ValueError('mismatch between feature_group_ID in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
-                if 'feature_group_ID_dict' not in summary_output_dict:
-                    summary_output_dict['feature_group_ID_dict'] = output_dict['feature_group_ID_dict']
+                if 'feature_group_ID_dict' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_group_ID_dict'] = feature_file_dict['feature_group_ID_dict']
                 else:
-                    if output_dict['feature_group_ID_dict'] != summary_output_dict['feature_group_ID_dict']:
+                    if feature_file_dict['feature_group_ID_dict'] != summary_ftr_file_dict['feature_group_ID_dict']:
                         raise ValueError('mismatch between feature_group_ID_dict in {} '
-                                         'and other feature files'.format(output_file))
+                                         'and other feature files'.format(feature_file))
 
 
-            joblib.dump(summary_output_dict,
+            joblib.dump(summary_ftr_file_dict,
                         summary_filename)
         else: # if only one feature_file
             os.rename(ftr_output_files[0],
                       summary_filename)
-        dump_select_config(summary_output_dict,
+        dump_select_config(summary_ftr_file_dict,
                            timestamp,
                            summary_filename,
                            todo['output_dir'])

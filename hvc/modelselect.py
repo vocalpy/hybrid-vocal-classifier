@@ -147,7 +147,14 @@ def select(config_file):
                                                                                num_train_samples,
                                                                                replicate)
                         model_filename = os.path.join(model_output_dir,model_fname_str)
-                        joblib.dump(clf,model_filename)
+                        model_feature_list = [feature_file['feature_list'][ind]
+                                              for ind in model_dict['feature_indices']]
+                        model_output_dict = {
+                            'model_feature_list' : model_feature_list,
+                            'model' : clf
+                        }
+                        joblib.dump(model_output_dict,
+                                    model_filename)
 
         # after looping through all samples + replicates
         output_dict = {
