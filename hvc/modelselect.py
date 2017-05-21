@@ -108,37 +108,40 @@ def select(config_file):
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
                     if model_dict['model'] == 'svm':
-                        print('training svm')
+                        print('training svm. ', end='')
                         clf = SVC(C=model_dict['hyperparameters']['C'],
                                       gamma=model_dict['hyperparameters']['gamma'],
                                       decision_function_shape='ovr')
                     elif model_dict['model'] == 'knn':
-                        print('training knn')
+                        print('training knn. ', end='')
                         clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
                                                              'distance')
+
+                    feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                           model_dict['feature_list_indices'])
 
                     if model_dict['model'] in ['svm','knn']:
                         #use 'advanced indexing' to get only sample rows and only feature models
                         features_train = feature_file['features'][train_IDs[:,np.newaxis],
-                                                                  model_dict['feature_indices']]
+                                                                  feature_inds]
                         scaler = StandardScaler()
                         features_train = scaler.fit_transform(features_train)
 
                         features_test = feature_file['features'][test_IDs[:,np.newaxis],
-                                                                 model_dict['feature_indices']]
+                                                                 feature_inds]
                         features_test = scaler.transform(features_test)
 
-                        print('fitting model')
+                        print('fitting model. ',end='')
                         clf.fit(features_train, labels_train)
                         score = clf.score(features_test, labels_test)
-                        print('score on test set: {}'.format(score))
+                        print('score on test set: {:05.2f} '.format(score),end='')
                         score_arr[num_samples_ind, replicate, model_ind] = score
                         pred_labels = clf.predict(features_test)
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
                         acc_by_label, avg_acc = get_acc_by_label(labels_test,
                                                                  pred_labels,
                                                                  feature_file['labelset'])
-                        print('average accuracy on test set: {}'.format(avg_acc))
+                        print(', average accuracy on test set: {:05.2f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
                         model_output_dir = os.path.join(output_dir,model_dict['model'])
                         if not os.path.isdir(model_output_dir):
@@ -148,7 +151,7 @@ def select(config_file):
                                                                                replicate)
                         model_filename = os.path.join(model_output_dir,model_fname_str)
                         model_feature_list = [feature_file['feature_list'][ind]
-                                              for ind in model_dict['feature_indices']]
+                                              for ind in model_dict['feature_list_indices']]
                         model_output_dict = {
                             'model_feature_list': model_feature_list,
                             'model': clf,

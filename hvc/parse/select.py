@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.externals import joblib
 
 VALID_MODELS = set(['knn','svm','neuralnet'])
+VALID_MODEL_DICT_KEYS = set(['model','feature_list_indices','hyperparameters'])
 
 def _validate_model_list(model_list):
     """
@@ -25,7 +26,7 @@ def _validate_model_list(model_list):
                 currently valid: 'knn', 'svm', 'neuralnet'
             'hyperparameters' : dictionary
                 parameters for "training" the model
-            'feature_indices' : list of integers
+            'feature_list_indices' : list of integers
                 features to use from an already generated feature array
 
     Returns
@@ -47,21 +48,28 @@ def _validate_model_list(model_list):
     validated_model_list = copy.deepcopy(model_list)
 
     for ind, model_dict in enumerate(model_list):
+        model_dict_keys = set(model_dict.keys())
+        if not model_dict_keys.issubset(VALID_MODEL_DICT_KEYS):
+            invalid_model_dict_keys = list(model_dict_keys - VALID_MODEL_DICT_KEYS)
+            raise ValueError('Invalid keys in model #{0} from list: {1}'
+                             .format(ind,
+                                     invalid_model_dict_keys))
+
         validated_model_dict = copy.deepcopy(model_dict)
         for model_key, model_val in model_dict.items():
-            if model_key == 'feature_indices':
+            if model_key == 'feature_list_indices':
                 if type(model_val) != list and type(model_val) != str:
-                    raise ValueError('\'feature_indices\' should be a list or string but parsed as a {}'
+                    raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
                                      .format(type(model_val)))
                 if type(model_val) == str:
                     try:
                         model_val = [int(num) for num in model_val.split(',')]
                     except ValueError:
-                        raise ValueError('feature_indices parsed as a string '
+                        raise ValueError('feature_list_indices parsed as a string '
                                          'but could not convert following to list of ints: {}'
                                          .format(model_val))
                 if not all([type(item_val) is int for item_val in model_val]):
-                    raise ValueError('all indices in \'feature_indices\' should be integers')
+                    raise ValueError('all indices in \'feature_list_indices\' should be integers')
                 validated_model_dict[model_key] = model_val
             elif model_key == 'model':
                 if model_val == 'knn':
