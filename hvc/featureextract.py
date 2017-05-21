@@ -30,7 +30,7 @@ SELECT_TEMPLATE = """select:
 MODELS_TEMPLATE = """
     -
       model: {0}
-      feature_indices: {1}
+      feature_list_indices: {1}
       hyperparameters:
         {2}
 """
@@ -74,8 +74,8 @@ def dump_select_config(summary_ftr_file_dict,
     select_config_filename = 'select.config.from_extract_output_' + timestamp + '.yml'
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
-        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
-            inds = np.flatnonzero(summary_ftr_file_dict['feature_group_ID']==model_ID).tolist()
+        for model_name, model_ID in summary_ftr_file_dict['feature_list_group_ID_dict'].items():
+            inds = np.flatnonzero(summary_ftr_file_dict['feature_list_group_ID']==model_ID).tolist()
             inds = ', '.join(str(ind) for ind in inds)
             if model_name == 'svm':
                 hyperparams = SVM_HYPERPARAMS
@@ -144,8 +144,7 @@ def extract(config_file):
             for file_num, songfile in enumerate(songfiles_list):
                 print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
                 if file_format == 'evtaf':
-                    songfile = songfile[
-                               :-8]  # remove .not.mat extension from filename to get name of associated .cbin file
+                    songfile = songfile[:-8]  # remove .not.mat extension from filename to get name of associated .cbin file
                 ftrs_from_curr_file, labels, ftr_inds = features.extract.from_file(songfile,
                                                                                    todo['file_format'],
                                                                                    todo['feature_list'],
@@ -175,11 +174,12 @@ def extract(config_file):
                 'file_format' : todo['file_format'],
                 'bird_ID' : todo['bird_ID'],
                 'song_IDs' : song_IDs,
-                'features' : features_from_all_files
-            }
-            if 'feature_group_ID' in todo:
-                feature_file_dict['feature_group_ID'] = todo['feature_group_ID']
-                feature_file_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
+                'features' : features_from_all_files,
+                'features_arr_column_IDs' : ftr_inds
+                                }
+            if 'feature_list_group_ID' in todo:
+                feature_file_dict['feature_list_group_ID'] = todo['feature_list_group_ID']
+                feature_file_dict['feature_list_group_ID_dict'] = todo['feature_list_group_ID_dict']
 
             joblib.dump(feature_file_dict,
                         feature_file,
@@ -207,7 +207,7 @@ def extract(config_file):
                 if 'labels' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['labels'] = feature_file_dict['labels']
                 else:
-                    summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] +feature_file_dict['labels']
+                    summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] + feature_file_dict['labels']
 
                 if 'spect_params' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
@@ -251,20 +251,30 @@ def extract(config_file):
                         raise ValueError('mismatch between feature_list in {} '
                                          'and other feature files'.format(feature_file))
 
-                if 'feature_group_ID' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['feature_group_ID'] = feature_file_dict['feature_group_ID']
+                if 'feature_list_group_ID' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
                 else:
-                    if any(feature_file_dict['feature_group_ID'] != summary_ftr_file_dict['feature_group_ID']):
-                        raise ValueError('mismatch between feature_group_ID in {} '
+                    if any(feature_file_dict['feature_list_group_ID'] !=
+                                   summary_ftr_file_dict['feature_list_group_ID']):
+                        raise ValueError('mismatch between feature_list_group_ID in {} '
                                          'and other feature files'.format(feature_file))
 
-                if 'feature_group_ID_dict' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['feature_group_ID_dict'] = feature_file_dict['feature_group_ID_dict']
+                if 'feature_list_group_ID_dict' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_list_group_ID_dict'] = \
+                        feature_file_dict['feature_list_group_ID_dict']
                 else:
-                    if feature_file_dict['feature_group_ID_dict'] != summary_ftr_file_dict['feature_group_ID_dict']:
-                        raise ValueError('mismatch between feature_group_ID_dict in {} '
+                    if feature_file_dict['feature_list_group_ID_dict'] != \
+                            summary_ftr_file_dict['feature_list_group_ID_dict']:
+                        raise ValueError('mismatch between feature_list_group_ID_dict in {} '
                                          'and other feature files'.format(feature_file))
 
+                if 'features_arr_column_IDs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
+                else:
+                    if any(feature_file_dict['features_arr_column_IDs'] !=
+                                   summary_ftr_file_dict['features_arr_column_IDs']):
+                        raise ValueError('mismatch between features_arr_column_IDs in {} '
+                                         'and other feature files'.format(feature_file))
 
             joblib.dump(summary_ftr_file_dict,
                         summary_filename)
