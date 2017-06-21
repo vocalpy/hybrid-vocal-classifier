@@ -1,13 +1,14 @@
+import warnings
+
 import numpy as np
 from scipy.io import wavfile
 import scipy.signal
 from scipy.signal import slepian # AKA DPSS, window used for FFT
-#from scipy.signal import spectrogram
 from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
 
-class spectrogram():
+class Spectrogram:
     """class for making spectrograms.
     Abstracts out function calls so user just has to put spectrogram parameters
     in YAML config file.
@@ -17,10 +18,11 @@ class spectrogram():
                  samp_freq=None,
                  nperseg=None,
                  noverlap=None,
+                 window=None,
                  freq_cutoffs=None,
                  filter_func=None,
                  spec_func='scipy',
-                 reference=None):
+                 ref=None):
         """init function
         
         Parameters
@@ -31,22 +33,40 @@ class spectrogram():
             numper of samples per segment for FFT, e.g. 512
         noverlap : integer
             number of overlapping samples in each segment
+        window : string
+            window to apply to segments
+            valid strings are 'Hann', 'dpss', None
+            Hann -- Uses np.Hanning with paramater M (window width) set to value of nperseg
+            dpss -- Discrete prolate spheroidal sequences AKA Slepian.
+                Uses scipy.signal.slepian with M parameter equal to nperseg and
+                width parameter equal to 4/nperseg, as in [2]_.
         freq_cutoffs : two-element list of integers
             limits of frequency band to keep, e.g. [1000,8000]
         filter_func : string
-            filter to apply to raw audio. valid strings are 'dpss' or 'diff', or None
-            'dpss' -- 'Discrete prolate spheroidal (Slepian) sequences'
-            'diff' -- differential filter, literally np.diff applied to signal
-            None -- no filter
+            filter to apply to raw audio. valid strings are 'diff' or None
+            'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
+            None -- no filter, this is the default
         spec_func : string
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
             'scipy' uses scipy.signal.spectrogram,
             'mpl' uses matplotlib.matlab.specgram.
             Default is 'scipy'.
-        reference : string
-            'tachibana','koumura'. 'tachibana' uses spectrogram parameters
-            from [1] and 'koumura' uses spectrogram parameters from [2].
+        ref : string
+            Use spectrogram parameters from a reference.
+            Valid strings are 'tachibana','koumura'.
+            'tachibana' uses spectrogram parameters from [1]_,
+            'koumura' uses spectrogram parameters from [2]_.
+
+        References
+        ----------
+        .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
+        automatic classification of birdsong elements using a linear support vector
+         machine." PloS one 9.3 (2014): e92584.
+
+        .. [2] Koumura, Takuya, and Kazuo Okanoya. "Automatic recognition of element
+        classes and boundaries in the birdsong with variable sequences."
+        PloS one 11.7 (2016): e0159188.
         """
 
         if type(samp_freq) != int:
@@ -56,33 +76,33 @@ class spectrogram():
             self.sampFreq = samp_freq
 
         # check for 'reference' parameter first since it takes precedence
-        if reference is not None:
-            if reference not in ('tachibana','koumra'):
+        if ref is not None:
+            if ref not in ('tachibana','koumura'):
                 raise ValueError('{} is not a valid value for reference argument'.
-                                 format(reference))
-            # either call with 'reference' or with all other params
+                                 format(ref))
+            # throw error if called with 'ref' and with other params
             if any(param is not None
-                   for param in [samp_freq,
-                               nperseg,
+                   for param in [nperseg,
                                noverlap,
                                freq_cutoffs,
-                               filter_func,
-                               spec_func]):
-                raise ValueError('spectrogram class received reference '
-                                 'parameter but also received other parameters, '
-                                 'not clear which to use')
+                               filter_func]):
+                warnings.warn('Spectrogram class received ref '
+                              'parameter but also received other parameters, '
+                              'will over-write those with defaults for reference.')
             else:
-                if reference == 'tachibana':
+                if ref == 'tachibana':
                     self.nperseg = 256
                     self.noverlap = 192
+                    self.window = 'Hann'
                     self.freq_cutoffs = [500,6000]
                     self.filter_func = 'diff'
                     self.spec_func = 'mpl'
-                elif reference == 'koumura':
+                elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
+                    self.window = 'dpss'
                     self.freq_cutoffs = [1000,8000]
-                    self.filter_func = 'dpss'
+                    self.filter_func = None
                     self.spec_func = 'scipy'
 
         else:
@@ -91,7 +111,7 @@ class spectrogram():
                                nperseg,
                                noverlap,
                                filter_func]):
-                raise ValueError('not all parameters set')
+                raise ValueError('not all parameters set for Spectrogram init')
             else:
                 if type(nperseg) != int:
                     raise ValueError('type of nperseg must be int, but is {}'.
@@ -105,6 +125,21 @@ class spectrogram():
                 else:
                     self.noverlap = noverlap
 
+                if type(window) != str:
+                    raise ValueError('type of window must be str, but is {}'.
+                                     format(type(window)))
+                else:
+                    if window not in ['Hann','dpss',None]:
+                        raise ValueError('{} is not a valid specification for window'.
+                                         format(window))
+                    else:
+                        if window == 'Hann':
+                            self.window = np.hanning(self.nperseg)
+                        elif window == 'dpss':
+                            self.window = slepian(self.nperseg, 4 / self.nperseg)
+                        elif window == None:
+                            self.window = None
+
                 if type(freq_cutoffs) != list:
                     raise ValueError('type of freq_cutoffs must be list, but is {}'.
                                      format(type(freq_cutoffs)))
@@ -112,16 +147,16 @@ class spectrogram():
                     raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
                                      format(len(freq_cutoffs)))
                 elif not all([type(val) == int for val in freq_cutoffs]):
-                    raise ValueError('all values in freq_cutoffs list must be ints'.)
+                    raise ValueError('all values in freq_cutoffs list must be ints')
                 else:
                     self.freq_cutoffs = freq_cutoffs
 
                 if type(filter_func) != str:
                     raise ValueError('type of filter_func must be str, but is {}'.
                                      format(type(filter_func)))
-                elif filter_func not in ['dpss','diff',None]:
-                    raise ValueError('string \'{}\' is not valid for filter_func.'
-                                     'Valid values are: \'dpss\',\'diff\', or None.'.
+                elif filter_func not in ['diff',None]:
+                    raise ValueError('string \'{}\' is not valid for filter_func. '
+                                     'Valid values are: \'diff\' or None.'.
                                      format(filter_func))
                 else:
                     self.filter_func = filter_func
@@ -130,8 +165,8 @@ class spectrogram():
                     raise ValueError('type of spec_func must be str, but is {}'.
                                      format(type(spec_func)))
                 elif spec_func not in ['scipy','mpl']:
-                    raise ValueError('string \'{}\' is not valid for filter_func.'
-                                     'Valid values are: \'dpss\',\'diff\', or None.'.
+                    raise ValueError('string \'{}\' is not valid for filter_func. '
+                                     'Valid values are: \'scipy\' or \'mpl\'.'.
                                      format(filter_func))
                 else:
                     self.spec_func = spec_func
@@ -150,33 +185,28 @@ class spectrogram():
         -------
         spect : 2-d numpy array
         freq_bins : 1-d numpy array
-        time_bins 1-d numpy array
+        time_bins : 1-d numpy array
         """
 
-        if self.filter_func == 'dpss':
-            window = slepian(size, 4/size)
-        elif self.filter_func == 'diff':
-            rawsong = np.diff(rawsong)  # Tachibana applied a differential filter_func
-            window = None
-
-        fft_overlap = size - step
+        if self.filter_func == 'diff':
+            rawsong = np.diff(rawsong)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
         if self.spec_func == 'scipy':
             freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
                                                                    sampfreq,
-                                                                   window=window,
-                                                                   nperseg=window.shape[0],
-                                                                   noverlap=fft_overlap)
+                                                                   window=self.window,
+                                                                   nperseg=self.nperseg,
+                                                                   noverlap=self.noverlap)
         elif self.spec_func == 'mpl':
             # note that the matlab specgram function returns the STFT by default
             # whereas the default for the matplotlib.mlab version of specgram
             # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
             # to match, mode must be set to 'complex'
             spect, freq_bins, time_bins = specgram(rawsong,
-                                                   NFFT=nfft,
+                                                   NFFT=self.nperseg,
                                                    Fs=samp_freq,
-                                                   window=np.hanning(nfft),
-                                                   noverlap=overlap,
+                                                   window=self.window,
+                                                   noverlap=self.noverlap,
                                                    mode='complex')
         #below, I set freq_bins to >= freq_cutoffs
         #so that Koumura default of [1000,8000] returns 112 freq. bins
