@@ -1,6 +1,6 @@
 # hybrid-vocal-classifier
 Python package that automates segmenting and labeling vocalizations. 
-The main application of the package is to birdsong behavioral experiments but long-term goals are to make it easy to segment and label any vocalization.
+The main application of the package is to birdsong, but the long-term goal is to make it easy to segment and label any vocalization.
 
 BSD License.
 
@@ -11,10 +11,10 @@ In neuroscience, songbirds provide a model system to understand how the brain le
 
 Often neuroscientists carry out behavioral experiments to investigate specific aspects of how the songbird brain learns and produces song. To analyze results from these experiments, the scientists must "label" the elements of birdsong by hand.
 
-Many methods have been proposed to automate the process of labeling birdsong. Recent papers provide code and datasets, but it is often challenging for researchers to install and work with several code bases, then decide which method works best.
+Many methods have been proposed to automate the process of labeling birdsong. Recent papers provide code and datasets, but it is often challenging for researchers to install and work with several codebases, then decide which method works best. The hybrid-vocal-classifier package addresses these issues.
 
 ### Advantages of hybrid-vocal-classifier:
-+ completely open-source, free like free beer and like free speech
++ completely open-source, free
 + makes it easy to compare multiple machine learning algorithms
 + almost no coding required, configurable with text files
 + built on top of Python packages road-tested by the greater data-science community
@@ -25,7 +25,7 @@ Many methods have been proposed to automate the process of labeling birdsong. Re
   - [keras](https://keras.io/)
 
 ## More about the science
-Songbirds learn their song during a critical period in development from an adult "tutor". Each individual bird has its own unique song, often very similar to the song of the bird that tutored it.
+Songbirds provide a model system to understand how the brain learns and produces speech and other sequential motor skills acquired by imitation (like playing the piano or shooting a basketball). Songbirds learn their song during a critical period in development from an adult "tutor". Each individual bird has its own unique song, often very similar to the song of the bird that tutored it.
 The songbird brains contain a specialized network of areas required for learning and producing song.
 Although this network, known as the song system, is found only in songbird brains, it has evolved on top of the basic floor plan that appears in all vertebrate brains, including humans.
 By understanding the song system, we can understand more about our own brain.
