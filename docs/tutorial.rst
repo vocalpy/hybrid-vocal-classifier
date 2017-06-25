@@ -16,3 +16,11 @@ tutorial
 
     # predict classes for new data
     hvc.predict('predict_config.yml')
+
+In depth tutorials
+------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorial/writing_extract_yaml
