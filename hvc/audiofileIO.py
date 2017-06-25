@@ -23,7 +23,7 @@ class Spectrogram:
                  filter_func=None,
                  spec_func='scipy',
                  ref=None):
-        """init function
+        """Spectrogram.__init__ function
         
         Parameters
         ----------
@@ -114,19 +114,19 @@ class Spectrogram:
                 raise ValueError('not all parameters set for Spectrogram init')
             else:
                 if type(nperseg) != int:
-                    raise ValueError('type of nperseg must be int, but is {}'.
+                    raise TypeError('type of nperseg must be int, but is {}'.
                                      format(type(nperseg)))
                 else:
                     self.nperseg = nperseg
 
                 if type(noverlap) != int:
-                    raise ValueError('type of noverlap must be int, but is {}'.
+                    raise TypeError('type of noverlap must be int, but is {}'.
                                      format(type(noverlap)))
                 else:
                     self.noverlap = noverlap
 
                 if type(window) != str:
-                    raise ValueError('type of window must be str, but is {}'.
+                    raise TypeError('type of window must be str, but is {}'.
                                      format(type(window)))
                 else:
                     if window not in ['Hann','dpss',None]:
@@ -141,7 +141,7 @@ class Spectrogram:
                             self.window = None
 
                 if type(freq_cutoffs) != list:
-                    raise ValueError('type of freq_cutoffs must be list, but is {}'.
+                    raise TypeError('type of freq_cutoffs must be list, but is {}'.
                                      format(type(freq_cutoffs)))
                 elif len(freq_cutoffs) != 2:
                     raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
@@ -152,7 +152,7 @@ class Spectrogram:
                     self.freq_cutoffs = freq_cutoffs
 
                 if type(filter_func) != str:
-                    raise ValueError('type of filter_func must be str, but is {}'.
+                    raise TypeError('type of filter_func must be str, but is {}'.
                                      format(type(filter_func)))
                 elif filter_func not in ['diff',None]:
                     raise ValueError('string \'{}\' is not valid for filter_func. '
@@ -162,7 +162,7 @@ class Spectrogram:
                     self.filter_func = filter_func
 
                 if type(spec_func) != str:
-                    raise ValueError('type of spec_func must be str, but is {}'.
+                    raise TypeError('type of spec_func must be str, but is {}'.
                                      format(type(spec_func)))
                 elif spec_func not in ['scipy','mpl']:
                     raise ValueError('string \'{}\' is not valid for filter_func. '
@@ -458,8 +458,31 @@ class song:
     used for feature extraction
     """
 
-    def __init__(self,songfile,file_format,spect_params=None):
-        self.file = songfile
+    def __init__(self,
+                 filename,
+                 file_format,
+                 spect_params=None,
+                 threshold=None):
+        """__init__ function for song object
+
+        Parameters
+        ----------
+        filename : string
+            name of file
+        file_format : string
+            valid formats are 'evtaf','koumura'
+        spect_params : dictionary
+            keys should be parameters for Spectrogram.__init__,
+            see the docstring for those keys.
+        threshold : integer
+            amplitude at which to threshold, default is None.
+            if file not found that contains onsets and offsets,
+            this value is used as threshold above which
+            amplitude crossing are considered syllables.
+            If file is found and this value is supplied,
+            it will be ignored.
+        """
+        self.filename = filename
         self.fileFormat = file_format
         self.spectParams = spect_params
         if file_format == 'evtaf':
@@ -472,7 +495,7 @@ class song:
                 spect, time_bins, freq_bins = make_song_spect(dat,
                                                               samp_freq,
                                                               spect_params)
-                onsets, offsets = segment_song(amp, time_bins)
+                onsets, offsets = segment_song(threshold, time_bins)
                 song_dict['onsets'] = onsets
                 song_dict['offsets'] = offsets
 
@@ -521,16 +544,13 @@ class song:
                                        labels_to_use)
 
     def make_syl_spects(self, spect_params, syl_spect_width=-1):
-        """
-        Make spectrograms from syllables.
+        """Make spectrograms from syllables.
         This method isolates making spectrograms from selecting syllables
         to use so that spectrograms can be loaded 'lazily', e.g., if only
         duration features are being extracted that don't require spectrograms.
 
         Parameters
         ----------
-        self : 
-                    
         spect_params: dictionary
             with keys 'nperseg','noverlap','freq_cutoffs', and 'samp_freq'.
             Note that 'samp_freq' is the **expected** sampling frequency and the
@@ -554,9 +574,9 @@ class song:
             raise ValueError('Must set syls_to_use by calling set_syls_to_use method '
                              'before calling get_syls.')
 
-        if self.file_format == 'evtaf':
+        if self.fileFormat == 'evtaf':
             dat, samp_freq = evfuncs.load_cbin(self.file)
-        elif self.file_format == 'koumura':
+        elif self.fileFormat == 'koumura':
             samp_freq, dat = wavfile.read(self.file)
 
         if samp_freq != spect_params['samp_freq']:
