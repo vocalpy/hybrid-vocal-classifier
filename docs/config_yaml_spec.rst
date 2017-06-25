@@ -1,4 +1,7 @@
-# spec for yaml config files
+==========================
+spec for yaml config files
+==========================
+
 This document specifies the structure of HVC config files written in yaml.
 It is a painfully dry document that exists to guide the project code,
  not to teach someone how to write HVC config files. For a gentle

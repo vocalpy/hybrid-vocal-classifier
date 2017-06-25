@@ -6,3 +6,4 @@ MANIFEST
 .ipynb_checkpoints
 dir_names.txt
 .idea/
+docs/_build

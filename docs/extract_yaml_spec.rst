@@ -1,4 +1,7 @@
-# spec for YAML files to configure feature extraction
+===================================================
+spec for YAML files to configure feature extraction
+===================================================
+
 This document specifies the structure of HVC config files written in
 YAML. It is a painfully dry document that exists to guide the project
 code, not to teach someone how to write the files. For a gentle

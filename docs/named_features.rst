@@ -1,7 +1,12 @@
-# named features
+==============
+named features
+==============
+
 These features are pre-defined and can be referred to by name in the `feature_list` of YAML files for `extract`.
 
- ## feature group `Tachibana`:
+feature group `Tachibana`:
+==========================
+
  - `mean_spectrum`
  - `mean_delta_spectrum` : 5-order delta of spectrum
  - `mean_cepstrum`

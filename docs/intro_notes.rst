@@ -1,10 +1,27 @@
 # intro notes
 
-`hybrid-vocal-classifier` (or `HVC` for short) is a Python package whose
+`hybrid-vocal-classifier` (or `HVC` for short) is a Python library whose
 goal is to make it easy to apply machine learning algorithms that
 automatically classify the elements of birdsong, often referred to as
  syllables.
 
+Writing scripts that run `HVC` requires almost no coding.
+The user writes configuration files in YAML, a language for specifying
+data structures. YAML is meant to be easy for humans to read and write.
+Most users will only have to copy the example .yml files and then
+change a couple of parameters.
+
+Here's how you'd run an analysis using `HVC`:
+
+```Python
+import hvc
+
+hvc.extract('extract_config.yml')
+hvc.select('select_config.yml')
+hvc.predict('predict_config.yml')
+```
+
+## But, why?
 Scientists that study birdsong at the level of individual birds often
 have to label the syllables of each bird's song by hand in order to get
  results.
@@ -23,25 +40,11 @@ is robust across the songs of many different individuals from a species.
 As stated, the primary goal of the `HVC` package is to make it easier
 for any scientist to apply machine-learning algorithms to birdsong.
 
-To achieve this goal, `HVC` uses configuration files written in YAML,
-a data-serialization language* with a design that emphasizes human-
-readable formatting.
-
-Here's how you'd run an analysis using `HVC`:
-
-```Python
-import hvc
-
-hvc.extract('extract_config.yml')
-hvc.select('select_config.yml')
-hvc.predict('predict_config.yml')
-```
-
 The secondary goal of the package is to facilitate comparisons of
 different machine learning algorithms. Several groups have published
 on various algorithms but little work has been done to compare accuracy.
 
-A final goal is to entice the field of artifical intelligence to study
+A final goal is to entice the field of artificial intelligence to study
 birdsong. Birdsong presents an ideal test-bed to experiment with machine
 learning algorithms that segment time-series data, i.e., that decide at
 what time point each segment starts and stops. Unlike in speech,
