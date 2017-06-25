@@ -4,10 +4,9 @@ spec for yaml config files
 
 This document specifies the structure of HVC config files written in yaml.
 It is a painfully dry document that exists to guide the project code,
- not to teach someone how to write HVC config files. For a gentle
-  introduction to writing config files, please see the
-   [intro notes](intro_notes.md) and
-[writing HVC config files](writing_config_files.md).
+not to teach someone how to write HVC config files. For a gentle
+introduction to writing config files, please see the
+:doc:`writing_config_files`.
 
 Essentially, each config file specifies a list of `jobs`. Each `job` in
 a list will typically correspond to data files from one bird.
@@ -35,7 +34,8 @@ global_config:
         syl_spect_width : 300
 ```
 
-## `model_selection`
+`model_selection`
+-----------------
 
 `model_selection` is a list of `jobs`. Each `job` is a dictionary.
  Hence `model_selection` is a list of dictionaries.
@@ -89,7 +89,8 @@ model_selection: # list of dictionaries, dash without key next to is a list item
 
 ```
 
-## `prediction`
+`prediction`
+------------
 
 Like `model_selection`, the `prediction` section is a list of `job`
 dictionaries.
@@ -107,7 +108,9 @@ prediction:
       model_file : gr41rd51_svm.pkl
 ```
 
-## parameters
+parameters
+----------
+
 The parameters listed below can appear in either `global_config` or a `job`.
  - spect_params :
     - samp_freq : integer

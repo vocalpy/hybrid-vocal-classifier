@@ -6,22 +6,22 @@
 hybrid-vocal-classifier (HVC)
 =============================
 
-`hybrid-vocal-classifier` (or `HVC` for short) makes it easy to
- segment and classify vocalizations with machine learning algorithms,
+hybrid-vocal-classifier (or HVC for short) makes it easy to
+segment and classify vocalizations with machine learning algorithms,
 and to compare the performance of different algorithms.
 
 The main application is for scientists studying birdsong.
 (You can read more about that on the :doc:`more_about` page.)
 
-Writing scripts with `HVC` requires almost no coding.
+Writing scripts with HVC requires almost no coding.
 The user writes configuration files in YAML, a language for specifying
 data structures. YAML is meant to be easy for humans to read and write.
 Most users will only have to copy the example .yml files and then
 change a couple of parameters.
 
-Here's how you'd run an analysis using `HVC`:
+Here's how you'd run an analysis using HVC:
 
-.. codeblock:: python
+.. code-block:: python
 
    import hvc
 
@@ -32,13 +32,23 @@ Here's how you'd run an analysis using `HVC`:
 Advantages of hybrid-vocal-classifier:
 --------------------------------------
 
-+ completely open-source, free
++ completely open source, free
 + makes it easy to compare multiple machine learning algorithms
 + almost no coding required, configurable with text files
 + built on top of Python packages road-tested by the greater data-science community:
-   `numpy<http://www.numpy.org/>`_, `scipy<https://www.scipy.org/scipylib/index.html>`_,
-   `matplotlib<https://matplotlib.org/>`_, `scikit-learn<http://scikit-learn.org/stable/>`_,
-   `keras<https://keras.io/>`_
+   `numpy <http://www.numpy.org/>`_ , `scipy <https://www.scipy.org/scipylib/index.html>`_ ,
+   `matplotlib <https://matplotlib.org/>`_ , `scikit-learn <http://scikit-learn.org/stable/>`_ ,
+   `keras <https://keras.io/>`_
+
+Documentation
+-------------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorial
+   api_ref/modules
+   development
 
 Installation
 ------------
@@ -64,17 +74,8 @@ License
 
 BSD license.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   tutorial
-   reference
-   development
-
-
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
