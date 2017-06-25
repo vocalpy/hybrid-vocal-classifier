@@ -1,3 +1,7 @@
+"""
+test audiofileIO module
+"""
+
 import pytest
 import numpy as np
 import hvc.audiofileIO

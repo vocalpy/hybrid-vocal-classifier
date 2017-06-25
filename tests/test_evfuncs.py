@@ -1,3 +1,6 @@
+"""
+test evfuncs module
+"""
 import numpy as np
 
 import hvc.evfuncs
