@@ -15,11 +15,10 @@ class Spectrogram:
     """
 
     def __init__(self,
-                 samp_freq=None,
                  nperseg=None,
                  noverlap=None,
-                 window=None,
                  freq_cutoffs=None,
+                 window=None,
                  filter_func=None,
                  spec_func='scipy',
                  ref=None):
@@ -27,12 +26,12 @@ class Spectrogram:
         
         Parameters
         ----------
-        samp_freq : integer
-            sampling frequency in Hz, e.g. 32000
         nperseg : integer
             numper of samples per segment for FFT, e.g. 512
         noverlap : integer
             number of overlapping samples in each segment
+        freq_cutoffs : two-element list of integers
+            limits of frequency band to keep, e.g. [1000,8000]
         window : string
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
@@ -40,8 +39,6 @@ class Spectrogram:
             dpss -- Discrete prolate spheroidal sequences AKA Slepian.
                 Uses scipy.signal.slepian with M parameter equal to nperseg and
                 width parameter equal to 4/nperseg, as in [2]_.
-        freq_cutoffs : two-element list of integers
-            limits of frequency band to keep, e.g. [1000,8000]
         filter_func : string
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
@@ -53,8 +50,8 @@ class Spectrogram:
             'mpl' uses matplotlib.matlab.specgram.
             Default is 'scipy'.
         ref : string
+            {'tachibana','koumura'}
             Use spectrogram parameters from a reference.
-            Valid strings are 'tachibana','koumura'.
             'tachibana' uses spectrogram parameters from [1]_,
             'koumura' uses spectrogram parameters from [2]_.
 
@@ -68,12 +65,6 @@ class Spectrogram:
         classes and boundaries in the birdsong with variable sequences."
         PloS one 11.7 (2016): e0159188.
         """
-
-        if type(samp_freq) != int:
-            raise ValueError('type of samp_freq must be int, but is {}'.
-                             format(type(samp_freq)))
-        else:
-            self.sampFreq = samp_freq
 
         # check for 'reference' parameter first since it takes precedence
         if ref is not None:
@@ -107,10 +98,9 @@ class Spectrogram:
 
         else:
             if any(param is None
-                   for param in [samp_freq,
-                               nperseg,
-                               noverlap,
-                               filter_func]):
+                   for param in [nperseg,
+                                 noverlap,
+                                 freq_cutoffs]):
                 raise ValueError('not all parameters set for Spectrogram init')
             else:
                 if type(nperseg) != int:
@@ -125,7 +115,7 @@ class Spectrogram:
                 else:
                     self.noverlap = noverlap
 
-                if type(window) != str:
+                if window is not None and type(window) != str:
                     raise TypeError('type of window must be str, but is {}'.
                                      format(type(window)))
                 else:
@@ -151,7 +141,7 @@ class Spectrogram:
                 else:
                     self.freq_cutoffs = freq_cutoffs
 
-                if type(filter_func) != str:
+                if filter_func is not None and type(filter_func) != str:
                     raise TypeError('type of filter_func must be str, but is {}'.
                                      format(type(filter_func)))
                 elif filter_func not in ['diff',None]:
@@ -192,26 +182,41 @@ class Spectrogram:
             rawsong = np.diff(rawsong)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
         if self.spec_func == 'scipy':
-            freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
-                                                                   sampfreq,
-                                                                   window=self.window,
-                                                                   nperseg=self.nperseg,
-                                                                   noverlap=self.noverlap)
+            if self.window:
+                freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
+                                                                       samp_freq,
+                                                                       window=self.window,
+                                                                       nperseg=self.nperseg,
+                                                                       noverlap=self.noverlap)
+            else:
+                freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
+                                                                       samp_freq,
+                                                                       nperseg=self.nperseg,
+                                                                       noverlap=self.noverlap)
+
         elif self.spec_func == 'mpl':
             # note that the matlab specgram function returns the STFT by default
             # whereas the default for the matplotlib.mlab version of specgram
             # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
             # to match, mode must be set to 'complex'
-            spect, freq_bins, time_bins = specgram(rawsong,
-                                                   NFFT=self.nperseg,
-                                                   Fs=samp_freq,
-                                                   window=self.window,
-                                                   noverlap=self.noverlap,
-                                                   mode='complex')
+            if self.window:
+                spect, freq_bins, time_bins = specgram(rawsong,
+                                                       NFFT=self.nperseg,
+                                                       Fs=samp_freq,
+                                                       window=self.window,
+                                                       noverlap=self.noverlap,
+                                                       mode='complex')
+            else:
+                spect, freq_bins, time_bins = specgram(rawsong,
+                                                       NFFT=self.nperseg,
+                                                       Fs=samp_freq,
+                                                       noverlap=self.noverlap,
+                                                       mode='complex')
+
         #below, I set freq_bins to >= freq_cutoffs
         #so that Koumura default of [1000,8000] returns 112 freq. bins
-        f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) &
-                            (freq_bins < freq_cutoffs[1]))[0] #returns tuple
+        f_inds = np.nonzero((freq_bins >= self.freq_cutoffs[0]) &
+                            (freq_bins < self.freq_cutoffs[1]))[0] #returns tuple
         freq_bins = freq_bins[f_inds]
         spect = spect[f_inds,:]
         spect = np.log10(spect) # log transform to increase range
@@ -302,7 +307,9 @@ def compute_amp(spect):
 
     return np.sum(spect,axis=0)
 
-def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.002):
+def segment_song(amp,
+                 time_bins,
+                 segment_params=None):
     """Divides songs into segments based on threshold crossings of amplitude.
     Returns onsets and offsets of segments, corresponding (hopefully) to syllables in a song.
     Parameters
@@ -311,12 +318,14 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
         amplitude of power spectral density. Returned by compute_amp.
     time_bins : 1-d numpy array
         time in s, must be same length as log amp. Returned by make_song_spect.
-    threshold : scalar, integer
-        value above which amplitude is considered part of a segment. default is 5000.
-    min_syl_dur : scalar, float
-        minimum duration of a syllable. default is 0.02, i.e. 20 ms.
-    min_silent_dur : scalar, float
-        minimum duration of silent gap between syllables. default is 0.002, i.e. 2 ms.
+    segment_params : dict
+        with the following keys
+            threshold : int
+                value above which amplitude is considered part of a segment. default is 5000.
+            min_syl_dur : float
+                minimum duration of a segment. default is 0.02, i.e. 20 ms.
+            min_silent_dur : float
+                minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
 
     Returns
     -------
@@ -328,7 +337,11 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     To get that segment of the spectrogram, you'd take spect[:,onsets[0]:offsets[0]]
     """
 
-    above_th = amp > threshold
+    if segment_params is None:
+        segment_params = {'threshold' : 5000,
+                          'min_syl_dur' : 0.2,
+                          'min_silent_dur' : 0.02}
+    above_th = amp > segment_params['threshold']
     h = [1, -1] 
     above_th_convoluted = np.convolve(h,above_th) # convolving with h causes:
     # +1 whenever above_th changes from 0 to 1
@@ -338,16 +351,16 @@ def segment_song(amp,time_bins,threshold=5000,min_syl_dur=0.02,min_silent_dur=0.
     
     #get rid of silent intervals that are shorter than min_silent_dur
     silent_gap_durs = onsets[1:] - offsets[:-1] # duration of silent gaps
-    keep_these = np.nonzero(silent_gap_durs > min_silent_dur)
+    keep_these = np.nonzero(silent_gap_durs > segment_params['min_silent_dur'])
     onsets = onsets[keep_these]
     offsets = offsets[keep_these]
     
     #eliminate syllables with duration shorter than min_syl_dur
     syl_durs = offsets - onsets
-    keep_these = np.nonzero(syl_durs > min_syl_dur)
+    keep_these = np.nonzero(syl_durs > segment_params['min_syl_dur'])
     onsets = onsets[keep_these]
-    offsets = offsets[keep_these]    
-    
+    offsets = offsets[keep_these]
+
     return onsets, offsets
 
 class syllable:
@@ -389,10 +402,12 @@ class syllable:
         self.freqBins = freq_bins
         self.timeBins = time_bins
 
-def _make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,freq_cutoffs=[500,6000]):
-    """
-    internal function that makes spectrograms for syllables
-    Defaults are as in [1]_.
+def _make_syl_spect(syl_audio,
+                    samp_freq,
+                    nperseg,
+                    overlap,
+                    freq_cutoffs):
+    """internal function that makes spectrograms for syllables
 
     Parameters
     ----------
@@ -402,53 +417,28 @@ def _make_syl_spect(syl_audio,samp_freq,nfft=256,overlap=192,freq_cutoffs=[500,6
         sampling frequency
     nfft : integer
         number of samples for each Fast Fourier Transform (FFT)
-        in spectrogram. Default is 256.
+        in spectrogram.
     overlap : integer
-        number of overlapping samples in each FFT. Default is 192.
+        number of overlapping samples in each FFT.
     freq_cutoffs: list
         two-element list of integers, minimum and maximum frequency in FFT
 
     Returns
     -------
     syl_spect : object with properties as defined in the syl class
-
-    References
-    ----------
-    .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
-    automatic classification of birdsong elements using a linear support vector
-     machine." PloS one 9.3 (2014): e92584.
-
     """
-    # for below, need to have a 'filter' option in extract files
-    # and then have named_spec_params where one would be 'Tachibana', another 'Koumura', another 'Sober', etc.
 
-    # spectrogram and cepstrum
-    syl_diff = np.diff(syl_audio) # Tachibana applied a differential filter
-    # note that the matlab specgram function returns the STFT by default
-    # whereas the default for the matplotlib.mlab version of specgram
-    # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
-    # to match, mode must be set to 'complex'
-    power,freq_bins,time_bins = specgram(syl_diff,
-                                         NFFT=nfft,
-                                         Fs=samp_freq,
-                                         window=np.hanning(nfft),
-                                         noverlap=overlap,
-                                         mode='complex')
+    spect = Spectrogram(samp_freq,
+                        nperseg,
+                        noverlap,
+                        freq_cutoffs)
+    power,freq_bins,time_bins = spect.make(syl_audio)
 
-    f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) &
-                        (freq_bins < freq_cutoffs[1]))[0] #returns tuple
-    freq_bins = freq_bins[f_inds]
-    power = power[f_inds,:]
-    power = np.log10(power) # log transform to increase range
-
-    #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
-    power = np.flipud(power)
-    freq_bins = np.flipud(freq_bins)
     return syllable(syl_audio,
                     samp_freq,
                     power,
-                    nfft,
-                    overlap,
+                    nperseg,
+                    noverlap,
                     freq_cutoffs,
                     freq_bins,
                     time_bins)
@@ -462,7 +452,7 @@ class song:
                  filename,
                  file_format,
                  spect_params=None,
-                 threshold=None):
+                 segment_params=None):
         """__init__ function for song object
 
         Parameters
@@ -470,11 +460,11 @@ class song:
         filename : string
             name of file
         file_format : string
-            valid formats are 'evtaf','koumura'
+            {'evtaf','koumura'}
         spect_params : dictionary
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
-        threshold : integer
+        segment_params : dictionary
             amplitude at which to threshold, default is None.
             if file not found that contains onsets and offsets,
             this value is used as threshold above which
@@ -485,29 +475,35 @@ class song:
         self.filename = filename
         self.fileFormat = file_format
         self.spectParams = spect_params
+        if segment_params:
+            self.segmentParams = segment_params
         if file_format == 'evtaf':
-            dat, samp_freq = evfuncs.load_cbin(songfile)
+            dat, samp_freq = evfuncs.load_cbin(filename)
             try:
-                song_dict = evfuncs.load_notmat(songfile)
+                song_dict = evfuncs.load_notmat(filename)
+                self.labels = song_dict['labels']
             except FileNotFoundError:
                 # if notmat not found, segment and get onsets and offsets
                 song_dict = {}
                 spect, time_bins, freq_bins = make_song_spect(dat,
                                                               samp_freq,
                                                               spect_params)
-                onsets, offsets = segment_song(threshold, time_bins)
+                amp = compute_amp(spect)
+                onsets, offsets = segment_song(amp,
+                                               time_bins,
+                                               segment_params)
                 song_dict['onsets'] = onsets
                 song_dict['offsets'] = offsets
+                self.labels = '-' * len(onsets)
 
             self.onsets_s = song_dict['onsets'] / 1000
             self.offsets_s = song_dict['offsets'] / 1000
             self.onsets_Hz = np.round(self.onsets_s * samp_freq).astype(int)
             self.offsets_Hz = np.round(self.offsets_s * samp_freq).astype(int)
 
-            self.labels = song_dict['labels']
         elif file_format == 'koumura':
-            samp_freq, dat = wavfile.read(songfile)
-            song_dict = koumura.load_song_annot(songfile)
+            samp_freq, dat = wavfile.read(filename)
+            song_dict = koumura.load_song_annot(filename)
             self.onsets_Hz = song_dict['onsets']
             self.offsets_Hz = song_dict['offsets']
             self.onsets_s = self.onsets_Hz / samp_freq
@@ -551,11 +547,23 @@ class song:
 
         Parameters
         ----------
-        spect_params: dictionary
-            with keys 'nperseg','noverlap','freq_cutoffs', and 'samp_freq'.
+        spect_params: dict
+            with the following keys
+                    sampfreq : integer
+                        sampling frequency in Hz, e.g. 32000
+                    size: integer
+                        size of FFT window, default is 512 samples
+                    step: integer
+                        number of samples between the start of each window, default is 32
+                        i.e. if size == step then there will be no overlap of windows
+                    freq_range: 2-element list
+                        range of frequencies to return. Frequencies
+                        less than the first element or greater than the second are discarded.
+
             Note that 'samp_freq' is the **expected** sampling frequency and the
-            function throws an error if the actual sampling frequency of cbin does
+            function throws an error if the actual sampling frequency of an audio file does
             not match the expected one.
+
         syl_spect_duration : int
             Optional parameter to set constant duration for each spectrogram of a
             syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
@@ -575,9 +583,9 @@ class song:
                              'before calling get_syls.')
 
         if self.fileFormat == 'evtaf':
-            dat, samp_freq = evfuncs.load_cbin(self.file)
+            dat, samp_freq = evfuncs.load_cbin(self.filename)
         elif self.fileFormat == 'koumura':
-            samp_freq, dat = wavfile.read(self.file)
+            samp_freq, dat = wavfile.read(self.filename)
 
         if samp_freq != spect_params['samp_freq']:
             raise ValueError(
@@ -590,6 +598,10 @@ class song:
             syl_spect_width_Hz = np.round(syl_spect_width * samp_freq)
 
         all_syls = []
+
+        spect = Spectrogram(nperseg=spect_params['nperseg'],
+                            noverlap=spect_params['noverlap'],
+                            freq_cutoffs=spect_params['freq_cutoffs'])
 
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
@@ -621,11 +633,19 @@ class song:
                     offset + right_width]
                 else:
                     syl_audio = dat[onset:offset]
-                curr_syl = _make_syl_spect(syl_audio,
-                                           samp_freq,
-                                           nfft=spect_params['nperseg'],
-                                           overlap=spect_params['noverlap'],
-                                           freq_cutoffs =spect_params['freq_cutoffs'])
+
+                power, freq_bins, time_bins = spect.make(syl_audio,
+                                                         samp_freq)
+
+                curr_syl = syllable(syl_audio,
+                                    spect_params['samp_freq'],
+                                    power,
+                                    spect_params['nperseg'],
+                                    spect_params['noverlap'],
+                                    spect_params['freq_cutoffs'],
+                                    freq_bins,
+                                    time_bins)
+
                 all_syls.append(curr_syl)
 
         self.syls = all_syls
