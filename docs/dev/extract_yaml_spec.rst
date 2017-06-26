@@ -6,9 +6,50 @@ This document specifies the structure of HVC config files written in
 YAML. It is a painfully dry document that exists to guide the project
 code, not to teach someone how to write the files. For a gentle
 introduction to writing the files, please see
-[writing config files for feature extraction](writing_extract_yaml.md) .
+:doc:`writing_extract_yaml.md`.
 
-`extract` config files may define the following keys:
+Every `extract.config.yml` file has exactly one **required** key at the top level:
+   `todo_list`: list of dicts
+      list where each element is a dict.
+      each dict sets parameters for a 'job', typically
+      data associated with one set of vocalizations.
+
+`extract.config.yml` files *may* optionally define other keys at the same level as `todo_list`.
+When defined at the same level as `todo_list` they are considered `default`.
+If an element in `todo_list` defines different values for any of these keys,
+the value assigned in that element takes precedence over the `default` value:
+   spect_params: dict
+      spectrogram parameters, defined below
+    segment_params: dict
+        parameters for dividing audio into segments, defined below
+
+Every dict in a `todo_list` has the following **required** keys:
+  bird_ID : str
+    for example, `bl26lb16`
+
+  file_format: str
+    {'evtaf','koumura'}
+
+  data_dirs: list of str
+    directories containing data
+    each str must be a valid directory that can be found on the path
+    for example
+    ```
+        - C:\DATA\bl26lb16\pre_surgery_baseline\041912
+        - C:\DATA\bl26lb16\pre_surgery_baseline\042012
+    ```
+
+  output_dir: str
+    directory in which to save output
+    if it doesn't exist, HVC will create it
+    for example, `C:\DATA\bl26lb16\`
+
+  labelset: str
+    string of labels corresponding to labeled segments
+    from which features should be extracted.
+    Segments with labels not in this str will be ignored.
+    Converted to a list but not necessary to enter as a list.
+    For example, `iabcdef`
 
 <table>
   <tbody>
@@ -56,7 +97,8 @@ introduction to writing the files, please see
   </tbody>
 </table>
 
-## example `extract_config.yml`
+example `extract_config.yml`
+----------------------------
 
 ```YAML
 spect_params :

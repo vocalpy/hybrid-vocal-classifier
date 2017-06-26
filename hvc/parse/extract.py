@@ -16,14 +16,100 @@ from hvc.features.extract import multiple_syl_features_switch_case_dict
 VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
                  list(multiple_syl_features_switch_case_dict.keys())
 
-path = os.path.abspath(__file__)
-dir_path = os.path.dirname(path)
+path = os.path.abspath(__file__) # get the path of this file
+dir_path = os.path.dirname(path) # but then just take the dir
 
 with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
 with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+
+################################################################
+# validation functions for individual configuration parameters #
+################################################################
+valid_spect_param_keys = set(['samp_freq',
+                              'nperseg',
+                              'noverlap',
+                              'freq_cutoffs'])
+
+def validate_spect_params(spect_params):
+    if type(spect_params) != dict:
+        raise TypeeError('value for key \'spect_params\' in config file did '
+                         'not parse as a dictionary of parameters, '
+                         'it parsed as {}. Check file formatting.'
+                         .format(spect_params))
+
+    if set(spect_params.keys()) != valid_spect_param_keys:
+        raise KeyError('unrecognized keys in spect_params dictionary')
+    else:
+        for sp_key, sp_val in spect_params.items():
+            if sp_key == 'samp_freq' or sp_key == 'window_size' or sp_key == 'window_step':
+                if type(sp_val) != int:
+                    raise ValueError('{} in spect_params should be an integer'.format(sp_key))
+            elif sp_key == 'freq_cutoffs':
+                if len(sp_val) != 2:
+                    raise ValueError('freq_cutoffs should be a 2 item list')
+                for freq_cutoff in sp_val:
+                    if type(freq_cutoff) != int:
+                        raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
+
+valid_segment_param_keys = set(['threshold',
+                                'min_syl_dur',
+                                'min_silent_dur'])
+
+def validate_segment_params(segment_params):
+    """validates segmenting parameters
+
+    Parameters
+    ----------
+    segment_params : dict
+        with following keys:
+            threshold : int
+                amplitudes crossing above this are considered segments
+            min_syl_dur : float
+                minimum syllable duration, in seconds
+            min_silent_dur : float
+                minimum duration of silent gap between syllables, in seconds
+
+    Returns
+    -------
+    nothing if parameters are valid
+    else raises error
+    """
+
+    if type(segment_params) != dict:
+        raise TypeError('segment_params did not parse as a dictionary, '
+                        'instead it parsed as {}.'
+                        ' Please check config file formatting.'.format(type(val)))
+
+    elif set(segment_params.keys()) != valid_segment_param_keys:
+        if set(segment_params.keys()) < valid_segment_param_keys:
+            missing_keys = valid_segment_param_keys - set(segment_params.keys())
+            raise KeyError('segment_params is missing keys: {}'
+                           .format(missing_keys))
+        elif valid_segment_param_keys < set(segment_params.keys()):
+            extra_keys = set(segment_params.keys()) - segment_param_keys
+            raise KeyError('segment_params has extra keys:'
+                           .format(extra_keys))
+        else:
+            invalid_keys = set(segment_params.keys()) - valid_segment_param_keys
+            raise KeyError('segment_params has invalid keys:'
+                           .format(invalid_keys))
+    else:
+        for key, val in segment_params.items():
+            if key=='threshold':
+                if type(val) != int:
+                    raise ValueError('threshold should be int but parsed as {}'
+                                     .format(type(val)))
+            elif key=='min_syl_dur':
+                if type(val) != float:
+                    raise ValueError('min_syl_dur should be float but parsed as {}'
+                                     .format(type(val)))
+            elif key=='min_silent_dur':
+                if type(val) != float:
+                    raise ValueError('min_silent_dur should be float but parsed as {}'
+                                     .format(type(val)))
 
 def _validate_todo_list_dict(todo_list_dict,index):
     """
@@ -43,11 +129,13 @@ def _validate_todo_list_dict(todo_list_dict,index):
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
     if not set(todo_list_dict.keys()) >= required_todo_list_keys:
-        raise KeyError('not all required keys in todo_list item #{}'.format(index))
+        missing_keys = required_todo_list_keys - set(todo_list_dict.keys())
+        raise KeyError('todo_list item #{0} is missing required keys: {1}'
+                       .format(index,missing_keys))
     else:
         additional_keys = set(todo_list_dict.keys()) - required_todo_list_keys
         for extra_key in additional_keys:
-            if extra_key not in validate_dict['additional_todo_list_keys']:
+            if extra_key not in validate_dict['optional_todo_list_keys']:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
                                .format(extra_key,index))
 
@@ -146,15 +234,25 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
                                  .format(type(val)))
 
+        elif key=='segment_params':
+            validate_segment_params(val)
+
+        elif key == 'spect_params':
+            validate_spect_params(val)
+
         else: # if key is not found in list
             raise KeyError('key {} in todo_list_dict is an invalid key'.
                             format(key))
     return validated_todo_list_dict
 
+##########################################
+# main function that validates yaml file #
+##########################################
+
 def validate_yaml(extract_config_yaml):
     """
     validates config from extract YAML file
-    
+
     Parameters
     ----------
     extract_config_yaml : dictionary, config as loaded with YAML module
@@ -164,30 +262,29 @@ def validate_yaml(extract_config_yaml):
     extract_config_dict : dictionary, after validation of all keys
     """
 
+    if 'todo_list' not in extract_config_yaml:
+        raise KeyError('extract config does not have required key \'todo_list\'')
+
+    if 'spect_params' not in extract_config_yaml:
+        has_spect_params = ['spect_params' in todo_dict
+                            for todo_dict in extract_config_yaml['todo_list']]
+        if not all(has_spect_params):
+            raise KeyError('no default `spect_params` specified, but'
+                           'not every todo_list in extract config has spect_params')
+
+    if 'segment_params' not in extract_config_yaml:
+        has_segment_params = ['segment_params' in todo_dict
+                              for todo_dict in extract_config_yaml['todo_list']]
+        if not all(has_segment_params):
+            raise KeyError('no default `segment_params` specified, but'
+                           'not every todo_list in extract config has segment_params')
+
     validated_extract_config = copy.deepcopy(extract_config_yaml)
     for key, val in extract_config_yaml.items():
         if key == 'spect_params':
-            if type(val) != dict:
-                raise ValueError('value for key \'spect_params\' in config file did '
-                                 'not parse as a dictionary of parameters. Check '
-                                 'file formatting.')
-            spect_param_keys = set(['samp_freq',
-                                    'nperseg',
-                                    'noverlap',
-                                    'freq_cutoffs'])
-            if set(val.keys()) != spect_param_keys:
-                raise KeyError('unrecognized keys in spect_params dictionary')
-            else:
-                for sp_key, sp_val in val.items():
-                    if sp_key=='samp_freq' or sp_key=='window_size' or sp_key=='window_step':
-                        if type(sp_val) != int:
-                            raise ValueError('{} in spect_params should be an integer'.format(sp_key))
-                    elif sp_key=='freq_cutoffs':
-                        if len(sp_val) != 2:
-                            raise ValueError('freq_cutoffs should be a 2 item list')
-                        for freq_cutoff in sp_val:
-                            if type(freq_cutoff) != int:
-                                raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
+            validate_spect_params(val)
+        elif key=='segment_params':
+            validate_segment_params(val)
         elif key=='todo_list':
             if type(val) != list:
                 raise TypeError('todo_list did not parse as a list, instead it parsed as {}.'

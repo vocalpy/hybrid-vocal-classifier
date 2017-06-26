@@ -1,0 +1,203 @@
+test_parse:
+  valid_with_default_spect_and_seg_params:
+    spect_params:
+      samp_freq: 32000 # Hz
+      nperseg: 512
+      noverlap: 480
+      freq_cutoffs: [1000,8000]
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+    todo_list:
+      -
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdef
+      - #2
+        bird_ID : bl26lb16
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\DATA\bl26lb16\041912
+          - C:\DATA\bl26lb16\042012
+        output_dir: C:\DATA\bl26lb16\
+        labelset: iabcdef
+
+  valid_with_default_spect_params:
+    spect_params:
+      samp_freq: 32000 # Hz
+      nperseg: 512
+      noverlap: 480
+      freq_cutoffs: [1000,8000]
+
+    todo_list:
+      - #1
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdefghjk
+        segment_params:
+          threshold: 5000 # arbitrary units of amplitude
+          min_syl_dur: 0.02 # ms
+          min_silent_dur: 0.002 # ms
+
+  valid_with_default_segment_params:
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+    todo_list:
+      - #1
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdefghjk
+        spect_params:
+          samp_freq: 32000 # Hz
+          nperseg: 512
+          noverlap: 480
+          freq_cutoffs: [1000,8000]
+
+      - #2
+        bird_ID : bl26lb16
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\DATA\bl26lb16\041912
+          - C:\DATA\bl26lb16\042012
+        output_dir: C:\DATA\bl26lb16\
+        labelset: iabcdef
+        spect_params:
+          samp_freq: 32000 # Hz
+          nperseg: 512
+          noverlap: 480
+          freq_cutoffs: [1000,8000]
+
+  invalid_no_todo:
+    spect_params:
+      samp_freq: 32000 # Hz
+      nperseg: 512
+      noverlap: 480
+      freq_cutoffs: [1000,8000]
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+  invalid_missing_segment_params:
+    spect_params:
+      samp_freq: 32000 # Hz
+      nperseg: 512
+      noverlap: 480
+      freq_cutoffs: [1000,8000]
+
+    todo_list:
+      - #1
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdefghjk
+        segment_params:
+          threshold: 5000 # arbitrary units of amplitude
+          min_syl_dur: 0.02 # ms
+          min_silent_dur: 0.002 # ms
+
+      - #2
+        bird_ID : bl26lb16
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\DATA\bl26lb16\041912
+          - C:\DATA\bl26lb16\042012
+        output_dir: C:\DATA\bl26lb16\
+        labelset: iabcdef
+        # missing segment params!!!
+
+  invalid_missing_spect_params:
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+    todo_list:
+      - #1
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdefghjk
+        spect_params:
+          samp_freq: 32000 # Hz
+          nperseg: 512
+          noverlap: 480
+          freq_cutoffs: [1000,8000]
+
+      - #2
+        bird_ID : bl26lb16
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\DATA\bl26lb16\041912
+          - C:\DATA\bl26lb16\042012
+        output_dir: C:\DATA\bl26lb16\
+        labelset: iabcdef
+        # missing spect params!!!
+
+test_segment_params:
+  segparams_missing_key:
+      threshold: 5000.0
+      min_syl_dur: 0.02
+      # min silent dur missing
+  segparams_threshold_wrong_type:
+      threshold: 5000.0 # should be int
+      min_syl_dur: 0.02
+      min_silent_dur: 0.002
+  segparams_min_syl_dur_wrong_type:
+      threshold: 5000
+      min_syl_dur: 2 # should be float
+      min_silent_dur: 0.002
+  segparams_min_silent_dur_wrong_type:
+      threshold: 5000
+      min_syl_dur: 0.02
+      min_silent_dur: 2 # should be float

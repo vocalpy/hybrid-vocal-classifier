@@ -9,6 +9,8 @@ required_todo_list_keys:
   - output_dir
   - labelset
 
-additional_todo_list_keys:
+optional_todo_list_keys:
+  - spect_params
+  - segment_params
   - feature_group
   - feature_list
