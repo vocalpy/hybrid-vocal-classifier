@@ -21,7 +21,8 @@ class Spectrogram:
                  window=None,
                  filter_func=None,
                  spec_func='scipy',
-                 ref=None):
+                 ref=None,
+                 log_transform_spect=True):
         """Spectrogram.__init__ function
         
         Parameters
@@ -54,6 +55,8 @@ class Spectrogram:
             Use spectrogram parameters from a reference.
             'tachibana' uses spectrogram parameters from [1]_,
             'koumura' uses spectrogram parameters from [2]_.
+        log_transform_spect : bool
+            if True, applies np.log10 to spectrogram to increase range. Default is True.
 
         References
         ----------
@@ -88,6 +91,7 @@ class Spectrogram:
                     self.freq_cutoffs = [500,6000]
                     self.filter_func = 'diff'
                     self.spec_func = 'mpl'
+                    self.ref = ref
                 elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
@@ -95,6 +99,13 @@ class Spectrogram:
                     self.freq_cutoffs = [1000,8000]
                     self.filter_func = None
                     self.spec_func = 'scipy'
+                    self.ref = ref
+                elif ref is None:
+                    self.ref = ref
+                else:
+                    raise ValueError('{} is not a valid value for \'ref\' argument. '
+                                     'Valid values: {\'tachibana\',\'koumura\',None}'
+                                     .format(ref))
 
         else:
             if any(param is None
@@ -161,6 +172,13 @@ class Spectrogram:
                 else:
                     self.spec_func = spec_func
 
+                if type(log_transform_spect) is not bool:
+                    raise ValueError('Value for log_transform_spect is {}, but'
+                                     ' it must be bool.'
+                                     .format(type(log_transform_spect)))
+                else:
+                    self.logTransformSpect = log_transform_spect
+
     def make(self,rawsong,samp_freq):
         """makes spectrogram using assigned properties
         
@@ -199,6 +217,16 @@ class Spectrogram:
             # whereas the default for the matplotlib.mlab version of specgram
             # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
             # to match, mode must be set to 'complex'
+
+            # I think I determined empirically at one point (by staring at single
+            # cases) that mlab.specgram gave me values that were closer to Matlab's
+            # specgram function, which is used by Tachibana in his original feature
+            # extraction code. So I'm maintaining the option to use it here.
+
+            # Note that 'mpl' returns complex frequency spectrum,
+            # not power density spectrum
+            # That's because some tachibana features need use the freq. spectrum
+            # without log transforming or anything as is typical
             if self.window:
                 spect, freq_bins, time_bins = specgram(rawsong,
                                                        NFFT=self.nperseg,
@@ -213,13 +241,14 @@ class Spectrogram:
                                                        noverlap=self.noverlap,
                                                        mode='complex')
 
+        if self.logTransformSpect:
+            spect = np.log10(spect)  # log transform to increase range
+
         #below, I set freq_bins to >= freq_cutoffs
         #so that Koumura default of [1000,8000] returns 112 freq. bins
         f_inds = np.nonzero((freq_bins >= self.freq_cutoffs[0]) &
                             (freq_bins < self.freq_cutoffs[1]))[0] #returns tuple
         freq_bins = freq_bins[f_inds]
-        spect = spect[f_inds,:]
-        spect = np.log10(spect) # log transform to increase range
 
         #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
         spect = np.flipud(spect)
@@ -401,47 +430,6 @@ class syllable:
         self.freqCutoffs = freq_cutoffs
         self.freqBins = freq_bins
         self.timeBins = time_bins
-
-def _make_syl_spect(syl_audio,
-                    samp_freq,
-                    nperseg,
-                    overlap,
-                    freq_cutoffs):
-    """internal function that makes spectrograms for syllables
-
-    Parameters
-    ----------
-    syl_audio : 1d numpy array
-        raw audio waveform of a segmented syllable
-    samp_freq : integer
-        sampling frequency
-    nfft : integer
-        number of samples for each Fast Fourier Transform (FFT)
-        in spectrogram.
-    overlap : integer
-        number of overlapping samples in each FFT.
-    freq_cutoffs: list
-        two-element list of integers, minimum and maximum frequency in FFT
-
-    Returns
-    -------
-    syl_spect : object with properties as defined in the syl class
-    """
-
-    spect = Spectrogram(samp_freq,
-                        nperseg,
-                        noverlap,
-                        freq_cutoffs)
-    power,freq_bins,time_bins = spect.make(syl_audio)
-
-    return syllable(syl_audio,
-                    samp_freq,
-                    power,
-                    nperseg,
-                    noverlap,
-                    freq_cutoffs,
-                    freq_bins,
-                    time_bins)
 
 class song:
     """song object
