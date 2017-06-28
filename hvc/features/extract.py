@@ -48,7 +48,12 @@ multiple_syl_features_switch_case_dict = {
     'following silent gap duration' : knn.foll_gapdur
  }
 
-def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
+def from_file(filename,
+              file_format,
+              feature_list,
+              spect_params,
+              segment_params=None,
+              labels_to_use=None):
     """
     extracts features from an audio file containing birdsong
     
@@ -80,7 +85,7 @@ def from_file(filename, file_format, feature_list, spect_params, labels_to_use):
         but unique(feature_inds) = len(feature_list)
     """
 
-    song = audiofileIO.song(filename,file_format)
+    song = audiofileIO.Song(filename, file_format)
     song.set_syls_to_use(labels_to_use)
 
     #initialize indexing array for features
