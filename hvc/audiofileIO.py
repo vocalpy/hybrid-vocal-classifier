@@ -392,7 +392,16 @@ class Song:
                  segment_params=None):
         """__init__ function for song object
 
-        loads raw audio and annotation
+        either loads annotations, or segments song to find annotations.
+        Annotations are:
+            onsets_s : 1-d array
+            offsets_s : 1-d array, same length as onsets_s
+                onsets and offsets of segments in seconds
+            onsets_Hz : 1-d array, same length as onsets_s
+            offsets_Hz : 1-d array, same length as onsets_s
+                onsets and offsets of segments in Hertz
+                for isolating segments from raw audio instead of from spectrogram
+            labels: 1-d array, same length as onsets_s
 
         Parameters
         ----------
@@ -403,11 +412,14 @@ class Song:
             'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
             'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
         use_annotation : bool
-            if True, looks for annotation file and
+            if True, loads annotations from file.
             default is True.
-            if annotation file not found, raises FileNotFound error
+            if False, segment song during init using spect_params and segment_params.
+            if annotation file not found, raises FileNotFound error.
         annote_filename : str
             name of file that contains annotations to use for segments
+            default is None.
+            If None, __init__ tries to find file automatically
         spect_params : dict
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
@@ -423,17 +435,25 @@ class Song:
         """
 
         if use_annotation is False and segment_params is None:
-            raise TypeError('use_annotation set to False but no segment_params '
-                            'was provided; segment_params are required to '
-                            'find segments.')
+            raise ValueeError('use_annotation set to False but no segment_params '
+                              'was provided; segment_params are required to '
+                              'find segments.')
 
         if use_annotation is False and spect_params is None:
-            raise TypeError('use_annotation set to False but no spect_params '
-                            'was provided; spect_params are required to '
-                            'find segments.')
+            raise ValueError('use_annotation set to False but no spect_params '
+                             'was provided; spect_params are required to '
+                             'find segments.')
 
         self.filename = filename
         self.fileFormat = file_format
+
+        if file_format == 'evtaf':
+            raw_audio, samp_freq = evfuncs.load_cbin(filename)
+        elif file_format == 'koumura':
+            samp_freq, raw_audio = wavfile.read(filename)
+
+        self.rawAudio = raw_audio
+        self.sampFreq = samp_freq
 
         if use_annotation:
             if segment_params is not None:
@@ -445,30 +465,37 @@ class Song:
                 if annote_filename:
                     song_dict = evfuncs.load_notmat(annote_filename)
                 else:
-                    song_dict = evfuncs.load_notmat(filename)
+                    try:
+                        song_dict = evfuncs.load_notmat(filename)
+                    except FileNotFoundError:
+                        print("Could not automatically find an annotation file for {}."
+                              .format(filename))
+                        raise
+                # below evsonganaly saves onsets and offsets as ms, have to convert
+                self.onsets_s = song_dict['onsets'] / 1000
+                self.offsets_s = song_dict['offsets'] / 1000
+                self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
+                self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
             elif file_format == 'koumura':
                 if annote_filename:
                     song_dict = koumura.load_song_annot(annote_filename)
                 else:
-                    song_dict = koumura.load_song_annot(filename)
+                    try:
+                        song_dict = koumura.load_song_annot(filename)
+                    except FileNotFoundError:
+                        print("Could not automatically find an annotation file for {}."
+                              .format(filename))
+                        raise
+                self.onsets_Hz = song_dict['onsets'] # in Koumura annotation.xml files, onsets given in Hz
+                self.offsets_Hz = song_dict['offsets'] # and offsets
+                self.onsets_s = self.onsets_Hz / self.sampFreq # so need to convert to seconds
+                self.offsets_s = song_dict['offsets'] / self.sampFreq
 
-            self.onsets_Hz = song_dict['onsets']
-            self.offsets_Hz = song_dict['offsets']
-            self.onsets_s = self.onsets_Hz / samp_freq
-            self.offsets_s = song_dict['offsets'] / samp_freq
             self.labels = song_dict['labels']
 
         else:
             self.spectParams = spect_params
             self.segmentParams = segment_params
-
-            if file_format == 'evtaf':
-                raw_audio, samp_freq = evfuncs.load_cbin(filename)
-            elif file_format == 'koumura':
-                samp_freq, raw_audio = wavfile.read(filename)
-
-            self.rawAudio = raw_audio
-            self.sampFreq = samp_freq
 
             spect, time_bins, freq_bins = make_song_spect(raw_audio,
                                                           samp_freq,
@@ -479,8 +506,8 @@ class Song:
                                            segment_params)
             self.onsets_s = onsets
             self.offsets_s = offsets
-            self.onsets_Hz = np.round(self.onsets_s * samp_freq).astype(int)
-            self.offsets_Hz = np.round(self.offsets_s * samp_freq).astype(int)
+            self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
+            self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
             self.labels = '-' * len(onsets)
 
     def set_syls_to_use(self,labels_to_use='all'):
