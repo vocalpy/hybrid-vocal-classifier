@@ -20,7 +20,7 @@ class Spectrogram:
                  freq_cutoffs=None,
                  window=None,
                  filter_func=None,
-                 spec_func='scipy',
+                 spect_func=None,
                  ref=None,
                  log_transform_spect=True):
         """Spectrogram.__init__ function
@@ -33,18 +33,20 @@ class Spectrogram:
             number of overlapping samples in each segment
         freq_cutoffs : two-element list of integers
             limits of frequency band to keep, e.g. [1000,8000]
+            Spectrogram.make keeps the band:
+                freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
         window : string
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
-            Hann -- Uses np.Hanning with paramater M (window width) set to value of nperseg
-            dpss -- Discrete prolate spheroidal sequences AKA Slepian.
+            Hann -- Uses np.Hanning with parameter M (window width) set to value of nperseg
+            dpss -- Discrete prolate spheroidal sequence AKA Slepian.
                 Uses scipy.signal.slepian with M parameter equal to nperseg and
                 width parameter equal to 4/nperseg, as in [2]_.
         filter_func : string
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
             None -- no filter, this is the default
-        spec_func : string
+        spect_func : string
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
             'scipy' uses scipy.signal.spectrogram,
@@ -77,9 +79,10 @@ class Spectrogram:
             # throw error if called with 'ref' and with other params
             if any(param is not None
                    for param in [nperseg,
-                               noverlap,
-                               freq_cutoffs,
-                               filter_func]):
+                                 noverlap,
+                                 freq_cutoffs,
+                                 filter_func,
+                                 spect_func]):
                 warnings.warn('Spectrogram class received ref '
                               'parameter but also received other parameters, '
                               'will over-write those with defaults for reference.')
@@ -100,14 +103,17 @@ class Spectrogram:
                     self.filter_func = None
                     self.spec_func = 'scipy'
                     self.ref = ref
-                elif ref is None:
-                    self.ref = ref
                 else:
                     raise ValueError('{} is not a valid value for \'ref\' argument. '
                                      'Valid values: {\'tachibana\',\'koumura\',None}'
                                      .format(ref))
 
-        else:
+        elif ref is None:
+            if spect_func is None:
+                # switch to default
+                # can't have in args list because need to check above for
+                # conflict with default spectrogram functions for each ref
+                spect_func = 'scipy'
             if any(param is None
                    for param in [nperseg,
                                  noverlap,
@@ -150,7 +156,7 @@ class Spectrogram:
                 elif not all([type(val) == int for val in freq_cutoffs]):
                     raise ValueError('all values in freq_cutoffs list must be ints')
                 else:
-                    self.freq_cutoffs = freq_cutoffs
+                    self.freqCutoffs = freq_cutoffs
 
                 if filter_func is not None and type(filter_func) != str:
                     raise TypeError('type of filter_func must be str, but is {}'.
@@ -160,17 +166,17 @@ class Spectrogram:
                                      'Valid values are: \'diff\' or None.'.
                                      format(filter_func))
                 else:
-                    self.filter_func = filter_func
+                    self.filterFunc = filter_func
 
-                if type(spec_func) != str:
-                    raise TypeError('type of spec_func must be str, but is {}'.
-                                     format(type(spec_func)))
-                elif spec_func not in ['scipy','mpl']:
+                if type(spect_func) != str:
+                    raise TypeError('type of spect_func must be str, but is {}'.
+                                     format(type(spect_func)))
+                elif spect_func not in ['scipy','mpl']:
                     raise ValueError('string \'{}\' is not valid for filter_func. '
                                      'Valid values are: \'scipy\' or \'mpl\'.'.
-                                     format(filter_func))
+                                     format(spect_func))
                 else:
-                    self.spec_func = spec_func
+                    self.spectFunc = spect_func
 
                 if type(log_transform_spect) is not bool:
                     raise ValueError('Value for log_transform_spect is {}, but'
@@ -179,12 +185,14 @@ class Spectrogram:
                 else:
                     self.logTransformSpect = log_transform_spect
 
-    def make(self,rawsong,samp_freq):
+    def make(self,
+             raw_audio,
+             samp_freq):
         """makes spectrogram using assigned properties
         
         Parameters
         ----------
-        rawsong : 1-d numpy array
+        raw_audio : 1-d numpy array
             raw audio waveform
         samp_freq : integer scalar
             sampling frequency in Hz
@@ -196,10 +204,10 @@ class Spectrogram:
         time_bins : 1-d numpy array
         """
 
-        if self.filter_func == 'diff':
-            rawsong = np.diff(rawsong)  # differential filter_func, as applied in Tachibana Okanoya 2014
+        if self.filterFunc == 'diff':
+            raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
-        if self.spec_func == 'scipy':
+        if self.spectFunc == 'scipy':
             if self.window:
                 freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
                                                                        samp_freq,
@@ -220,13 +228,14 @@ class Spectrogram:
 
             # I think I determined empirically at one point (by staring at single
             # cases) that mlab.specgram gave me values that were closer to Matlab's
-            # specgram function, which is used by Tachibana in his original feature
+            # specgram function than scipy.signal.spectrogram
+            # Matlab's specgram is what Tachibana used in his original feature
             # extraction code. So I'm maintaining the option to use it here.
 
-            # Note that 'mpl' returns complex frequency spectrum,
-            # not power density spectrum
-            # That's because some tachibana features need use the freq. spectrum
-            # without log transforming or anything as is typical
+            # 'mpl' is set to return complex frequency spectrum,
+            # not power spectral density,
+            # because some tachibana features (based on CUIDADO feature set)
+            # need to use the freq. spectrum before taking np.abs or np.log10
             if self.window:
                 spect, freq_bins, time_bins = specgram(rawsong,
                                                        NFFT=self.nperseg,

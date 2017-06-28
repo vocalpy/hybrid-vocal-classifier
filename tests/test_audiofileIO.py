@@ -16,7 +16,7 @@ class TestAudiofileIO:
                                            window='Hann',
                                            freq_cutoffs=[1000, 5000],
                                            filter_func = 'diff',
-                                           spec_func = 'scipy')
+                                           spect_func = 'scipy')
 
         #test whether init works with 'ref' parameter
         #instead of passing spect params
@@ -24,14 +24,19 @@ class TestAudiofileIO:
 
         spec = hvc.audiofileIO.Spectrogram(ref='koumura')
 
-        #test whether lack of samp_freq raises error
-        with pytest.raises(ValueError):
-            spec = hvc.audiofileIO.Spectrogram()
-
-        #test that ref with other params raises warning
+        #test that specify 'ref' and specifying other params raises warning
+        #(because other params specified will be ignored)
         with pytest.warns(UserWarning):
             spec = hvc.audiofileIO.Spectrogram(nperseg=512,
                                                ref='tachibana')
+        with pytest.warns(UserWarning):
+            spec = hvc.audiofileIO.Spectrogram(nperseg=512,
+                                               ref='tachibana')
+
+        with pytest.warns(UserWarning):
+            spec = hvc.audiofileIO.Spectrogram(spect_func='scipy',
+                                               ref='tachibana')
+
 
     def test_Song(self):
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
