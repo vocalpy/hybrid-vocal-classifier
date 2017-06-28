@@ -7,20 +7,23 @@ import glob
 
 from sklearn.externals import joblib
 
+import hvc
+
 class TestExtract:
-    import hvc
-    hvc.featureextract.run('./tests/config_ymls_for_testing/test_extract.config.yml')
-    # switch to test dir
-    os.chdir(TEST_DIR)
-    ftr_files = glob.glob('features_from*')
-    ftr_dicts = []
-    for ftr_file in ftr_files:
-        ftr_dicts.append(joblib.load(ftr_file))
 
-    # for each dict, make sure length of labels == num rows in features
+    def test_extract(self):
+        hvc.extract('./tests/config_ymls_for_testing/test_extract.config.yml')
+        # switch to test dir
+        os.chdir(TEST_DIR)
+        ftr_files = glob.glob('features_from*')
+        ftr_dicts = []
+        for ftr_file in ftr_files:
+            ftr_dicts.append(joblib.load(ftr_file))
 
-    # make sure number of features i.e. columns is constant across feature matrices
+        # for each dict, make sure length of labels == num rows in features
 
-    # load summary dict
+        # make sure number of features i.e. columns is constant across feature matrices
 
-    # make sure rows in summary dict features == sum of rows of each ftr file features
+        # load summary dict
+
+        # make sure rows in summary dict features == sum of rows of each ftr file features
