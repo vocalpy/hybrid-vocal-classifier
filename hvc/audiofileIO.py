@@ -269,59 +269,6 @@ class song_spect:
         self.freqBins = freq_bins
         self.timeBins = time_bins
         self.sampFreq = sampfreq
-
-def make_song_spect(waveform,sampfreq,size=512,step=32,freq_cutoffs=[1000,8000]):
-    """
-    Computes spectogram of raw song waveform using FFT.
-    Defaults to FFT parameters from Koumura Okanoya 2016.
-    **Note that spectrogram is log transformed (base 10), and that
-    both spectrogram and freq_bins are "flipped" (reflected across horizontal
-    axis) so that when plotted the lower frequencies of the spectrogram are 
-    at 0 on the y axis.
-
-    Parameters
-    ----------
-    waveform : 1-d numpy array
-        raw audio waveform as recorded in file
-    sampfreq : integer
-        sampling frequency in Hz, e.g. 32000
-    size: integer
-        size of FFT window, default is 512 samples
-    step: integer
-        number of samples between the start of each window, default is 32
-        i.e. if size == step then there will be no overlap of windows
-    freq_range: 2-element list
-        range of frequencies to return. Frequencies
-        less than the first element or greater than the second are discarded.
-
-    Returns
-    -------
-    spect -- spectrogram, log transformed
-    time_bins -- vector assigning time values to each column in spect
-        e.g. [0,8,16] <-- 8 ms time bins
-    freq_bins -- vector assigning frequency values to each row in spect
-        e.g. [0,100,200] <-- 100 Hz frequency bins
-    """
-    win_dpss = slepian(size, 4/size)
-    fft_overlap = size - step
-    freq_bins, time_bins, spect = scipy.signal.spectrogram(waveform,
-                                                           sampfreq,
-                                                           window=win_dpss,
-                                                           nperseg=win_dpss.shape[0],
-                                                           noverlap=fft_overlap)
-    #below, I set freq_bins to >= freq_cutoffs 
-    #so that Koumura default of [1000,8000] returns 112 freq. bins
-    f_inds = np.nonzero((freq_bins >= freq_cutoffs[0]) & 
-                        (freq_bins < freq_cutoffs[1]))[0] #returns tuple
-    freq_bins = freq_bins[f_inds]
-    spect = spect[f_inds,:]
-    spect = np.log10(spect) # log transform to increase range
-
-    #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
-    spect = np.flipud(spect)
-    freq_bins = np.flipud(freq_bins)
-    spect_obj = song_spect(spect,freq_bins,time_bins,sampfreq)
-    return spect_obj
     
 def compute_amp(spect):
     """
@@ -431,72 +378,110 @@ class syllable:
         self.freqBins = freq_bins
         self.timeBins = time_bins
 
-class song:
-    """song object
+class Song:
+    """Song object
     used for feature extraction
     """
 
     def __init__(self,
                  filename,
                  file_format,
+                 use_annotation=True,
+                 annote_filename = None,
                  spect_params=None,
                  segment_params=None):
         """__init__ function for song object
 
+        loads raw audio and annotation
+
         Parameters
         ----------
-        filename : string
+        filename : str
             name of file
-        file_format : string
+        file_format : str
             {'evtaf','koumura'}
-        spect_params : dictionary
+            'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
+            'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
+        use_annotation : bool
+            if True, looks for annotation file and
+            default is True.
+            if annotation file not found, raises FileNotFound error
+        annote_filename : str
+            name of file that contains annotations to use for segments
+        spect_params : dict
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
-        segment_params : dictionary
-            amplitude at which to threshold, default is None.
-            if file not found that contains onsets and offsets,
-            this value is used as threshold above which
-            amplitude crossing are considered syllables.
-            If file is found and this value is supplied,
-            it will be ignored.
+        segment_params : dict
+            with the following keys
+                threshold : int
+                    value above which amplitude is considered part of a segment. default is 5000.
+                min_syl_dur : float
+                    minimum duration of a segment. default is 0.02, i.e. 20 ms.
+                min_silent_dur : float
+                    minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
+
         """
+
+        if use_annotation is False and segment_params is None:
+            raise TypeError('use_annotation set to False but no segment_params '
+                            'was provided; segment_params are required to '
+                            'find segments.')
+
+        if use_annotation is False and spect_params is None:
+            raise TypeError('use_annotation set to False but no spect_params '
+                            'was provided; spect_params are required to '
+                            'find segments.')
+
         self.filename = filename
         self.fileFormat = file_format
-        self.spectParams = spect_params
-        if segment_params:
-            self.segmentParams = segment_params
-        if file_format == 'evtaf':
-            dat, samp_freq = evfuncs.load_cbin(filename)
-            try:
-                song_dict = evfuncs.load_notmat(filename)
-                self.labels = song_dict['labels']
-            except FileNotFoundError:
-                # if notmat not found, segment and get onsets and offsets
-                song_dict = {}
-                spect, time_bins, freq_bins = make_song_spect(dat,
-                                                              samp_freq,
-                                                              spect_params)
-                amp = compute_amp(spect)
-                onsets, offsets = segment_song(amp,
-                                               time_bins,
-                                               segment_params)
-                song_dict['onsets'] = onsets
-                song_dict['offsets'] = offsets
-                self.labels = '-' * len(onsets)
 
-            self.onsets_s = song_dict['onsets'] / 1000
-            self.offsets_s = song_dict['offsets'] / 1000
-            self.onsets_Hz = np.round(self.onsets_s * samp_freq).astype(int)
-            self.offsets_Hz = np.round(self.offsets_s * samp_freq).astype(int)
+        if use_annotation:
+            if segment_params is not None:
+                warnings.warn('use_annotations set to True in call to Song.__init__'
+                              ' but segment_params were also passed, will use segments'
+                              ' from annotation file and ignore segment_params.')
 
-        elif file_format == 'koumura':
-            samp_freq, dat = wavfile.read(filename)
-            song_dict = koumura.load_song_annot(filename)
+            if file_format == 'evtaf':
+                if annote_filename:
+                    song_dict = evfuncs.load_notmat(annote_filename)
+                else:
+                    song_dict = evfuncs.load_notmat(filename)
+            elif file_format == 'koumura':
+                if annote_filename:
+                    song_dict = koumura.load_song_annot(annote_filename)
+                else:
+                    song_dict = koumura.load_song_annot(filename)
+
             self.onsets_Hz = song_dict['onsets']
             self.offsets_Hz = song_dict['offsets']
             self.onsets_s = self.onsets_Hz / samp_freq
             self.offsets_s = song_dict['offsets'] / samp_freq
             self.labels = song_dict['labels']
+
+        else:
+            self.spectParams = spect_params
+            self.segmentParams = segment_params
+
+            if file_format == 'evtaf':
+                raw_audio, samp_freq = evfuncs.load_cbin(filename)
+            elif file_format == 'koumura':
+                samp_freq, raw_audio = wavfile.read(filename)
+
+            self.rawAudio = raw_audio
+            self.sampFreq = samp_freq
+
+            spect, time_bins, freq_bins = make_song_spect(raw_audio,
+                                                          samp_freq,
+                                                          spect_params)
+            amp = compute_amp(spect)
+            onsets, offsets = segment_song(amp,
+                                           time_bins,
+                                           segment_params)
+            self.onsets_s = onsets
+            self.offsets_s = offsets
+            self.onsets_Hz = np.round(self.onsets_s * samp_freq).astype(int)
+            self.offsets_Hz = np.round(self.offsets_s * samp_freq).astype(int)
+            self.labels = '-' * len(onsets)
 
     def set_syls_to_use(self,labels_to_use='all'):
         """        
@@ -527,7 +512,9 @@ class song:
             self.syls_to_use = np.in1d(list(self.labels),
                                        labels_to_use)
 
-    def make_syl_spects(self, spect_params, syl_spect_width=-1):
+    def make_syl_spects(self,
+                        spect_params,
+                        syl_spect_width=-1):
         """Make spectrograms from syllables.
         This method isolates making spectrograms from selecting syllables
         to use so that spectrograms can be loaded 'lazily', e.g., if only
@@ -570,12 +557,16 @@ class song:
             raise ValueError('Must set syls_to_use by calling set_syls_to_use method '
                              'before calling get_syls.')
 
-        if self.fileFormat == 'evtaf':
-            dat, samp_freq = evfuncs.load_cbin(self.filename)
-        elif self.fileFormat == 'koumura':
-            samp_freq, dat = wavfile.read(self.filename)
+        if not hasattr(self, 'raw_audio') and not hasattr(self, 'sampFreq'):
+            if self.fileFormat == 'evtaf':
+                    raw_audio, samp_freq = evfuncs.load_cbin(self.filename)
+            elif self.fileFormat == 'koumura':
+                samp_freq, raw_audio = wavfile.read(self.filename)
+            self.rawAudio = raw_audio
+            self.sampFreq = samp_freq
 
-        if samp_freq != spect_params['samp_freq']:
+
+        if self.sampFreq != spect_params['samp_freq']:
             raise ValueError(
                 'Sampling frequency for {}, {}, does not match expected sampling '
                 'frequency of {}'.format(filename,
@@ -587,9 +578,9 @@ class song:
 
         all_syls = []
 
-        spect = Spectrogram(nperseg=spect_params['nperseg'],
-                            noverlap=spect_params['noverlap'],
-                            freq_cutoffs=spect_params['freq_cutoffs'])
+        spect_maker = Spectrogram(nperseg=spect_params['nperseg'],
+                                  noverlap=spect_params['noverlap'],
+                                  freq_cutoffs=spect_params['freq_cutoffs'])
 
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
@@ -613,21 +604,21 @@ class song:
                         # (could happen with first onset)
                         left_width = 0
                         right_width = width_diff - offset
-                    elif offset + right_width > dat.shape[-1]:
+                    elif offset + right_width > self.rawAudio.shape[-1]:
                         # if right width greater than length of file
-                        right_width = dat.shape[-1] - offset
+                        right_width = self.rawAudio.shape[-1] - offset
                         left_width = width_diff - right_width
-                    syl_audio = dat[:, onset - left_width:
+                    syl_audio = self.rawAudio[:, onset - left_width:
                     offset + right_width]
                 else:
-                    syl_audio = dat[onset:offset]
+                    syl_audio = self.rawAudio[onset:offset]
 
-                power, freq_bins, time_bins = spect.make(syl_audio,
-                                                         samp_freq)
+                spect, freq_bins, time_bins = spect_maker.make(syl_audio,
+                                                               self.sampFreq)
 
                 curr_syl = syllable(syl_audio,
                                     spect_params['samp_freq'],
-                                    power,
+                                    spect,
                                     spect_params['nperseg'],
                                     spect_params['noverlap'],
                                     spect_params['freq_cutoffs'],
