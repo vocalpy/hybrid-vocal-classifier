@@ -17,6 +17,7 @@ doi:10.1371/journal.pone.0159188
 """
 
 #from standard library
+import os
 import glob
 import xml.etree.ElementTree as ET
 
@@ -364,19 +365,26 @@ def get_trans_mat(seqs,smoothing_constant=1e-4):
 
     return trans_mat
 
+
 def load_song_annot(songfile):
     """
     
     Parameters
     ----------
-    songfile
+    songfile : str
+        filename of .wav file from Koumura dataset
 
     Returns
     -------
     songfile_dict :
         with keys onsets, offsets, and labels
     """
-    annot_file = glob.glob('../Annotation.xml')
+
+    dirname, songfile = os.path.split(songfile)
+    if dirname == '':
+        annot_file = glob.glob('../Annotation.xml')
+    else:
+        annot_file = glob.glob(os.path.join(dirname, '../Annotation.xml'))
     if len(annot_file) < 1:
         raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
                          format(songfile))
@@ -386,7 +394,7 @@ def load_song_annot(songfile):
     else:
         annot_file = annot_file[0]
 
-    seq_list = parse_xml(annot_file,concat_seqs_into_songs=True)
+    seq_list = parse_xml(annot_file, concat_seqs_into_songs=True)
     wav_files = [seq.wavFile for seq in seq_list]
     ind = wav_files.index(songfile)
     this_seq = seq_list[ind]
