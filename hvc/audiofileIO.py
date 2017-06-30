@@ -8,6 +8,7 @@ from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
 
+
 class Spectrogram:
     """class for making spectrograms.
     Abstracts out function calls so user just has to put spectrogram parameters
@@ -91,17 +92,17 @@ class Spectrogram:
                     self.nperseg = 256
                     self.noverlap = 192
                     self.window = 'Hann'
-                    self.freq_cutoffs = [500,6000]
-                    self.filter_func = 'diff'
-                    self.spec_func = 'mpl'
+                    self.freqCutoffs = [500,6000]
+                    self.filterFunc = 'diff'
+                    self.spectFunc = 'mpl'
                     self.ref = ref
                 elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
                     self.window = 'dpss'
-                    self.freq_cutoffs = [1000,8000]
-                    self.filter_func = None
-                    self.spec_func = 'scipy'
+                    self.freqCutoffs = [1000,8000]
+                    self.filterFunc = None
+                    self.spectFunc = 'scipy'
                     self.ref = ref
                 else:
                     raise ValueError('{} is not a valid value for \'ref\' argument. '
@@ -209,18 +210,18 @@ class Spectrogram:
 
         if self.spectFunc == 'scipy':
             if self.window:
-                freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
+                freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
                                                                        samp_freq,
                                                                        window=self.window,
                                                                        nperseg=self.nperseg,
                                                                        noverlap=self.noverlap)
             else:
-                freq_bins, time_bins, spect = scipy.signal.spectrogram(rawsong,
+                freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
                                                                        samp_freq,
                                                                        nperseg=self.nperseg,
                                                                        noverlap=self.noverlap)
 
-        elif self.spec_func == 'mpl':
+        elif self.spectFunc == 'mpl':
             # note that the matlab specgram function returns the STFT by default
             # whereas the default for the matplotlib.mlab version of specgram
             # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
@@ -237,14 +238,14 @@ class Spectrogram:
             # because some tachibana features (based on CUIDADO feature set)
             # need to use the freq. spectrum before taking np.abs or np.log10
             if self.window:
-                spect, freq_bins, time_bins = specgram(rawsong,
+                spect, freq_bins, time_bins = specgram(raw_audio,
                                                        NFFT=self.nperseg,
                                                        Fs=samp_freq,
                                                        window=self.window,
                                                        noverlap=self.noverlap,
                                                        mode='complex')
             else:
-                spect, freq_bins, time_bins = specgram(rawsong,
+                spect, freq_bins, time_bins = specgram(raw_audio,
                                                        NFFT=self.nperseg,
                                                        Fs=samp_freq,
                                                        noverlap=self.noverlap,
@@ -255,8 +256,8 @@ class Spectrogram:
 
         #below, I set freq_bins to >= freq_cutoffs
         #so that Koumura default of [1000,8000] returns 112 freq. bins
-        f_inds = np.nonzero((freq_bins >= self.freq_cutoffs[0]) &
-                            (freq_bins < self.freq_cutoffs[1]))[0] #returns tuple
+        f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
+                            (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
         freq_bins = freq_bins[f_inds]
 
         #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
@@ -430,9 +431,11 @@ class Song:
             default is None.
             If None, __init__ tries to find file automatically
         spect_params : dict
+            not required unless use_annotation is False
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
         segment_params : dict
+            not required unless use_annotation is False
             with the following keys
                 threshold : int
                     value above which amplitude is considered part of a segment. default is 5000.
@@ -440,7 +443,6 @@ class Song:
                     minimum duration of a segment. default is 0.02, i.e. 20 ms.
                 min_silent_dur : float
                     minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
-
         """
 
         if use_annotation is False and segment_params is None:
@@ -480,7 +482,8 @@ class Song:
                         print("Could not automatically find an annotation file for {}."
                               .format(filename))
                         raise
-                # below evsonganaly saves onsets and offsets as ms, have to convert
+                # in .not.mat files saved by evsonganaly,
+                # onsets and offsets are in units of ms, have to convert to s
                 self.onsets_s = song_dict['onsets'] / 1000
                 self.offsets_s = song_dict['offsets'] / 1000
                 self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
@@ -519,7 +522,7 @@ class Song:
             self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
             self.labels = '-' * len(onsets)
 
-    def set_syls_to_use(self,labels_to_use='all'):
+    def set_syls_to_use(self, labels_to_use='all'):
         """        
         Parameters
         ----------
@@ -558,23 +561,10 @@ class Song:
 
         Parameters
         ----------
-        spect_params: dict
-            with the following keys
-                    sampfreq : integer
-                        sampling frequency in Hz, e.g. 32000
-                    size: integer
-                        size of FFT window, default is 512 samples
-                    step: integer
-                        number of samples between the start of each window, default is 32
-                        i.e. if size == step then there will be no overlap of windows
-                    freq_range: 2-element list
-                        range of frequencies to return. Frequencies
-                        less than the first element or greater than the second are discarded.
 
-            Note that 'samp_freq' is the **expected** sampling frequency and the
-            function throws an error if the actual sampling frequency of an audio file does
-            not match the expected one.
-
+        spect_params : dict
+            keys should be parameters for Spectrogram.__init__,
+            see the docstring for those keys.
         syl_spect_duration : int
             Optional parameter to set constant duration for each spectrogram of a
             syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
@@ -589,7 +579,7 @@ class Song:
             greater than syl_spect_duration, the function raises an error.
         """
 
-        if not hasattr(self,'syls_to_use'):
+        if not hasattr(self, 'syls_to_use'):
             raise ValueError('Must set syls_to_use by calling set_syls_to_use method '
                              'before calling get_syls.')
 
@@ -601,22 +591,12 @@ class Song:
             self.rawAudio = raw_audio
             self.sampFreq = samp_freq
 
-
-        if self.sampFreq != spect_params['samp_freq']:
-            raise ValueError(
-                'Sampling frequency for {}, {}, does not match expected sampling '
-                'frequency of {}'.format(filename,
-                                         samp_freq,
-                                         spect_params['samp_freq']))
-
         if syl_spect_width > 0:
             syl_spect_width_Hz = np.round(syl_spect_width * samp_freq)
 
         all_syls = []
 
-        spect_maker = Spectrogram(nperseg=spect_params['nperseg'],
-                                  noverlap=spect_params['noverlap'],
-                                  freq_cutoffs=spect_params['freq_cutoffs'])
+        spect_maker = Spectrogram(**spect_params)
 
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
@@ -651,13 +631,12 @@ class Song:
 
                 spect, freq_bins, time_bins = spect_maker.make(syl_audio,
                                                                self.sampFreq)
-
                 curr_syl = syllable(syl_audio,
-                                    spect_params['samp_freq'],
+                                    self.sampFreq,
                                     spect,
-                                    spect_params['nperseg'],
-                                    spect_params['noverlap'],
-                                    spect_params['freq_cutoffs'],
+                                    spect_maker.nperseg,
+                                    spect_maker.noverlap,
+                                    spect_maker.freqCutoffs,
                                     freq_bins,
                                     time_bins)
 
