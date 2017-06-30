@@ -91,18 +91,20 @@ class Spectrogram:
                 if ref == 'tachibana':
                     self.nperseg = 256
                     self.noverlap = 192
-                    self.window = 'Hann'
-                    self.freqCutoffs = [500,6000]
+                    self.window = np.hanning(self.nperseg) #Hann window
+                    self.freqCutoffs = [500, 6000]
                     self.filterFunc = 'diff'
                     self.spectFunc = 'mpl'
+                    self.logTransformSpect = False  # see tachibana feature docs
                     self.ref = ref
                 elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
-                    self.window = 'dpss'
-                    self.freqCutoffs = [1000,8000]
+                    self.window = slepian(self.nperseg, 4 / self.nperseg) #dpss
+                    self.freqCutoffs = [1000, 8000]
                     self.filterFunc = None
                     self.spectFunc = 'scipy'
+                    self.logTransformSpect = True
                     self.ref = ref
                 else:
                     raise ValueError('{} is not a valid value for \'ref\' argument. '
@@ -145,7 +147,7 @@ class Spectrogram:
                             self.window = np.hanning(self.nperseg)
                         elif window == 'dpss':
                             self.window = slepian(self.nperseg, 4 / self.nperseg)
-                        elif window == None:
+                        elif window is None:
                             self.window = None
 
                 if type(freq_cutoffs) != list:
@@ -209,7 +211,7 @@ class Spectrogram:
             raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
         if self.spectFunc == 'scipy':
-            if self.window:
+            if self.window is not None:
                 freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
                                                                        samp_freq,
                                                                        window=self.window,
@@ -237,7 +239,7 @@ class Spectrogram:
             # not power spectral density,
             # because some tachibana features (based on CUIDADO feature set)
             # need to use the freq. spectrum before taking np.abs or np.log10
-            if self.window:
+            if self.window is not None:
                 spect, freq_bins, time_bins = specgram(raw_audio,
                                                        NFFT=self.nperseg,
                                                        Fs=samp_freq,

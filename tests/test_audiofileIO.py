@@ -3,14 +3,17 @@ test audiofileIO module
 """
 
 import pytest
-import numpy as np
+from scipy.io import wavfile
 
 import hvc.audiofileIO
+import hvc.evfuncs
+import hvc.koumura
 
 class TestAudiofileIO:
     
     def test_Spectrogram_init(self):
-        #test whether can init a spec object
+        """#test whether can init a spec object
+        """
         spec = hvc.audiofileIO.Spectrogram(nperseg=128,
                                            noverlap=32,
                                            window='Hann',
@@ -20,25 +23,45 @@ class TestAudiofileIO:
 
         #test whether init works with 'ref' parameter
         #instead of passing spect params
-        spec = hvc.audiofileIO.Spectrogram(ref='tachibana')
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
 
-        spec = hvc.audiofileIO.Spectrogram(ref='koumura')
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
 
         #test that specify 'ref' and specifying other params raises warning
         #(because other params specified will be ignored)
         with pytest.warns(UserWarning):
-            spec = hvc.audiofileIO.Spectrogram(nperseg=512,
-                                               ref='tachibana')
+            spect_maker = hvc.audiofileIO.Spectrogram(nperseg=512,
+                                                      ref='tachibana')
         with pytest.warns(UserWarning):
-            spec = hvc.audiofileIO.Spectrogram(nperseg=512,
-                                               ref='tachibana')
+            spect_maker = hvc.audiofileIO.Spectrogram(nperseg=512,
+                                                    ref='tachibana')
 
         with pytest.warns(UserWarning):
-            spec = hvc.audiofileIO.Spectrogram(spect_func='scipy',
-                                               ref='tachibana')
+            spect_maker = hvc.audiofileIO.Spectrogram(spect_func='scipy',
+                                                      ref='tachibana')
+
+    def test_Spectrogram_make(self):
+        """ test whether Spectrogram.make works
+        """
+        #test whether make works with .cbin
+        cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
+        dat, fs = hvc.evfuncs.load_cbin(cbin)
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
+        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
+        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+
+        #test whether make works with .wav from Koumura dataset
+        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        fs, dat = wavfile.read(wav)
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
+        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
+        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
 
     def test_Song_init(self):
-
+        """test whether Song object inits properly
+        """
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf')
@@ -53,7 +76,6 @@ class TestAudiofileIO:
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf')
         cbin_song.set_syls_to_use('iabcdef')
-
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         wav_song = hvc.audiofileIO.Song(filename=wav,
