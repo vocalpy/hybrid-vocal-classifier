@@ -43,21 +43,34 @@ class TestAudiofileIO:
     def test_Spectrogram_make(self):
         """ test whether Spectrogram.make works
         """
-        #test whether make works with .cbin
+        # test whether make works with .cbin
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
         dat, fs = hvc.evfuncs.load_cbin(cbin)
+
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
         spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        assert spect.shape[0] == freq_bins.shape[0]
+        assert spect.shape[1] == time_bins.shape[0]
+
         spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
         spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        assert spect.shape[0] == freq_bins.shape[0]
+        assert spect.shape[1] == time_bins.shape[0]
 
-        #test whether make works with .wav from Koumura dataset
+        # test whether make works with .wav from Koumura dataset
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         fs, dat = wavfile.read(wav)
+
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
         spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        assert spect.shape[0] == freq_bins.shape[0]
+        assert spect.shape[1] == time_bins.shape[0]
+
         spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
         spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        assert spect.shape[0] == freq_bins.shape[0]
+        assert spect.shape[1] == time_bins.shape[0]
+
 
     def test_Song_init(self):
         """test whether Song object inits properly

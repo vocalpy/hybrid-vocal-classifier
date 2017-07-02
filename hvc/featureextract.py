@@ -149,7 +149,8 @@ def extract(config_file):
                                                                                    todo['file_format'],
                                                                                    todo['feature_list'],
                                                                                    extract_config['spect_params'],
-                                                                                   todo['labelset'])
+                                                                                   todo['labelset'],
+                                                                                   extract_config['segment_params'])
                 all_labels.extend(labels)
                 song_IDs.extend([song_ID_counter] * len(labels))
                 song_ID_counter += 1

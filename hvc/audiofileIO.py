@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from scipy.io import wavfile
 import scipy.signal
-from scipy.signal import slepian # AKA DPSS, window used for FFT
+from scipy.signal import slepian  # AKA DPSS, window used for FFT
 from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
@@ -261,6 +261,7 @@ class Spectrogram:
         f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
                             (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
         freq_bins = freq_bins[f_inds]
+        spect = spect[f_inds, :]
 
         #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
         spect = np.flipud(spect)
@@ -360,7 +361,7 @@ class syllable:
         raw waveform from audio file
     sampfreq : integer
         sampling frequency in Hz as determined by scipy.io.wavfile function
-    power : 2-d m by n numpy array
+    spect : 2-d m by n numpy array
         spectrogram as computed by make_song_spect. Each of the m rows is a frequency bin, 
         and each of the n columns is a time bin. Value in each bin is power at that frequency and time.
     nfft : integer
@@ -375,7 +376,7 @@ class syllable:
     def __init__(self,
                  syl_audio,
                  samp_freq,
-                 power,
+                 spect,
                  nfft,
                  overlap,
                  freq_cutoffs,
@@ -383,7 +384,7 @@ class syllable:
                  time_bins):
         self.sylAudio = syl_audio
         self.sampFreq = samp_freq
-        self.power = power
+        self.spect = spect
         self.nfft = nfft
         self.overlap = overlap
         self.freqCutoffs = freq_cutoffs
@@ -398,10 +399,10 @@ class Song:
     def __init__(self,
                  filename,
                  file_format,
+                 segment_params,
                  use_annotation=True,
-                 annote_filename = None,
-                 spect_params=None,
-                 segment_params=None):
+                 annote_filename=None,
+                 spect_params=None):
         """__init__ function for song object
 
         either loads annotations, or segments song to find annotations.
@@ -423,6 +424,18 @@ class Song:
             {'evtaf','koumura'}
             'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
             'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
+        segment_params : dict
+            required. If use_annotation is True, checks values in this dict against
+            the parameters in the annotation file (if they are present, not all
+            data sets include segmentation parameters).
+
+            segment_params dict has the following keys:
+                threshold : int
+                    value above which amplitude is considered part of a segment. default is 5000.
+                min_syl_dur : float
+                    minimum duration of a segment. default is 0.02, i.e. 20 ms.
+                min_silent_dur : float
+                    minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
         use_annotation : bool
             if True, loads annotations from file.
             default is True.
@@ -436,15 +449,6 @@ class Song:
             not required unless use_annotation is False
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
-        segment_params : dict
-            not required unless use_annotation is False
-            with the following keys
-                threshold : int
-                    value above which amplitude is considered part of a segment. default is 5000.
-                min_syl_dur : float
-                    minimum duration of a segment. default is 0.02, i.e. 20 ms.
-                min_silent_dur : float
-                    minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
         """
 
         if use_annotation is False and segment_params is None:
@@ -483,9 +487,21 @@ class Song:
                     except FileNotFoundError:
                         print("Could not automatically find an annotation file for {}."
                               .format(filename))
-                        raise
+                        raise  # (re-raise FileNotFound that we just caught with except)
                 # in .not.mat files saved by evsonganaly,
                 # onsets and offsets are in units of ms, have to convert to s
+                if segment_params['threshold'] != song_dict['threshold']:
+                    raise ValueError('\'threshold\' parameter for {} does not match parameter '
+                                     'value for segment_params[\'threshold\'].'
+                                     .format(filename))
+                if segment_params['min_syl_dur'] != song_dict['min_dur']/1000:
+                    raise ValueError('\'min_dur\' parameter for {} does not match parameter '
+                                     'value for segment_params[\'min_syl_dur\'].'
+                                     .format(filename))
+                if segment_params['min_silent_dur'] != song_dict['min_int']/1000:
+                    raise ValueError('\'min_int\' parameter for {} does not match parameter '
+                                     'value for segment_params[\'min_silent_dur\'].'
+                                     .format(filename))
                 self.onsets_s = song_dict['onsets'] / 1000
                 self.offsets_s = song_dict['offsets'] / 1000
                 self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)

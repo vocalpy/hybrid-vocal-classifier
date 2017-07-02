@@ -16,7 +16,7 @@ Many based on the CUIDADO feature set described in Peeters 2004 [2]_.
 """
 
 import numpy as np
-from matplotlib.mlab import specgram
+
 
 def duration(syllable):
     """
@@ -36,10 +36,13 @@ def duration(syllable):
 def _spectrum(spect):
     """
     helper function to calculate spectrum
+    Returns spect without first coefficient, the
+    "DC component", as was done in [1]_
 
     Parameters
     ----------
-    spect
+    spect : 2d array
+        spectrogram of syllable
 
     Returns
     -------
@@ -47,6 +50,7 @@ def _spectrum(spect):
     """
 
     return 20 * np.log10(np.abs(spect[1:, :]))
+
 
 def mean_spectrum(syllable):
     """
@@ -63,6 +67,7 @@ def mean_spectrum(syllable):
 
     spect = _spectrum(syllable.spect)
     return np.mean(spect, axis=1)
+
 
 def _cepstrum_for_mean(spect, freq_bin_ID):
     """
@@ -82,6 +87,7 @@ def _cepstrum_for_mean(spect, freq_bin_ID):
     cepstrum
     
     """
+
     power2 = np.concatenate((spect, np.flipud(spect[1:-1, :])))
     real_cepstrum = np.real(np.fft.fft(np.log10(np.abs(power2)), axis=0))
     return real_cepstrum[1:freq_bin_ID, :]
@@ -100,8 +106,9 @@ def mean_cepstrum(syllable):
     mean_cepstrum : 1d numpy array, mean of cepstrum (i.e. take mean across columns of spectrogram)
     """
 
-    cepst = _cepstrum_for_mean(syllable.spect,syllable.freqBins.shape[0])
+    cepst = _cepstrum_for_mean(syllable.spect, syllable.freqBins.shape[0])
     return np.mean(cepst, axis=1)
+
 
 def _five_point_delta(x):
     """
@@ -117,7 +124,7 @@ def _five_point_delta(x):
     """
     if len(x.shape) > 1:
         return -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
-    else: # if 1d vector, e.g. spectral slope
+    else:  # if 1d vector, e.g. spectral slope
         if x.shape[0] < 5:
             # if length of 1d vector is less than five, can't take five-point
             # delta--would return empty array that then raises warning when
@@ -128,6 +135,7 @@ def _five_point_delta(x):
             return np.zeros((x.shape[0]-1,))
         else:
             return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
+
 
 def mean_delta_spectrum(syllable):
     """
@@ -143,7 +151,7 @@ def mean_delta_spectrum(syllable):
     """
 
     if syllable.spect.shape[-1] < 5:
-        #can't take five point delta if less than five time bins
+        # can't take five point delta if less than five time bins
         # so return zeros instead, as original code did.
         # Return vector of length = number of frequency bins - 1
         # Originally done to remove "DC component", first coefficient
@@ -153,6 +161,7 @@ def mean_delta_spectrum(syllable):
         spect = _spectrum(syllable.spect)
         delta_spectrum = _five_point_delta(spect)
         return np.mean(np.abs(delta_spectrum), axis=1)
+
 
 def mean_delta_cepstrum(syllable):
     """
@@ -175,7 +184,7 @@ def mean_delta_cepstrum(syllable):
         # of FFT.
         return np.zeros((syllable.spect.shape[0]-1,))
     else:
-        cepst = _cepstrum_for_mean(syllable.spect,syllable.freqBins.shape[0])
+        cepst = _cepstrum_for_mean(syllable.spect, syllable.freqBins.shape[0])
         delta_cepstrum = _five_point_delta(cepst)
         return np.mean(np.abs(delta_cepstrum), axis=1)
 
@@ -292,7 +301,7 @@ def spectral_spread(spect,freqBins):
     prob, freqs_mat, num_rows = _convert_spect_to_probability(spect,freqBins)[:3]
     spect_centroid = spectral_centroid(prob,freqs_mat)
     variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
-    return np.spect(variance, 1 / 2)
+    return np.power(variance, 1 / 2)
 
 def mean_spectral_spread(syllable):
     """
