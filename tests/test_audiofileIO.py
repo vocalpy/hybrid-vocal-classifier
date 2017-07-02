@@ -71,7 +71,8 @@ class TestAudiofileIO:
                                     file_format='koumura')
 
     def test_Song_set_and_make_syls(self):
-
+        """
+        """
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf')
@@ -89,5 +90,8 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params)
         wav_song.make_syl_spects(spect_params)
 
-        cbin_song.make_syl_spects(spect_params={'ref':'tachibana'})
-        wav_song.make_syl_spects(spect_params={'ref':'tachibana'})
+        cbin_song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        wav_song.make_syl_spects(spect_params={'ref': 'tachibana'})
+
+        cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
+        wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
