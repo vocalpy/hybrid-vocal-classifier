@@ -19,6 +19,7 @@ class TestParseExtract:
         extract.validate_yaml(test_yaml['valid_with_default_spect_and_seg_params'])
         extract.validate_yaml(test_yaml['valid_with_default_spect_params'])
         extract.validate_yaml(test_yaml['valid_with_default_segment_params'])
+        extract.validate_yaml(test_yaml['valid_test_spect_params_with_ref'])
 
         with pytest.raises(KeyError):
             extract.validate_yaml(test_yaml['invalid_no_todo'])
@@ -49,4 +50,6 @@ class TestParseExtract:
         with pytest.raises(ValueError):
             extract.validate_segment_params(test_yaml['segparams_min_silent_dur_wrong_type'])
 
-#class TestParseExtract():
+#class TestParseSelect():
+
+#class TestParsePredict():

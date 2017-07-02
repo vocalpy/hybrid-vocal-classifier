@@ -1,7 +1,6 @@
 test_parse:
   valid_with_default_spect_and_seg_params:
     spect_params:
-      samp_freq: 32000 # Hz
       nperseg: 512
       noverlap: 480
       freq_cutoffs: [1000,8000]
@@ -18,7 +17,7 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
+          - ./test_data/cbins
           - C:\Data\gy6gy6\010317
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdef
@@ -36,7 +35,6 @@ test_parse:
 
   valid_with_default_spect_params:
     spect_params:
-      samp_freq: 32000 # Hz
       nperseg: 512
       noverlap: 480
       freq_cutoffs: [1000,8000]
@@ -77,7 +75,6 @@ test_parse:
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         spect_params:
-          samp_freq: 32000 # Hz
           nperseg: 512
           noverlap: 480
           freq_cutoffs: [1000,8000]
@@ -94,14 +91,12 @@ test_parse:
         output_dir: C:\DATA\bl26lb16\
         labelset: iabcdef
         spect_params:
-          samp_freq: 32000 # Hz
           nperseg: 512
           noverlap: 480
           freq_cutoffs: [1000,8000]
 
   invalid_no_todo:
     spect_params:
-      samp_freq: 32000 # Hz
       nperseg: 512
       noverlap: 480
       freq_cutoffs: [1000,8000]
@@ -112,7 +107,6 @@ test_parse:
 
   invalid_missing_segment_params:
     spect_params:
-      samp_freq: 32000 # Hz
       nperseg: 512
       noverlap: 480
       freq_cutoffs: [1000,8000]
@@ -166,7 +160,6 @@ test_parse:
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         spect_params:
-          samp_freq: 32000 # Hz
           nperseg: 512
           noverlap: 480
           freq_cutoffs: [1000,8000]
@@ -183,6 +176,27 @@ test_parse:
         output_dir: C:\DATA\bl26lb16\
         labelset: iabcdef
         # missing spect params!!!
+
+  valid_test_spect_params_with_ref:
+    spect_params:
+      ref: 'tachibana'
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+    todo_list:
+      -
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\Data\gy6gy6\010217
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdef
 
 test_segment_params:
   segparams_missing_key:

@@ -2,15 +2,16 @@
 YAML parser for extract config files
 """
 
-#from standard library
+# from standard library
 import os
 import copy
+import warnings
 
-#from dependencies
+# from dependencies
 import yaml
 import numpy as np
 
-#from hvc
+# from hvc
 from hvc.features.extract import single_syl_features_switch_case_dict
 from hvc.features.extract import multiple_syl_features_switch_case_dict
 VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
@@ -28,35 +29,126 @@ with open(os.path.join(dir_path,'feature_groups.yml')) as ftr_grp_yaml:
 ################################################################
 # validation functions for individual configuration parameters #
 ################################################################
-valid_spect_param_keys = set(['samp_freq',
-                              'nperseg',
-                              'noverlap',
-                              'freq_cutoffs'])
+
+valid_spect_param_keys = {'nperseg',
+                          'noverlap',
+                          'freq_cutoffs',
+                          'window',
+                          'filter_func',
+                          'spect_func',
+                          'ref',
+                          'log_transform_spect'
+                          }
 
 def validate_spect_params(spect_params):
+    """validates spect_params
+
+    Parameters
+    ----------
+    spect_params : dict
+        with keys as specified in extract YAML spec
+        also are the arguments to Spectrogram.__init__
+            nperseg : int
+                numper of samples per segment for FFT, e.g. 512
+            noverlap : int
+                number of overlapping samples in each segment
+            freq_cutoffs : two-element list of integers
+                limits of frequency band to keep, e.g. [1000,8000]
+                Spectrogram.make keeps the band:
+                    freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
+            window : str
+                window to apply to segments
+                valid strings are 'Hann', 'dpss', None
+                Hann -- Uses np.Hanning with parameter M (window width) set to value of nperseg
+                dpss -- Discrete prolate spheroidal sequence AKA Slepian.
+                    Uses scipy.signal.slepian with M parameter equal to nperseg and
+                    width parameter equal to 4/nperseg, as in [2]_.
+            filter_func : str
+                filter to apply to raw audio. valid strings are 'diff' or None
+                'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
+                None -- no filter, this is the default
+            spect_func : str
+                which function to use for spectrogram.
+                valid strings are 'scipy' or 'mpl'.
+                'scipy' uses scipy.signal.spectrogram,
+                'mpl' uses matplotlib.matlab.specgram.
+                Default is 'scipy'.
+            ref : str
+                {'tachibana','koumura'}
+                Use spectrogram parameters from a reference.
+                'tachibana' uses spectrogram parameters from [1]_,
+                'koumura' uses spectrogram parameters from [2]_.
+            log_transform_spect : bool
+                if True, applies np.log10 to spectrogram to increase range. Default is True.
+
+    Returns
+    -------
+    spect_params
+    """
+
     if type(spect_params) != dict:
-        raise TypeeError('value for key \'spect_params\' in config file did '
+        raise TypeError('value for key \'spect_params\' in config file did '
                          'not parse as a dictionary of parameters, '
                          'it parsed as {}. Check file formatting.'
                          .format(spect_params))
 
-    if set(spect_params.keys()) != valid_spect_param_keys:
-        raise KeyError('unrecognized keys in spect_params dictionary')
-    else:
-        for sp_key, sp_val in spect_params.items():
-            if sp_key == 'samp_freq' or sp_key == 'window_size' or sp_key == 'window_step':
-                if type(sp_val) != int:
-                    raise ValueError('{} in spect_params should be an integer'.format(sp_key))
-            elif sp_key == 'freq_cutoffs':
-                if len(sp_val) != 2:
-                    raise ValueError('freq_cutoffs should be a 2 item list')
-                for freq_cutoff in sp_val:
-                    if type(freq_cutoff) != int:
-                        raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
+    if not set(spect_params.keys()) <= valid_spect_param_keys:
+        invalid_keys = set(spect_params.keys()) - valid_spect_param_keys
+        raise KeyError('unrecognized keys in spect_params dictionary: {}'
+                       .format(invalid_keys))
 
-valid_segment_param_keys = set(['threshold',
-                                'min_syl_dur',
-                                'min_silent_dur'])
+    if 'ref' in spect_params:
+        if spect_params['ref'] not in {'tachibana', 'koumura'}:
+            raise ValueError('Value {} for \'ref\' not recognized.'
+                             'Valid values are: {\'tachibana\',\'koumura\'}.'
+                             .format(spect_params['ref']))
+        if len(spect_params.keys()) > 1:
+            warnings.warn('spect_params contains \'ref\' parameter '
+                          'but also contains other parameters. Defaults '
+                          'for \'ref\' will override other parameters.')
+            return {'ref': spect_params['ref']}
+        else:
+            return spect_params
+
+    if 'nperseg' not in spect_params.keys() and 'noverlap' not in spect_params.keys():
+        raise KeyError('keys nperseg and noverlap are required in'
+                       'spect_params but were not found.')
+    for sp_key, sp_val in spect_params.items():
+        if sp_key == 'nperseg' or sp_key == 'noverlap':
+            if type(sp_val) != int:
+                raise ValueError('{} in spect_params should be an integer'.format(sp_key))
+        elif sp_key == 'freq_cutoffs':
+            if len(sp_val) != 2:
+                raise ValueError('freq_cutoffs should be a 2 item list')
+            for freq_cutoff in sp_val:
+                if type(freq_cutoff) != int:
+                    raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
+        elif sp_key == 'window':
+            if sp_val not in {'Hann', 'dspp', None}:
+                raise ValueError('{} is invalid value for window in spect params.'
+                                 'Valid values are: {\'Hann\', \'dspp\', None}'
+                                 .format(sp_val))
+        elif sp_key == 'filter_func':
+            if sp_val not in {'Hann', 'dspp', None}:
+                raise ValueError('{} is invalid value for window in spect params.'
+                                 'Valid values are: {\'Hann\', \'dspp\', None}'
+                                 .format(sp_val))
+        elif sp_key == 'filter_func':
+            if sp_val not in {'Hann', 'dspp', None}:
+                raise ValueError('{} is invalid value for window in spect params.'
+                                 'Valid values are: {\'Hann\', \'dpss\', None}'
+                                 .format(sp_val))
+        elif sp_key == 'log_transform_spect':
+            if type(sp_val) != bool:
+                raise TypeError('log_transform_spect parsed as type {}, '
+                                'but should be bool.'
+                                .format(type(sp_val)))
+    return spect_params
+
+valid_segment_param_keys = {'threshold',
+                            'min_syl_dur',
+                            'min_silent_dur'}
+
 
 def validate_segment_params(segment_params):
     """validates segmenting parameters
@@ -111,6 +203,7 @@ def validate_segment_params(segment_params):
                     raise ValueError('min_silent_dur should be float but parsed as {}'
                                      .format(type(val)))
 
+
 def _validate_todo_list_dict(todo_list_dict,index):
     """
     validates to-do lists
@@ -152,7 +245,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
-        elif key=='data_dirs':
+        elif key == 'data_dirs':
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
@@ -178,7 +271,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                             if feature not in VALID_FEATURES:
                                 raise ValueError('feature {} not found in valid feature list'.format(feature))
                         validated_todo_list_dict['feature_list'] = feature_list
-            elif type(val)==list and len(val)==1: # if user entered list with just one element
+            elif type(val) == list and len(val) == 1:  # if user entered list with just one element
                 val = val[0]
                 if val not in valid_feature_groups_dict:
                     raise ValueError('{} not found in valid feature groups'.format(val))
@@ -279,13 +372,13 @@ def validate_yaml(extract_config_yaml):
             raise KeyError('no default `segment_params` specified, but'
                            'not every todo_list in extract config has segment_params')
 
-    validated_extract_config = copy.deepcopy(extract_config_yaml)
+    validated = copy.deepcopy(extract_config_yaml)
     for key, val in extract_config_yaml.items():
         if key == 'spect_params':
-            validate_spect_params(val)
-        elif key=='segment_params':
+            validated['spect_params'] = validate_spect_params(val)
+        elif key == 'segment_params':
             validate_segment_params(val)
-        elif key=='todo_list':
+        elif key == 'todo_list':
             if type(val) != list:
                 raise TypeError('todo_list did not parse as a list, instead it parsed as {}.'
                                 ' Please check config file formatting.'.format(type(val)))
@@ -297,10 +390,10 @@ def validate_yaml(extract_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item,index)
-            validated_extract_config['todo_list'] = val # re-assign because feature list is added
+            validated['todo_list'] = val # re-assign because feature list is added
 
         else: # if key is not found in list
             raise KeyError('key {} in extract is an invalid key'.
                             format(key))
 
-    return validated_extract_config
+    return validated
