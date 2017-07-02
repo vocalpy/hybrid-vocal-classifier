@@ -14,14 +14,66 @@ Every `extract.config.yml` file has exactly one **required** key at the top leve
       each dict sets parameters for a 'job', typically
       data associated with one set of vocalizations.
 
-`extract.config.yml` files *may* optionally define other keys at the same level as `todo_list`.
+`extract.config.yml` files *may* optionally define two other keys at the same level as `todo_list`.
+Those keys are `spect_params` and `segment_params`. As might be expected, `spect_params` is a dict
+that contains parameters for making spectrograms. The `segment_params` dict contains parameters for
+segmenting song.
+
 When defined at the same level as `todo_list` they are considered `default`.
 If an element in `todo_list` defines different values for any of these keys,
-the value assigned in that element takes precedence over the `default` value:
+the value assigned in that element takes precedence over the `default` value.
+
+Here are the
    spect_params: dict
-      spectrogram parameters, defined below
-    segment_params: dict
-        parameters for dividing audio into segments, defined below
+      parameters to calculate spectrogram
+      keys correspond to parameters/arguments passed to Spectrogram class for __init__.
+      **must** have *either* a 'ref' key *or* the `nperseg` and `noverlap` keys
+      as defined below:
+         ref : str
+            {'tachibana','koumura'}
+            Use spectrogram parameters from a reference.
+            'tachibana' uses spectrogram parameters from [1]_,
+            'koumura' uses spectrogram parameters from [2]_.
+
+         nperseg : int
+            numper of samples per segment for FFT, e.g. 512
+         noverlap : int
+            number of overlapping samples in each segment
+
+      the following keys are all **optional**:
+        freq_cutoffs : two-element list of integers
+            limits of frequency band to keep, e.g. [1000,8000]
+            Spectrogram.make keeps the band:
+                freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
+        window : str
+            window to apply to segments
+            valid strings are 'Hann', 'dpss', None
+            Hann -- Uses np.Hanning with parameter M (window width) set to value of nperseg
+            dpss -- Discrete prolate spheroidal sequence AKA Slepian.
+                Uses scipy.signal.slepian with M parameter equal to nperseg and
+                width parameter equal to 4/nperseg, as in [2]_.
+        filter_func : str
+            filter to apply to raw audio. valid strings are 'diff' or None
+            'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
+            None -- no filter, this is the default
+        spect_func : str
+            which function to use for spectrogram.
+            valid strings are 'scipy' or 'mpl'.
+            'scipy' uses scipy.signal.spectrogram,
+            'mpl' uses matplotlib.matlab.specgram.
+            Default is 'scipy'.
+        log_transform_spect : bool
+            if True, applies np.log10 to spectrogram to increase range. Default is True.
+
+   segment_params: dict
+      parameters for dividing audio into segments, defined below
+      with the following keys
+         threshold : int
+            value above which amplitude is considered part of a segment. default is 5000.
+         min_syl_dur : float
+            minimum duration of a segment. default is 0.02, i.e. 20 ms.
+         min_silent_dur : float
+            minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
 
 Every dict in a `todo_list` has the following **required** keys:
   bird_ID : str
@@ -51,59 +103,56 @@ Every dict in a `todo_list` has the following **required** keys:
     Converted to a list but not necessary to enter as a list.
     For example, `iabcdef`
 
-<table>
-  <tbody>
-    <tr>
-      <th>Key</th>
-      <th align="center">Value Type and Definition</th>
-    </tr>
-    <tr>
-      <td>spect_params</td>
-      <td align="left">
-      Dictionary, parameters for spectrogram
-        <ul>
-            <li>samp_freq : integer, sampling frequency (Hz)</li1>
-            <li>window_size : integer, FFT window length in number of samples</li>
-            <li>window_step : integer, number of samples to step forward for each window</li>
-            <li>freq_cutoffs : list of 2 integers [low,high], range of frequencies to keep</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>feature_list</td>
-      <td align="left">list, named features. See the
-       <a href="named_features.md">list of named features here</a></td>
-    </tr>
-    <tr>
-      <td>feature_group</td>
-      <td align="left">named group of features</td>
-    </tr>
-    <tr>
-      <td>todo_list</td>
-      <td align="left">list of dictionaries, 'jobs' to run. Typically data from one subject.
-      Each dictionary in the list must define the following fields:
-        <ul>
-            <li>subject_ID : string, alphanumeric.</li>
-            <li>dirs : list of strings, names of directories with
-            audio files from which to exract features</li>
-            <li>labelset : string, labels of syllables from which
-            features should be extracted. Provide the set as a single
-            string, e.g., `iabcdefg`. If a label appears in the labeled data but
-            does not appear in this string, it will be ignored.</li>
-            <li>output_dir : string, directory name in which to save output, the extracted feature files</li>
-        </ul>
-    </td>
-    </tr>
-  </tbody>
-</table>
+    feature_list : list
+        named features. See the list of named features here:
+        :doc:`named_features`
+
+    feature_group : str or list
+        named group of features, list if more than one group
+        {'knn','svm'}
 
 example `extract_config.yml`
 ----------------------------
 
 ```YAML
-spect_params :
-    samp_freq : 32000 # Hz
-    window_size : 512
-    window_step : 32
-    freq_cutoffs : [1000,8000]
+    spect_params:
+      nperseg: 512
+      noverlap: 480
+      freq_cutoffs: [1000,8000]
+    segment_params:
+      threshold: 5000 # arbitrary units of amplitude
+      min_syl_dur: 0.02 # ms
+      min_silent_dur: 0.002 # ms
+
+    todo_list:
+      -
+        bird_ID : gy6or6
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - ./test_data/cbins
+          - C:\Data\gy6gy6\010317
+        output_dir: C:\Data\gy6gy6\
+        labelset: iabcdef
+      - #2
+        bird_ID : bl26lb16
+        file_format: evtaf
+        feature_group:
+          - svm
+          - knn
+        data_dirs:
+          - C:\DATA\bl26lb16\041912
+          - C:\DATA\bl26lb16\042012
+        output_dir: C:\DATA\bl26lb16\
+        labelset: iabcdef
 ```
+
+.. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
+automatic classification of birdsong elements using a linear support vector
+ machine." PloS one 9.3 (2014): e92584.
+
+.. [2] Koumura, Takuya, and Kazuo Okanoya. "Automatic recognition of element
+classes and boundaries in the birdsong with variable sequences."
+PloS one 11.7 (2016): e0159188.
