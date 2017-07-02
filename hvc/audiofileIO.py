@@ -28,32 +28,32 @@ class Spectrogram:
         
         Parameters
         ----------
-        nperseg : integer
+        nperseg : int
             numper of samples per segment for FFT, e.g. 512
-        noverlap : integer
+        noverlap : int
             number of overlapping samples in each segment
         freq_cutoffs : two-element list of integers
             limits of frequency band to keep, e.g. [1000,8000]
             Spectrogram.make keeps the band:
                 freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
-        window : string
+        window : str
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
             Hann -- Uses np.Hanning with parameter M (window width) set to value of nperseg
             dpss -- Discrete prolate spheroidal sequence AKA Slepian.
                 Uses scipy.signal.slepian with M parameter equal to nperseg and
                 width parameter equal to 4/nperseg, as in [2]_.
-        filter_func : string
+        filter_func : str
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
             None -- no filter, this is the default
-        spect_func : string
+        spect_func : str
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
             'scipy' uses scipy.signal.spectrogram,
             'mpl' uses matplotlib.matlab.specgram.
             Default is 'scipy'.
-        ref : string
+        ref : str
             {'tachibana','koumura'}
             Use spectrogram parameters from a reference.
             'tachibana' uses spectrogram parameters from [1]_,
