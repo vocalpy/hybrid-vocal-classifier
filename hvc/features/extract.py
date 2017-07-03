@@ -110,6 +110,7 @@ def from_file(filename,
                 del curr_feature_arr
 
             for syl in song.syls:
+                # extract current feature from every syllable
                 ftr = single_syl_features_switch_case_dict[current_feature](syl)
                 if 'curr_feature_arr' in locals():
                     if np.isscalar(ftr):
@@ -118,13 +119,10 @@ def from_file(filename,
                         # note have to add dimension with newaxis because np.concat requires
                         # same number of dimensions, but extract_features returns 1d.
                         # Decided to keep it explicit that we go to 2d here.
-                        try:
-                            curr_feature_arr = np.concatenate((curr_feature_arr,
-                                                               ftr[np.newaxis, :]),
-                                                              axis=0)
-                        except ValueError:
-                            import pdb;pdb.set_trace()
-                else:
+                        curr_feature_arr = np.concatenate((curr_feature_arr,
+                                                           ftr[np.newaxis, :]),
+                                                          axis=0)
+                else:  # if curr_feature_arr doesn't exist yet
                     if np.isscalar(ftr):
                         curr_feature_arr = ftr
                     else:
@@ -133,11 +131,16 @@ def from_file(filename,
             # after looping through all syllables:
             if 'features_arr' in locals():
                 if np.isscalar(ftr):
+                    # if feature is scalar,
+                    # then `ftr` from all syllables will be a (row) vector
+                    # so transpose to column vector then add to growing end of 2d matrix
                     feature_inds.extend([ftr_ind])
                     features_arr = np.concatenate((features_arr,
                                                    curr_feature_arr[np.newaxis, :].T),
                                                   axis=1)
                 else:
+                    # if feature is not scalar,
+                    # `ftr` will be 2-d, so don't transpose before you concatenate
                     feature_inds.extend([ftr_ind] * ftr.shape[-1])
                     features_arr = np.concatenate((features_arr,
                                                    curr_feature_arr),

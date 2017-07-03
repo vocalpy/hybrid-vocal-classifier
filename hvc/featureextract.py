@@ -133,7 +133,7 @@ def extract(config_file):
                 del features_from_all_files
 
             if file_format == 'evtaf':
-                songfiles_list = glob.glob('*.not.mat')
+                songfiles_list = glob.glob('*.cbin')
             elif file_format == 'koumura':
                 songfiles_list = glob.glob('*.wav')
 
@@ -143,8 +143,6 @@ def extract(config_file):
             song_ID_counter = 0
             for file_num, songfile in enumerate(songfiles_list):
                 print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
-                if file_format == 'evtaf':
-                    songfile = songfile[:-8]  # remove .not.mat extension from filename to get name of associated .cbin file
                 ftrs_from_curr_file, labels, ftr_inds = features.extract.from_file(songfile,
                                                                                    todo['file_format'],
                                                                                    todo['feature_list'],

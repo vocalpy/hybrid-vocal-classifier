@@ -33,6 +33,7 @@ def duration(syllable):
 
     return syllable.sylAudio.shape[0] / syllable.sampFreq
 
+
 def _spectrum(spect):
     """
     helper function to calculate spectrum
@@ -402,6 +403,7 @@ def spectral_kurtosis(spect, freqBins):
     kurtosis = np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob, 0)
     return kurtosis / np.power(variance, 2)
 
+
 def mean_spectral_kurtosis(syllable):
     """
     mean of spectral kurtosis across syllable,
@@ -418,6 +420,7 @@ def mean_spectral_kurtosis(syllable):
 
     return np.mean(spectral_kurtosis(syllable.spect, syllable.freqBins))
 
+
 def mean_delta_spectral_kurtosis(syllable):
     """
     mean of 5-point delta of spectral kurtosis
@@ -432,6 +435,7 @@ def mean_delta_spectral_kurtosis(syllable):
     """
 
     return np.mean(_five_point_delta(spectral_kurtosis(syllable.spect, syllable.freqBins)))
+
 
 def spectral_flatness(spect):
     """
@@ -448,6 +452,7 @@ def spectral_flatness(spect):
     amplitude_spectrum = np.abs(spect)
     return np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(amplitude_spectrum, 0)
 
+
 def mean_spectral_flatness(syllable):
     """
     mean of spectral flatness across syllable
@@ -462,6 +467,7 @@ def mean_spectral_flatness(syllable):
     """
     return np.mean(spectral_flatness(syllable.spect))
 
+
 def mean_delta_spectral_flatness(syllable):
     """
     mean delta spectral flatness
@@ -475,6 +481,7 @@ def mean_delta_spectral_flatness(syllable):
     mean delta spectral flatness
     """
     return np.mean(_five_point_delta(spectral_flatness(syllable.spect)))
+
 
 def spectral_slope(spect,freq_bins):
     """
@@ -500,6 +507,7 @@ def spectral_slope(spect,freq_bins):
         spect_slope[n] = beta[0]
     return spect_slope
 
+
 def mean_spectral_slope(syllable):
     """
     mean of spectral slope across syllable
@@ -514,6 +522,7 @@ def mean_spectral_slope(syllable):
     """
 
     return np.mean(spectral_slope(syllable.spect, syllable.freqBins))
+
 
 def mean_delta_spectral_slope(syllable):
     """
@@ -530,7 +539,8 @@ def mean_delta_spectral_slope(syllable):
 
     return np.mean(_five_point_delta(spectral_slope(syllable.spect, syllable.freqBins)))
 
-def _cepstrum_for_pitch(spect,nfft,samp_freq,min_freq,max_freq):
+
+def _cepstrum_for_pitch(spect, nfft, samp_freq, min_freq, max_freq):
     """
     cepstrum as computed in Tachibana et al. 2014
     for the purposes of calculating pitch and pitch goodness
@@ -556,13 +566,14 @@ def _cepstrum_for_pitch(spect,nfft,samp_freq,min_freq,max_freq):
 
     exs = np.vstack((amplitude_spectrum,
                      np.matlib.repmat(amplitude_spectrum[-1, :], nfft, 1),
-                     np.flipud(amplitude_spectrum[1:-1,:])))
+                     np.flipud(amplitude_spectrum[1:-1, :])))
     cepstrum = np.real(np.fft.fft(np.log10(exs)))
     max_val = np.max(cepstrum[min_quef:max_quef, :], axis=0)
     max_id = np.argmax(cepstrum[min_quef:max_quef, :], axis=0)
     return max_val, max_id, min_quef
 
-def pitch(syllable,min_freq=500,max_freq=6000):
+
+def pitch(syllable, min_freq=500, max_freq=6000):
     """
     pitch, as calculated in Tachibana et al. 2014.
     Peak of the cepstrum.
