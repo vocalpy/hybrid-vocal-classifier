@@ -16,26 +16,37 @@ class Spectrogram:
     """
 
     def __init__(self,
+                 ref=None,
                  nperseg=None,
                  noverlap=None,
                  freq_cutoffs=None,
                  window=None,
                  filter_func=None,
                  spect_func=None,
-                 ref=None,
                  log_transform_spect=True):
         """Spectrogram.__init__ function
         
         Parameters
         ----------
+        ref : str
+            {'tachibana','koumura'}
+            Use spectrogram parameters from a reference.
+            'tachibana' uses spectrogram parameters from [1]_,
+            'koumura' uses spectrogram parameters from [2]_.
         nperseg : int
             numper of samples per segment for FFT, e.g. 512
         noverlap : int
             number of overlapping samples in each segment
+
+        Either ref or nperseg and noverlap are required for __init__
+
+        Other Parameters
+        ----------------
         freq_cutoffs : two-element list of integers
             limits of frequency band to keep, e.g. [1000,8000]
             Spectrogram.make keeps the band:
                 freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
+            Default is None.
         window : str
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
@@ -43,23 +54,20 @@ class Spectrogram:
             dpss -- Discrete prolate spheroidal sequence AKA Slepian.
                 Uses scipy.signal.slepian with M parameter equal to nperseg and
                 width parameter equal to 4/nperseg, as in [2]_.
+            Default is None.
         filter_func : str
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
-            None -- no filter, this is the default
+            Default is None.
         spect_func : str
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
             'scipy' uses scipy.signal.spectrogram,
             'mpl' uses matplotlib.matlab.specgram.
             Default is 'scipy'.
-        ref : str
-            {'tachibana','koumura'}
-            Use spectrogram parameters from a reference.
-            'tachibana' uses spectrogram parameters from [1]_,
-            'koumura' uses spectrogram parameters from [2]_.
         log_transform_spect : bool
-            if True, applies np.log10 to spectrogram to increase range. Default is True.
+            if True, applies np.log10 to spectrogram to increase range.
+            Default is True.
 
         References
         ----------
@@ -74,10 +82,10 @@ class Spectrogram:
 
         # check for 'reference' parameter first since it takes precedence
         if ref is not None:
-            if ref not in ('tachibana','koumura'):
+            if ref not in ('tachibana', 'koumura'):
                 raise ValueError('{} is not a valid value for reference argument'.
                                  format(ref))
-            # throw error if called with 'ref' and with other params
+            # warn if called with 'ref' and with other params
             if any(param is not None
                    for param in [nperseg,
                                  noverlap,
@@ -112,64 +120,62 @@ class Spectrogram:
                                      .format(ref))
 
         elif ref is None:
+            if nperseg is None:
+                raise ValueError('nperseg requires a value for Spectrogram.__init__')
+            if noverlap is None:
+                raise ValueError('noverlap requires a value for Spectrogram.__init__')
             if spect_func is None:
                 # switch to default
                 # can't have in args list because need to check above for
                 # conflict with default spectrogram functions for each ref
                 spect_func = 'scipy'
-            if any(param is None
-                   for param in [nperseg,
-                                 noverlap,
-                                 freq_cutoffs]):
-                raise ValueError('not all parameters set for Spectrogram init')
+            if type(nperseg) != int:
+                raise TypeError('type of nperseg must be int, but is {}'.
+                                 format(type(nperseg)))
             else:
-                if type(nperseg) != int:
-                    raise TypeError('type of nperseg must be int, but is {}'.
-                                     format(type(nperseg)))
-                else:
-                    self.nperseg = nperseg
+                self.nperseg = nperseg
 
-                if type(noverlap) != int:
-                    raise TypeError('type of noverlap must be int, but is {}'.
-                                     format(type(noverlap)))
-                else:
-                    self.noverlap = noverlap
+            if type(noverlap) != int:
+                raise TypeError('type of noverlap must be int, but is {}'.
+                                 format(type(noverlap)))
+            else:
+                self.noverlap = noverlap
 
-                if window is not None and type(window) != str:
-                    raise TypeError('type of window must be str, but is {}'.
-                                     format(type(window)))
+            if window is not None and type(window) != str:
+                raise TypeError('type of window must be str, but is {}'.
+                                 format(type(window)))
+            else:
+                if window not in ['Hann','dpss',None]:
+                    raise ValueError('{} is not a valid specification for window'.
+                                     format(window))
                 else:
-                    if window not in ['Hann','dpss',None]:
-                        raise ValueError('{} is not a valid specification for window'.
-                                         format(window))
-                    else:
-                        if window == 'Hann':
-                            self.window = np.hanning(self.nperseg)
-                        elif window == 'dpss':
-                            self.window = slepian(self.nperseg, 4 / self.nperseg)
-                        elif window is None:
-                            self.window = None
+                    if window == 'Hann':
+                        self.window = np.hanning(self.nperseg)
+                    elif window == 'dpss':
+                        self.window = slepian(self.nperseg, 4 / self.nperseg)
+                    elif window is None:
+                        self.window = None
 
-                if type(freq_cutoffs) != list:
-                    raise TypeError('type of freq_cutoffs must be list, but is {}'.
-                                     format(type(freq_cutoffs)))
-                elif len(freq_cutoffs) != 2:
-                    raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
-                                     format(len(freq_cutoffs)))
-                elif not all([type(val) == int for val in freq_cutoffs]):
-                    raise ValueError('all values in freq_cutoffs list must be ints')
-                else:
-                    self.freqCutoffs = freq_cutoffs
+            if type(freq_cutoffs) != list:
+                raise TypeError('type of freq_cutoffs must be list, but is {}'.
+                                 format(type(freq_cutoffs)))
+            elif len(freq_cutoffs) != 2:
+                raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
+                                 format(len(freq_cutoffs)))
+            elif not all([type(val) == int for val in freq_cutoffs]):
+                raise ValueError('all values in freq_cutoffs list must be ints')
+            else:
+                self.freqCutoffs = freq_cutoffs
 
-                if filter_func is not None and type(filter_func) != str:
-                    raise TypeError('type of filter_func must be str, but is {}'.
-                                     format(type(filter_func)))
-                elif filter_func not in ['diff',None]:
-                    raise ValueError('string \'{}\' is not valid for filter_func. '
-                                     'Valid values are: \'diff\' or None.'.
-                                     format(filter_func))
-                else:
-                    self.filterFunc = filter_func
+            if filter_func is not None and type(filter_func) != str:
+                raise TypeError('type of filter_func must be str, but is {}'.
+                                 format(type(filter_func)))
+            elif filter_func not in ['diff',None]:
+                raise ValueError('string \'{}\' is not valid for filter_func. '
+                                 'Valid values are: \'diff\' or None.'.
+                                 format(filter_func))
+            else:
+                self.filterFunc = filter_func
 
                 if type(spect_func) != str:
                     raise TypeError('type of spect_func must be str, but is {}'.
@@ -268,21 +274,7 @@ class Spectrogram:
         freq_bins = np.flipud(freq_bins)
         return spect, freq_bins, time_bins
 
-class song_spect:
-    """spectrogram object, returned by make_song_spect.
-    Properties:
-        spect -- 2-d m by n numpy array, spectrogram as computed by make_song_spect.
-                 Each of the m rows is a frequency bin, and each of the n columns is a time bin.
-        time_bins -- 1d vector, values are times represented by each bin in s
-        freq_bins -- 1d vector, values are power spectral density in each frequency bin
-        sampfreq -- sampling frequency in Hz as determined by scipy.io.wavfile function
-    """
-    def __init__(self,spect,freq_bins,time_bins,sampfreq):
-        self.spect = spect
-        self.freqBins = freq_bins
-        self.timeBins = time_bins
-        self.sampFreq = sampfreq
-    
+
 def compute_amp(spect):
     """
     compute amplitude of spectrogram
@@ -306,7 +298,7 @@ def segment_song(amp,
     amp : 1-d numpy array
         amplitude of power spectral density. Returned by compute_amp.
     time_bins : 1-d numpy array
-        time in s, must be same length as log amp. Returned by make_song_spect.
+        time in s, must be same length as log amp. Returned by Spectrogram.make.
     segment_params : dict
         with the following keys
             threshold : int
@@ -362,7 +354,7 @@ class syllable:
     sampfreq : integer
         sampling frequency in Hz as determined by scipy.io.wavfile function
     spect : 2-d m by n numpy array
-        spectrogram as computed by make_song_spect. Each of the m rows is a frequency bin, 
+        spectrogram as computed by Spectrogram.make(). Each of the m rows is a frequency bin,
         and each of the n columns is a time bin. Value in each bin is power at that frequency and time.
     nfft : integer
         number of samples used for each FFT
@@ -399,7 +391,7 @@ class Song:
     def __init__(self,
                  filename,
                  file_format,
-                 segment_params,
+                 segment_params=None,
                  use_annotation=True,
                  annote_filename=None,
                  spect_params=None):
@@ -425,10 +417,11 @@ class Song:
             'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
             'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
         segment_params : dict
-            required. If use_annotation is True, checks values in this dict against
+            required for any data set that includes segmenting parameters.
+            If use_annotation is True, checks values in this dict against
             the parameters in the annotation file (if they are present, not all
             data sets include segmentation parameters).
-
+            Default is None.
             segment_params dict has the following keys:
                 threshold : int
                     value above which amplitude is considered part of a segment. default is 5000.
@@ -452,9 +445,9 @@ class Song:
         """
 
         if use_annotation is False and segment_params is None:
-            raise ValueeError('use_annotation set to False but no segment_params '
-                              'was provided; segment_params are required to '
-                              'find segments.')
+            raise ValueError('use_annotation set to False but no segment_params '
+                             'was provided; segment_params are required to '
+                             'find segments.')
 
         if use_annotation is False and spect_params is None:
             raise ValueError('use_annotation set to False but no spect_params '
@@ -473,12 +466,11 @@ class Song:
         self.sampFreq = samp_freq
 
         if use_annotation:
-            if segment_params is not None:
-                warnings.warn('use_annotations set to True in call to Song.__init__'
-                              ' but segment_params were also passed, will use segments'
-                              ' from annotation file and ignore segment_params.')
-
             if file_format == 'evtaf':
+                if segment_params is None:
+                    ValueError('segment_params required when '
+                               'use_annotation is true for '
+                               'evtaf file format')
                 if annote_filename:
                     song_dict = evfuncs.load_notmat(annote_filename)
                 else:
@@ -516,20 +508,25 @@ class Song:
                         print("Could not automatically find an annotation file for {}."
                               .format(filename))
                         raise
-                self.onsets_Hz = song_dict['onsets'] # in Koumura annotation.xml files, onsets given in Hz
-                self.offsets_Hz = song_dict['offsets'] # and offsets
-                self.onsets_s = self.onsets_Hz / self.sampFreq # so need to convert to seconds
+                self.onsets_Hz = song_dict['onsets']  # in Koumura annotation.xml files, onsets given in Hz
+                self.offsets_Hz = song_dict['offsets']  # and offsets
+                self.onsets_s = self.onsets_Hz / self.sampFreq  # so need to convert to seconds
                 self.offsets_s = song_dict['offsets'] / self.sampFreq
 
             self.labels = song_dict['labels']
 
-        else:
+        else:  # if use_annotation is False, segment song
             self.spectParams = spect_params
             self.segmentParams = segment_params
 
-            spect, time_bins, freq_bins = make_song_spect(raw_audio,
-                                                          samp_freq,
-                                                          spect_params)
+            spect_maker = Spectrogram(**spect_params)
+            spect, freq_bins, time_bins = spect_maker.make(self.rawAudio,
+                                                           self.sampFreq)
+            # redundant that I make spect but then throw it away after finding
+            # onsets + offsets. Could just keep segment spectrograms but for
+            # 'syls_to_use' not being set. Possibly could just assume that
+            # 'syls_to_use' == 'all' for unlabeled song
+            # Is there any time that would be unwanted behavior?
             amp = compute_amp(spect)
             onsets, offsets = segment_song(amp,
                                            time_bins,

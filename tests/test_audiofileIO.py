@@ -75,20 +75,36 @@ class TestAudiofileIO:
     def test_Song_init(self):
         """test whether Song object inits properly
         """
+
+        segment_params = {
+            'threshold': 1500,
+            'min_syl_dur': 0.01,
+            'min_silent_dur': 0.006
+        }
+
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
-                                    file_format='evtaf')
+                                    file_format='evtaf',
+                                    segment_params=segment_params)
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         song = hvc.audiofileIO.Song(filename=wav,
                                     file_format='koumura')
 
     def test_Song_set_and_make_syls(self):
+        """test that set_syls_to_use and make_syl_spects work
         """
-        """
+
+        segment_params = {
+            'threshold': 1500,
+            'min_syl_dur': 0.01,
+            'min_silent_dur': 0.006
+        }
+
         cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
-                                         file_format='evtaf')
+                                         file_format='evtaf',
+                                         segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdef')
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
