@@ -100,7 +100,7 @@ class Spectrogram:
                     self.nperseg = 256
                     self.noverlap = 192
                     self.window = np.hanning(self.nperseg) #Hann window
-                    self.freqCutoffs = [500, 6000]
+                    self.freqCutoffs = None
                     self.filterFunc = 'diff'
                     self.spectFunc = 'mpl'
                     self.logTransformSpect = False  # see tachibana feature docs
@@ -264,10 +264,11 @@ class Spectrogram:
 
         #below, I set freq_bins to >= freq_cutoffs
         #so that Koumura default of [1000,8000] returns 112 freq. bins
-        f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
-                            (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
-        freq_bins = freq_bins[f_inds]
-        spect = spect[f_inds, :]
+        if self.freqCutoffs is not None:
+            f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
+                                (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
+            freq_bins = freq_bins[f_inds]
+            spect = spect[f_inds, :]
 
         #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
         spect = np.flipud(spect)

@@ -10,13 +10,68 @@ import glob
 import yaml
 import numpy as np
 from scipy.io import loadmat
+import pytest
 
-import hvc
+import hvc.audiofileIO
 from hvc.features.extract import single_syl_features_switch_case_dict
 from hvc.features.extract import multiple_syl_features_switch_case_dict
+from hvc.features import tachibana
 
 with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+
+class TestTachibana:
+    """
+    unit tests that specifically test functions
+    in the Tachibana module
+    """
+
+    @pytest.fixture()
+    def song(self):
+        """make a song object
+
+        Should get fancy later and have this return random songs
+        for more thorough testing
+
+        Returns
+        -------
+        song: song object
+            used to text feature extraction functions
+        """
+        segment_params = {'threshold': 1500,
+                          'min_syl_dur': 0.01,
+                          'min_silent_dur': 0.006
+                          }
+        songfiles_list = glob.glob('./test_data/cbins/*.cbin')
+        song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
+        song.set_syls_to_use('iabcdefghjk')
+        song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        return song
+
+    def test_mean_spect(self, song):
+        """test mean spectrum
+        """
+        # if using `tachibana` reference to make syllable spectra
+        # (with 32 kHz sampling rate)
+        # length of vector returned by mean_spectrum should be 128.
+        # Want to be sure to return exact same number of features
+        # in case it matters for e.g. feature selection
+        assert tachibana.mean_spectrum(song.syls[0]).shape[0] == 128
+
+    def test_delta_mean_spect(self, song):
+        """test delta spectrum
+        """
+        assert tachibana.mean_delta_spectrum(song.syls[0]).shape[0] == 128
+
+    def test_mean_cepst(self, song):
+        """test mean cepstrum
+        """
+        assert tachibana.mean_cepstrum(song.syls[0]).shape[0] == 128
+
+    def test_delta_mean_cepstrum(self, song):
+        """test delta cepstrum
+        """
+        assert tachibana.mean_delta_cepstrum(song.syls[0]).shape[0] == 128
 
 
 class TestSVM:
@@ -37,8 +92,7 @@ class TestSVM:
                           'min_silent_dur': 0.006
                           }
 
-        os.chdir('./test_data/cbins')
-        songfiles_list = glob.glob('*.cbin')
+        songfiles_list = glob.glob('./test_data/cbins*.cbin')
 
         for songfile in songfiles_list[:10]:
             song = hvc.audiofileIO.Song(songfile, 'evtaf', segment_params)
