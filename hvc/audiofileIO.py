@@ -562,7 +562,7 @@ class Song:
                 labels_to_use = list(labels_to_use)
 
         if labels_to_use == 'all':
-            self.syls_to_use = np.ones((self.onsets.shape),dtype=bool)
+            self.syls_to_use = np.ones((self.onsets_s.shape),dtype=bool)
         else:
             self.syls_to_use = np.in1d(list(self.labels),
                                        labels_to_use)
