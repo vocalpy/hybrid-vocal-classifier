@@ -40,6 +40,7 @@ valid_spect_param_keys = {'nperseg',
                           'log_transform_spect'
                           }
 
+
 def validate_spect_params(spect_params):
     """validates spect_params
 

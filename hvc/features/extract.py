@@ -99,6 +99,12 @@ def from_file(filename,
     song = audiofileIO.Song(filename, file_format, segment_params)
     song.set_syls_to_use(labels_to_use)
 
+    if np.all(song.syls_to_use == False):
+        warnings.warn("No labels in {0} matched labels to use: {1}\n"
+                      "Did not extract features from file."
+                      .format(filename, labels_to_use))
+        return None, None, None
+
     # initialize indexing array for features
     # used to split back up into feature groups
     feature_inds = []

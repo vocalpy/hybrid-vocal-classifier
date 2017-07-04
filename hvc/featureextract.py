@@ -2,17 +2,17 @@
 feature extraction
 """
 
-#from standard library
+# from standard library
 import sys
 import os
 import glob
 from datetime import datetime
 
-#from dependencies
+# from dependencies
 import numpy as np
 from sklearn.externals import joblib
 
-#from hvc
+# from hvc
 from .parseconfig import parse_config
 from . import features
 
@@ -149,6 +149,10 @@ def extract(config_file):
                                                                                    extract_config['spect_params'],
                                                                                    todo['labelset'],
                                                                                    extract_config['segment_params'])
+                if all([returned is None for returned in (ftrs_from_curr_file,
+                                                          labels,
+                                                          ftr_inds)]):
+                    continue
                 all_labels.extend(labels)
                 song_IDs.extend([song_ID_counter] * len(labels))
                 song_ID_counter += 1
@@ -277,9 +281,10 @@ def extract(config_file):
 
             joblib.dump(summary_ftr_file_dict,
                         summary_filename)
-        else: # if only one feature_file
+        else:  # if only one feature_file
             os.rename(ftr_output_files[0],
                       summary_filename)
+            summary_ftr_file_dict = joblib.load(summary_filename)
         dump_select_config(summary_ftr_file_dict,
                            timestamp,
                            summary_filename,
