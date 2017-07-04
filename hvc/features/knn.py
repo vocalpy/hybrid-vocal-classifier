@@ -12,7 +12,8 @@ _duration = lambda onsets, offsets: offsets-onsets
 # helper function that calculates duration of silent gaps between syllables
 _gapdurs = lambda onsets, offsets: onsets[1:] - offsets[:-1]
 
-def duration(onsets,offsets,syls_to_use):
+
+def duration(onsets, offsets, syls_to_use):
     """
     durations of syllables, using onsets and offsets from segmentation
     
@@ -30,9 +31,10 @@ def duration(onsets,offsets,syls_to_use):
     _duration(onsets,offsets)[syls_to_use]
     """
 
-    return _duration(onsets,offsets)[syls_to_use]
+    return _duration(onsets, offsets)[syls_to_use]
 
-def pre_duration(onsets,offsets,syls_to_use):
+
+def pre_duration(onsets, offsets, syls_to_use):
     """
     duration of preceding syllable
         
@@ -53,10 +55,11 @@ def pre_duration(onsets,offsets,syls_to_use):
     """
 
     pre = np.zeros((onsets.shape[-1],))
-    pre[1:] = _duration(onsets,offsets)[:-1]
+    pre[1:] = _duration(onsets, offsets)[:-1]
     return pre[syls_to_use]
 
-def foll_duration(onsets,offsets,syls_to_use):
+
+def foll_duration(onsets, offsets, syls_to_use):
     """
     duration of following syllable
 
@@ -77,10 +80,11 @@ def foll_duration(onsets,offsets,syls_to_use):
     """
 
     foll = np.zeros((onsets.shape[-1],))
-    foll[:-1] = _duration(onsets,offsets)[1:]
+    foll[:-1] = _duration(onsets, offsets)[1:]
     return foll[syls_to_use]
 
-def pre_gapdur(onsets,offsets,syls_to_use):
+
+def pre_gapdur(onsets, offsets, syls_to_use):
     """
     duration of silent gap between syllable and preceding syllable
 
@@ -101,10 +105,11 @@ def pre_gapdur(onsets,offsets,syls_to_use):
     """
 
     pre = np.zeros((onsets.shape[-1],))
-    pre[1:] = _gapdurs(onsets,offsets)
+    pre[1:] = _gapdurs(onsets, offsets)
     return pre[syls_to_use]
 
-def foll_gapdur(onsets,offsets,syls_to_use):
+
+def foll_gapdur(onsets, offsets, syls_to_use):
     """
     duration of silent gap between syllable and following syllable
 
@@ -125,8 +130,9 @@ def foll_gapdur(onsets,offsets,syls_to_use):
     """
 
     foll = np.zeros((onsets.shape[-1],))
-    foll[:-1] = _gapdurs(onsets,offsets)
+    foll[:-1] = _gapdurs(onsets, offsets)
     return foll[syls_to_use]
+
 
 def _smooth_rect_amp(syllable):
     """
@@ -147,6 +153,7 @@ def _smooth_rect_amp(syllable):
                                 syllable.sampFreq,
                                 syllable.freqCutoffs)
 
+
 def mn_amp_smooth_rect(syllable):
     """
     mean of smoothed rectified amplitude
@@ -164,6 +171,7 @@ def mn_amp_smooth_rect(syllable):
 
     return np.mean(_smooth_rect_amp(syllable))
 
+
 def mn_amp_rms(syllable):
     """
     
@@ -179,6 +187,7 @@ def mn_amp_rms(syllable):
 
     return np.sqrt(mn_amp_smooth_rect(syllable))
 
+
 def _spect_entropy(syllable):
     """
     helper function that calculates spectral entropy for syllable spectrogram
@@ -193,9 +202,10 @@ def _spect_entropy(syllable):
         spectral entropy for each time bin in syllable spectrogram
         array will have length = number of columns in syllable.power
     """
-    psd = np.power(np.abs(syllable.power),2)
-    psd_pdf = psd / np.sum(psd,axis=0)
-    return -np.sum(psd_pdf * np.log(psd_pdf),axis=0)
+    psd = np.power(np.abs(syllable.power), 2)
+    psd_pdf = psd / np.sum(psd, axis=0)
+    return -np.sum(psd_pdf * np.log(psd_pdf), axis=0)
+
 
 def mean_spect_entropy(syllable):
     """
@@ -212,7 +222,8 @@ def mean_spect_entropy(syllable):
 
     return np.mean(_spect_entropy(syllable))
 
-def _hi_lo_ratio(syllable,middle=5000):
+
+def _hi_lo_ratio(syllable, middle=5000):
     """
     helper function to calculate hi/lo ratio
     hi/lo ratio is ratio of sum of power in "high" frequencies
@@ -233,11 +244,12 @@ def _hi_lo_ratio(syllable,middle=5000):
         array will have length = number of columns in syllable.power        
     """
 
-    psd = np.power(np.abs(syllable.power),2)
+    psd = np.power(np.abs(syllable.power), 2)
     hi_ids = syllable.freqBins > middle
     lo_ids = syllable.freqBins < middle
-    return np.log10(np.sum(psd[hi_ids,:], axis=0) /
-                    np.sum(psd[lo_ids,:], axis=0))
+    return np.log10(np.sum(psd[hi_ids, :], axis=0) /
+                    np.sum(psd[lo_ids, :], axis=0))
+
 
 def mean_hi_lo_ratio(syllable):
     """
@@ -254,7 +266,8 @@ def mean_hi_lo_ratio(syllable):
 
     return np.mean(_hi_lo_ratio(syllable))
 
-def _delta_inds(syllable,delta_times):
+
+def _delta_inds(syllable, delta_times):
     """
     helper function that converts times from percent of duration
     to seconds, then finds indices of time bins in sylllable
@@ -280,9 +293,10 @@ def _delta_inds(syllable,delta_times):
     return [np.argmin(np.abs(syllable.timeBins - t_early)),
             np.argmin(np.abs(syllable.timeBins - t_late))]
 
-_delta = lambda vec,inds: vec[inds[0]] - vec[inds[1]]
+_delta = lambda vec, inds: vec[inds[0]] - vec[inds[1]]
 
-def delta_amp_smooth_rect(syllable, delta_times = [0.2,0.8]):
+
+def delta_amp_smooth_rect(syllable, delta_times=[0.2, 0.8]):
     """
     change in smoothed rectified amplitude between two time points
     
@@ -302,7 +316,8 @@ def delta_amp_smooth_rect(syllable, delta_times = [0.2,0.8]):
     amp = _smooth_rect_amp(syllable)
     return _delta(amp,inds)
 
-def delta_entropy(syllable, delta_times = [0.2,0.8]):
+
+def delta_entropy(syllable, delta_times=[0.2, 0.8]):
     """
     change in entropy between two time points
 
@@ -323,7 +338,8 @@ def delta_entropy(syllable, delta_times = [0.2,0.8]):
     entropy = _spect_entropy(syllable)
     return _delta(entropy,inds)
 
-def delta_hi_lo_ratio(syllable, delta_times = [0.2,0.8]):
+
+def delta_hi_lo_ratio(syllable, delta_times=[0.2, 0.8]):
     """
     change in hi/lo ratio between two time points
 
@@ -341,4 +357,4 @@ def delta_hi_lo_ratio(syllable, delta_times = [0.2,0.8]):
     """
     inds = _delta_inds(syllable, delta_times)
     hi_lo = _hi_lo_ratio(syllable)
-    return _delta(hi_lo,inds)
+    return _delta(hi_lo, inds)
