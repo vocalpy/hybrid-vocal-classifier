@@ -47,12 +47,15 @@ TODO_TEMPLATE = """  todo_list:
       feature_file : {0}
       output_dir: {1}"""
 
-def dump_select_config(summary_ftr_file_dict,
+
+def write_select_config(summary_ftr_file_dict,
                        timestamp,
                        summary_filename,
                        output_dir):
-    """dumps summary output dict from extract to a config file for select
-    
+    """writes summary output dict from extract to a config file for select
+    Only called when feature_group is a list, to save user from figuring
+    out manually which features belong to which group.
+
     Parameters
     ----------
     summary_ftr_file_dict : dictionary
@@ -285,8 +288,9 @@ def extract(config_file):
             os.rename(ftr_output_files[0],
                       summary_filename)
             summary_ftr_file_dict = joblib.load(summary_filename)
-        dump_select_config(summary_ftr_file_dict,
-                           timestamp,
-                           summary_filename,
-                           todo['output_dir'])
+        if 'feature_list_group_ID' in summary_ftr_file_dict:
+            write_select_config(summary_ftr_file_dict,
+                                timestamp,
+                                summary_filename,
+                                todo['output_dir'])
     os.chdir(home_dir)
