@@ -171,17 +171,17 @@ def extract(config_file):
             # because those can't be in filename
             just_dir_name = os.getcwd().split(os.path.sep)[-1]
             feature_file = os.path.join(output_dir,
-                                           'features_from_' + just_dir_name + '_created_' + timestamp)
+                                        'features_from_' + just_dir_name + '_created_' + timestamp)
             feature_file_dict = {
-                'labels' : all_labels,
+                'labels': all_labels,
                 'feature_list': todo['feature_list'],
-                'spect_params' : extract_config['spect_params'],
-                'labelset' : todo['labelset'],
-                'file_format' : todo['file_format'],
-                'bird_ID' : todo['bird_ID'],
-                'song_IDs' : song_IDs,
-                'features' : features_from_all_files,
-                'features_arr_column_IDs' : ftr_inds
+                'spect_params': extract_config['spect_params'],
+                'labelset': todo['labelset'],
+                'file_format': todo['file_format'],
+                'bird_ID': todo['bird_ID'],
+                'song_IDs': song_IDs,
+                'features': features_from_all_files,
+                'features_arr_column_IDs': ftr_inds
                                 }
             if 'feature_list_group_ID' in todo:
                 feature_file_dict['feature_list_group_ID'] = todo['feature_list_group_ID']
@@ -257,23 +257,6 @@ def extract(config_file):
                         raise ValueError('mismatch between feature_list in {} '
                                          'and other feature files'.format(feature_file))
 
-                if 'feature_list_group_ID' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
-                else:
-                    if any(feature_file_dict['feature_list_group_ID'] !=
-                                   summary_ftr_file_dict['feature_list_group_ID']):
-                        raise ValueError('mismatch between feature_list_group_ID in {} '
-                                         'and other feature files'.format(feature_file))
-
-                if 'feature_list_group_ID_dict' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['feature_list_group_ID_dict'] = \
-                        feature_file_dict['feature_list_group_ID_dict']
-                else:
-                    if feature_file_dict['feature_list_group_ID_dict'] != \
-                            summary_ftr_file_dict['feature_list_group_ID_dict']:
-                        raise ValueError('mismatch between feature_list_group_ID_dict in {} '
-                                         'and other feature files'.format(feature_file))
-
                 if 'features_arr_column_IDs' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
                 else:
@@ -282,12 +265,32 @@ def extract(config_file):
                         raise ValueError('mismatch between features_arr_column_IDs in {} '
                                          'and other feature files'.format(feature_file))
 
+                if 'feature_list_group_ID' in todo:
+                    if 'feature_list_group_ID' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
+                    else:
+                        if any(feature_file_dict['feature_list_group_ID'] !=
+                                       summary_ftr_file_dict['feature_list_group_ID']):
+                            raise ValueError('mismatch between feature_list_group_ID in {} '
+                                             'and other feature files'.format(feature_file))
+
+                    if 'feature_list_group_ID_dict' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['feature_list_group_ID_dict'] = \
+                            feature_file_dict['feature_list_group_ID_dict']
+                    else:
+                        if feature_file_dict['feature_list_group_ID_dict'] != \
+                                summary_ftr_file_dict['feature_list_group_ID_dict']:
+                            raise ValueError('mismatch between feature_list_group_ID_dict in {} '
+                                             'and other feature files'.format(feature_file))
+
             joblib.dump(summary_ftr_file_dict,
                         summary_filename)
+
         else:  # if only one feature_file
             os.rename(ftr_output_files[0],
                       summary_filename)
             summary_ftr_file_dict = joblib.load(summary_filename)
+
         if 'feature_list_group_ID' in summary_ftr_file_dict:
             write_select_config(summary_ftr_file_dict,
                                 timestamp,
