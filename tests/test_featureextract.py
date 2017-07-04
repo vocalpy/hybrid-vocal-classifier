@@ -12,7 +12,7 @@ import hvc
 class TestExtract:
 
     def test_extract(self):
-        hvc.extract('./tests/config.yaml/test_extract.config.yml')
+        hvc.extract('./tests/config.yaml/test_extract_tach_svm.config.yml')
         # switch to test dir
         os.chdir(TEST_DIR)
         ftr_files = glob.glob('features_from*')
