@@ -100,7 +100,7 @@ def extract(config_file):
     config_file : string
         filename of YAML file that configures feature extraction    
     """
-    extract_config = parse_config(config_file,'extract')
+    extract_config = parse_config(config_file, 'extract')
     print('Parsed extract config.')
 
     home_dir = os.getcwd()
