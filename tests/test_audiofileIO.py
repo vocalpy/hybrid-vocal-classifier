@@ -12,10 +12,13 @@ import hvc.koumura
 
 @pytest.fixture()
 def has_window_error():
-    return './test_data/cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'
+    filename = './test_data/cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'
+    index = 19
+    return filename, index
+
 
 class TestAudiofileIO:
-    
+
     def test_Spectrogram_init(self):
         """#test whether can init a spec object
         """
@@ -45,7 +48,8 @@ class TestAudiofileIO:
             spect_maker = hvc.audiofileIO.Spectrogram(spect_func='scipy',
                                                       ref='tachibana')
 
-    def test_Spectrogram_make(self):
+
+    def test_Spectrogram_make(self, has_window_error):
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
@@ -76,10 +80,18 @@ class TestAudiofileIO:
         assert spect.shape[0] == freq_bins.shape[0]
         assert spect.shape[1] == time_bins.shape[0]
 
-        # test custom exceptions!!
-        # can test with syllable 19 of song 23 in gy6or6/032212
-        # file is: 'gy6or6_baseline_220312_0901.106.cbin'
-
+        # test custom exceptions
+        filename, index = has_window_error
+        dat, fs = hvc.evfuncs.load_cbin(filename)
+        notmat_dict = hvc.evfuncs.load_notmat(filename)
+        onset = notmat_dict['onsets'][index]
+        onset = np.round(onset / 1000 * fs).astype(int)
+        offset = notmat_dict['offsets'][index]
+        offset = np.round(offset / 1000 * fs).astype(int)
+        raw_audio = dat[onset:offset]
+        spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
+        with pytest.raises(hvc.audiofileIO.WindowError):
+            spect_maker.make(raw_audio, fs)
 
     def test_Song_init(self):
         """test whether Song object inits properly
@@ -99,6 +111,7 @@ class TestAudiofileIO:
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         song = hvc.audiofileIO.Song(filename=wav,
                                     file_format='koumura')
+
 
     def test_Song_set_and_make_syls(self):
         """test that set_syls_to_use and make_syl_spects work
@@ -134,20 +147,20 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
         wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
 
-        # test that when spect can't be made for a syl with certain params
-        # it gets set to np.nan
-        # can test with syllable 19 of song 23 in gy6or6/032212
-        # file is: 'gy6or6_baseline_220312_0901.106.cbin'
 
-    def check_window_error_set_to_nan(self,has_window_error):
+    def check_window_error_set_to_nan(self, has_window_error):
+        """check that, if an audio file raises a window error for Spectrogram.make
+        for a certain syllable, then that syllable's spectrogram is set to np.nan
+        """
+        filename, index = has_window_error
         segment_params = {
             'threshold': 1500,
             'min_syl_dur': 0.01,
             'min_silent_dur': 0.006
         }
-        cbin_song = hvc.audiofileIO.Song(filename=has_window_error,
+        cbin_song = hvc.audiofileIO.Song(filename=filename,
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
-        assert np.nan in cbin_song.syls
+        assert cbin_song.syls[index] is np.nan

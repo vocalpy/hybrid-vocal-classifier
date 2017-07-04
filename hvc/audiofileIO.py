@@ -9,6 +9,10 @@ from matplotlib.mlab import specgram
 from . import evfuncs, koumura
 
 
+class WindowError(Exception):
+    pass
+
+
 class Spectrogram:
     """class for making spectrograms.
     Abstracts out function calls so user just has to put spectrogram parameters
@@ -216,48 +220,54 @@ class Spectrogram:
         if self.filterFunc == 'diff':
             raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
-        if self.spectFunc == 'scipy':
-            if self.window is not None:
-                freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
-                                                                       samp_freq,
-                                                                       window=self.window,
-                                                                       nperseg=self.nperseg,
-                                                                       noverlap=self.noverlap)
-            else:
-                freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
-                                                                       samp_freq,
-                                                                       nperseg=self.nperseg,
-                                                                       noverlap=self.noverlap)
+        try:  # try to make spectrogram
+            if self.spectFunc == 'scipy':
+                if self.window is not None:
+                    freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
+                                                                           samp_freq,
+                                                                           window=self.window,
+                                                                           nperseg=self.nperseg,
+                                                                           noverlap=self.noverlap)
+                else:
+                    freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
+                                                                           samp_freq,
+                                                                           nperseg=self.nperseg,
+                                                                           noverlap=self.noverlap)
 
-        elif self.spectFunc == 'mpl':
-            # note that the matlab specgram function returns the STFT by default
-            # whereas the default for the matplotlib.mlab version of specgram
-            # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
-            # to match, mode must be set to 'complex'
+            elif self.spectFunc == 'mpl':
+                # note that the matlab specgram function returns the STFT by default
+                # whereas the default for the matplotlib.mlab version of specgram
+                # returns the PSD. So to get the behavior of matplotlib.mlab.specgram
+                # to match, mode must be set to 'complex'
 
-            # I think I determined empirically at one point (by staring at single
-            # cases) that mlab.specgram gave me values that were closer to Matlab's
-            # specgram function than scipy.signal.spectrogram
-            # Matlab's specgram is what Tachibana used in his original feature
-            # extraction code. So I'm maintaining the option to use it here.
+                # I think I determined empirically at one point (by staring at single
+                # cases) that mlab.specgram gave me values that were closer to Matlab's
+                # specgram function than scipy.signal.spectrogram
+                # Matlab's specgram is what Tachibana used in his original feature
+                # extraction code. So I'm maintaining the option to use it here.
 
-            # 'mpl' is set to return complex frequency spectrum,
-            # not power spectral density,
-            # because some tachibana features (based on CUIDADO feature set)
-            # need to use the freq. spectrum before taking np.abs or np.log10
-            if self.window is not None:
-                spect, freq_bins, time_bins = specgram(raw_audio,
-                                                       NFFT=self.nperseg,
-                                                       Fs=samp_freq,
-                                                       window=self.window,
-                                                       noverlap=self.noverlap,
-                                                       mode='complex')
-            else:
-                spect, freq_bins, time_bins = specgram(raw_audio,
-                                                       NFFT=self.nperseg,
-                                                       Fs=samp_freq,
-                                                       noverlap=self.noverlap,
-                                                       mode='complex')
+                # 'mpl' is set to return complex frequency spectrum,
+                # not power spectral density,
+                # because some tachibana features (based on CUIDADO feature set)
+                # need to use the freq. spectrum before taking np.abs or np.log10
+                if self.window is not None:
+                    spect, freq_bins, time_bins = specgram(raw_audio,
+                                                           NFFT=self.nperseg,
+                                                           Fs=samp_freq,
+                                                           window=self.window,
+                                                           noverlap=self.noverlap,
+                                                           mode='complex')
+                else:
+                    spect, freq_bins, time_bins = specgram(raw_audio,
+                                                           NFFT=self.nperseg,
+                                                           Fs=samp_freq,
+                                                           noverlap=self.noverlap,
+                                                           mode='complex')
+        except ValueError as err:  # if `try` to make spectrogram raised error
+            if str(err) == 'window is longer than input signal':
+                raise WindowError
+            else: # unrecognized error
+                raise
 
         if self.logTransformSpect:
             spect = np.log10(spect)  # log transform to increase range
@@ -657,7 +667,7 @@ class Song:
                 try:
                     spect, freq_bins, time_bins = spect_maker.make(syl_audio,
                                                                    self.sampFreq)
-                except ValueError as err:
+                except WindowError as err:
                     if str(err) == 'window is longer than input signal':
                         warnings.warn('Segment {0} in {1} with label {2} '
                                       'not long enough for window function'
