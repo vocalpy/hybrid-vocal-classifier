@@ -300,7 +300,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 validated_todo_list_dict['feature_list_group_ID'] = np.asarray(feature_list_group_ID)
                 validated_todo_list_dict['feature_list_group_ID_dict'] = ftr_grp_ID_dict
 
-        elif key== 'feature_list':
+        elif key == 'feature_list':
             if type(val) != list:
                 raise ValueError('feature_list should be a list but parsed as a {}'.format(type(val)))
             else:
