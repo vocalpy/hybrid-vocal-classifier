@@ -8,23 +8,77 @@ code, not to teach someone how to write the files. For a gentle
 introduction to writing the files, please see
 :doc:`writing_extract_yaml.md`.
 
+structure
+---------
+Every `extract.config.yml` file should be written in YAML as a dictionary with (key, value) pairs
+
+required key: todo_list
+-----------------------
 Every `extract.config.yml` file has exactly one **required** key at the top level:
    `todo_list`: list of dicts
       list where each element is a dict.
       each dict sets parameters for a 'job', typically
       data associated with one set of vocalizations.
 
+optional keys
+-------------
 `extract.config.yml` files *may* optionally define two other keys at the same level as `todo_list`.
 Those keys are `spect_params` and `segment_params`. As might be expected, `spect_params` is a dict
 that contains parameters for making spectrograms. The `segment_params` dict contains parameters for
-segmenting song.
+segmenting song. Specifications for these dictionaries are given below.
 
 When defined at the same level as `todo_list` they are considered `default`.
 If an element in `todo_list` defines different values for any of these keys,
 the value assigned in that element takes precedence over the `default` value.
 
-Here are the
-   spect_params: dict
+specification for dictionaries in todo_list
+-------------------------------------------
+required keys
+~~~~~~~~~~~~~
+
+Every dict in a `todo_list` has the following **required** keys:
+  * bird_ID : str
+    for example, `bl26lb16`
+
+  * file_format: str
+    {'evtaf','koumura'}
+
+  * data_dirs: list of str
+    directories containing data
+    each str must be a valid directory that can be found on the path
+    for example
+    ```
+        - C:\DATA\bl26lb16\pre_surgery_baseline\041912
+        - C:\DATA\bl26lb16\pre_surgery_baseline\042012
+    ```
+
+  * output_dir: str
+    directory in which to save output
+    if it doesn't exist, HVC will create it
+    for example, `C:\DATA\bl26lb16\`
+
+  * labelset: str
+    string of labels corresponding to labeled segments
+    from which features should be extracted.
+    Segments with labels not in this str will be ignored.
+    Converted to a list but not necessary to enter as a list.
+    For example, `iabcdef`
+
+**Finally, each dict in a `todo_list` must define *either*
+`feature_list` *or* a `feature_group`**
+   * feature_list : list
+        named features. See the list of named features here:
+        :doc:`named_features`
+
+If `feature_group` is a list then it
+   * feature_group : str or list
+        named group of features, list if more than one group
+        {'knn','svm'}
+
+specification for spect_params and segment_params dictionaries
+--------------------------------------------------------------
+
+   * spect_params: dict
       parameters to calculate spectrogram
       keys correspond to parameters/arguments passed to Spectrogram class for __init__.
       **must** have *either* a 'ref' key *or* the `nperseg` and `noverlap` keys
@@ -40,7 +94,7 @@ Here are the
          noverlap : int
             number of overlapping samples in each segment
 
-      the following keys are all **optional**:
+      the following keys are all **optional** for spect_params:
         freq_cutoffs : two-element list of integers
             limits of frequency band to keep, e.g. [1000,8000]
             Spectrogram.make keeps the band:
@@ -75,41 +129,6 @@ Here are the
          min_silent_dur : float
             minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
 
-Every dict in a `todo_list` has the following **required** keys:
-  bird_ID : str
-    for example, `bl26lb16`
-
-  file_format: str
-    {'evtaf','koumura'}
-
-  data_dirs: list of str
-    directories containing data
-    each str must be a valid directory that can be found on the path
-    for example
-    ```
-        - C:\DATA\bl26lb16\pre_surgery_baseline\041912
-        - C:\DATA\bl26lb16\pre_surgery_baseline\042012
-    ```
-
-  output_dir: str
-    directory in which to save output
-    if it doesn't exist, HVC will create it
-    for example, `C:\DATA\bl26lb16\`
-
-  labelset: str
-    string of labels corresponding to labeled segments
-    from which features should be extracted.
-    Segments with labels not in this str will be ignored.
-    Converted to a list but not necessary to enter as a list.
-    For example, `iabcdef`
-
-    feature_list : list
-        named features. See the list of named features here:
-        :doc:`named_features`
-
-    feature_group : str or list
-        named group of features, list if more than one group
-        {'knn','svm'}
 
 example `extract_config.yml`
 ----------------------------
