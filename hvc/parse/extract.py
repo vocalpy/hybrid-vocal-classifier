@@ -308,7 +308,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                     if feature not in VALID_FEATURES:
                         raise ValueError('feature {} not found in valid feature list'.format(feature))
 
-        elif key=='file_format':
+        elif key == 'file_format':
             if type(val) != str:
                 raise ValueError('Value {} for key \'file_format\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -316,19 +316,19 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key=='labelset':
+        elif key == 'labelset':
             if type(val) != str:
                 raise ValueError('Labelset should be a string, e.g., \'iabcde\'.')
             else:
                 validated_todo_list_dict[key] = list(val) # convert from string to list of chars
                 validated_todo_list_dict['labelset_int'] = [ord(label) for label in list(val)]
 
-        elif key=='output_dir':
+        elif key == 'output_dir':
             if type(val) != str:
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
                                  .format(type(val)))
 
-        elif key=='segment_params':
+        elif key == 'segment_params':
             validate_segment_params(val)
 
         elif key == 'spect_params':
