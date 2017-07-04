@@ -365,6 +365,10 @@ class syllable:
         values are times represented by each bin in s
     freq_bins : 1d vector
         values are power spectral density in each frequency bin
+    index: int
+        index of this syllable in song.syls.labels
+    label: int
+        label of this syllable from song.syls.labels
     """
     def __init__(self,
                  syl_audio,
@@ -374,7 +378,9 @@ class syllable:
                  overlap,
                  freq_cutoffs,
                  freq_bins,
-                 time_bins):
+                 time_bins,
+                 index,
+                 label):
         self.sylAudio = syl_audio
         self.sampFreq = samp_freq
         self.spect = spect
@@ -383,6 +389,9 @@ class syllable:
         self.freqCutoffs = freq_cutoffs
         self.freqBins = freq_bins
         self.timeBins = time_bins
+        self.index = index
+        self.label = label
+
 
 class Song:
     """Song object
@@ -645,8 +654,21 @@ class Song:
                 else:
                     syl_audio = self.rawAudio[onset:offset]
 
-                spect, freq_bins, time_bins = spect_maker.make(syl_audio,
-                                                               self.sampFreq)
+                try:
+                    spect, freq_bins, time_bins = spect_maker.make(syl_audio,
+                                                                   self.sampFreq)
+                except ValueError as err:
+                    if str(err) == 'window is longer than input signal':
+                        warnings.warn('Segment {0} in {1} with label {2} '
+                                      'not long enough for window function'
+                                      ' set with current spect_params.\n'
+                                      'spect will be set to nan.'
+                                      .format(ind, self.filename, label))
+                        spect, freq_bins, time_bins = (np.nan,
+                                                       np.nan,
+                                                       np.nan)
+                    else:
+                        raise
                 curr_syl = syllable(syl_audio,
                                     self.sampFreq,
                                     spect,
@@ -654,7 +676,9 @@ class Song:
                                     spect_maker.noverlap,
                                     spect_maker.freqCutoffs,
                                     freq_bins,
-                                    time_bins)
+                                    time_bins,
+                                    ind,
+                                    label)
 
                 all_syls.append(curr_syl)
 

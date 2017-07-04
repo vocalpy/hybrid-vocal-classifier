@@ -4,10 +4,15 @@ test audiofileIO module
 
 import pytest
 from scipy.io import wavfile
+import numpy as np
 
 import hvc.audiofileIO
 import hvc.evfuncs
 import hvc.koumura
+
+@pytest.fixture()
+def has_window_error():
+    return './test_data/cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'
 
 class TestAudiofileIO:
     
@@ -109,7 +114,7 @@ class TestAudiofileIO:
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
-        cbin_song.set_syls_to_use('iabcdef')
+        cbin_song.set_syls_to_use('iabcdefghjk')
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         wav_song = hvc.audiofileIO.Song(filename=wav,
@@ -133,3 +138,16 @@ class TestAudiofileIO:
         # it gets set to np.nan
         # can test with syllable 19 of song 23 in gy6or6/032212
         # file is: 'gy6or6_baseline_220312_0901.106.cbin'
+
+    def check_window_error_set_to_nan(self,has_window_error):
+        segment_params = {
+            'threshold': 1500,
+            'min_syl_dur': 0.01,
+            'min_silent_dur': 0.006
+        }
+        cbin_song = hvc.audiofileIO.Song(filename=has_window_error,
+                                         file_format='evtaf',
+                                         segment_params=segment_params)
+        cbin_song.set_syls_to_use('iabcdefghjk')
+        cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
+        assert np.nan in cbin_song.syls
