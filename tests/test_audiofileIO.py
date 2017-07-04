@@ -44,7 +44,7 @@ class TestAudiofileIO:
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
@@ -62,14 +62,18 @@ class TestAudiofileIO:
         fs, dat = wavfile.read(wav)
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
-        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect, freq_bins, time_bins = spect_maker.make(dat, fs)
         assert spect.shape[0] == freq_bins.shape[0]
         assert spect.shape[1] == time_bins.shape[0]
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
-        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect, freq_bins, time_bins = spect_maker.make(dat, fs)
         assert spect.shape[0] == freq_bins.shape[0]
         assert spect.shape[1] == time_bins.shape[0]
+
+        # test custom exceptions!!
+        # can test with syllable 19 of song 23 in gy6or6/032212
+        # file is: 'gy6or6_baseline_220312_0901.106.cbin'
 
 
     def test_Song_init(self):
@@ -82,7 +86,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
@@ -101,7 +105,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin  = './test_data/cbins/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
@@ -124,3 +128,8 @@ class TestAudiofileIO:
 
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
         wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
+
+        # test that when spect can't be made for a syl with certain params
+        # it gets set to np.nan
+        # can test with syllable 19 of song 23 in gy6or6/032212
+        # file is: 'gy6or6_baseline_220312_0901.106.cbin'

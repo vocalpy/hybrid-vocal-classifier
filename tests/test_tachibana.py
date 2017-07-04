@@ -42,7 +42,7 @@ class TestTachibana:
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
                           }
-        songfiles_list = glob.glob('./test_data/cbins/*.cbin')
+        songfiles_list = glob.glob('./test_data/cbins/032412/*.cbin')
         song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
         song.set_syls_to_use('iabcdefghjk')
         song.make_syl_spects(spect_params={'ref': 'tachibana'})
