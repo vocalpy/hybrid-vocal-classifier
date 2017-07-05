@@ -200,9 +200,9 @@ def _spect_entropy(syllable):
     -------
     spectral_entropy : 1-d numpy array
         spectral entropy for each time bin in syllable spectrogram
-        array will have length = number of columns in syllable.power
+        array will have length = number of columns in syllable.spect
     """
-    psd = np.power(np.abs(syllable.power), 2)
+    psd = np.power(np.abs(syllable.spect), 2)
     psd_pdf = psd / np.sum(psd, axis=0)
     return -np.sum(psd_pdf * np.log(psd_pdf), axis=0)
 
@@ -241,10 +241,10 @@ def _hi_lo_ratio(syllable, middle=5000):
     -------
     hi_lo_ratio : 1-d array
         hi/lo ratio for each time bin in syllable spectrogram
-        array will have length = number of columns in syllable.power        
+        array will have length = number of columns in syllable.spect
     """
 
-    psd = np.power(np.abs(syllable.power), 2)
+    psd = np.power(np.abs(syllable.spect), 2)
     hi_ids = syllable.freqBins > middle
     lo_ids = syllable.freqBins < middle
     return np.log10(np.sum(psd[hi_ids, :], axis=0) /
