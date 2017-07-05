@@ -223,11 +223,11 @@ class Spectrogram:
         try:  # try to make spectrogram
             if self.spectFunc == 'scipy':
                 if self.window is not None:
-                    freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
-                                                                           samp_freq,
-                                                                           window=self.window,
-                                                                           nperseg=self.nperseg,
-                                                                           noverlap=self.noverlap)
+                        freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
+                                                                               samp_freq,
+                                                                               window=self.window,
+                                                                               nperseg=self.nperseg,
+                                                                               noverlap=self.noverlap)
                 else:
                     freq_bins, time_bins, spect = scipy.signal.spectrogram(raw_audio,
                                                                            samp_freq,
@@ -265,8 +265,8 @@ class Spectrogram:
                                                            mode='complex')
         except ValueError as err:  # if `try` to make spectrogram raised error
             if str(err) == 'window is longer than input signal':
-                raise WindowError
-            else: # unrecognized error
+                raise WindowError()
+            else:  # unrecognized error
                 raise
 
         if self.logTransformSpect:
@@ -668,17 +668,15 @@ class Song:
                     spect, freq_bins, time_bins = spect_maker.make(syl_audio,
                                                                    self.sampFreq)
                 except WindowError as err:
-                    if str(err) == 'window is longer than input signal':
-                        warnings.warn('Segment {0} in {1} with label {2} '
-                                      'not long enough for window function'
-                                      ' set with current spect_params.\n'
-                                      'spect will be set to nan.'
-                                      .format(ind, self.filename, label))
-                        spect, freq_bins, time_bins = (np.nan,
-                                                       np.nan,
-                                                       np.nan)
-                    else:
-                        raise
+                    warnings.warn('Segment {0} in {1} with label {2} '
+                                  'not long enough for window function'
+                                  ' set with current spect_params.\n'
+                                  'spect will be set to nan.'
+                                  .format(ind, self.filename, label))
+                    spect, freq_bins, time_bins = (np.nan,
+                                                   np.nan,
+                                                   np.nan)
+
                 curr_syl = syllable(syl_audio,
                                     self.sampFreq,
                                     spect,

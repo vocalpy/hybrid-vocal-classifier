@@ -100,39 +100,59 @@ def from_file(filename,
     song.set_syls_to_use(labels_to_use)
 
     if np.all(song.syls_to_use == False):
-        warnings.warn("No labels in {0} matched labels to use: {1}\n"
-                      "Did not extract features from file."
+        warnings.warn('No labels in {0} matched labels to use: {1}\n'
+                      'Did not extract features from file.'
                       .format(filename, labels_to_use))
         return None, None, None
 
     # initialize indexing array for features
     # used to split back up into feature groups
     feature_inds = []
+
+    # loop through features first instead of syls because
+    # some features do not require making spectrogram
     for ftr_ind, current_feature in enumerate(feature_list):
+        # if this is a feature extracted from a single syllable, i.e.,
+        # if this feature requires a spectrogram
         if current_feature in single_syl_features_switch_case_dict:
             if not hasattr(song, 'syls'):
                 song.make_syl_spects(spect_params)
             if 'curr_feature_arr' in locals():
                 del curr_feature_arr
 
-            for syl in song.syls:
+            for ind, syl in enumerate(song.syls):
+                if syl.spect is np.nan:
+                    # can't extract feature so leave as nan
+                    continue
                 # extract current feature from every syllable
                 ftr = single_syl_features_switch_case_dict[current_feature](syl)
                 if 'curr_feature_arr' in locals():
                     if np.isscalar(ftr):
-                        curr_feature_arr = np.append(curr_feature_arr, ftr)
+                        curr_feature_arr[ind] = ftr
                     else:
                         # note have to add dimension with newaxis because np.concat requires
                         # same number of dimensions, but extract_features returns 1d.
                         # Decided to keep it explicit that we go to 2d here.
-                        curr_feature_arr = np.concatenate((curr_feature_arr,
-                                                           ftr[np.newaxis, :]),
-                                                          axis=0)
+                        curr_feature_arr[ind, :] = ftr[np.newaxis, :]
                 else:  # if curr_feature_arr doesn't exist yet
+                    # initialize vector, if feature is a scalar, or matrix, if feature is a vector
+                    # where each element (scalar feature) or row (vector feature) is feature from
+                    # one syllable.
+                    # Initialize as nan so that if there are syllables from which feature could
+                    # not be extracted, the value for that feature stays as nan
+                    # (e.g. because segment was too short to make spectrogram
+                    # with given spectrogram values)
                     if np.isscalar(ftr):
-                        curr_feature_arr = ftr
+                        curr_feature_arr = np.full((len(song.syls)), np.nan)
+                        # may not be on first syllable if first spectrogram was nan
+                        # so need to index into initialized array
+                        curr_feature_arr[ind] = ftr
                     else:
-                        curr_feature_arr = ftr[np.newaxis, :]  # make 2-d for concatenate
+                        curr_feature_arr = np.full((len(song.syls),
+                                                    ftr.shape[-1]), np.nan)
+                        # may not be on first syllable if first spectrogram was nan
+                        # so need to index into initialized array
+                        curr_feature_arr[ind, :] = ftr[np.newaxis, :]  # make 2-d for concatenate
 
             # after looping through all syllables:
             if 'features_arr' in locals():

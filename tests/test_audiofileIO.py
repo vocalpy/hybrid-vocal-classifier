@@ -147,7 +147,6 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
         wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
 
-
     def check_window_error_set_to_nan(self, has_window_error):
         """check that, if an audio file raises a window error for Spectrogram.make
         for a certain syllable, then that syllable's spectrogram is set to np.nan
