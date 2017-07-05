@@ -315,7 +315,6 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     a[0] = 1  # make an "all-zero filter"
     padlen = np.max((b.shape[-1] - 1, a.shape[-1] - 1))
     filtsong = scipy.signal.filtfilt(b, a, rawsong, padlen=padlen)
-    import pdb;pdb.set_trace()
     squared_song = np.power(filtsong, 2)
     len = np.round(samp_freq * smooth_win / 1000).astype(int)
     h = np.ones((len,)) / len
