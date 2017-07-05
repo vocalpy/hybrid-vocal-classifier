@@ -185,9 +185,9 @@ def from_file(filename,
             feature_inds.extend([ftr_ind])
             if 'features_arr' in locals():
                 features_arr = np.concatenate((features_arr,
-                                               curr_feature_arr[:,np.newaxis]),
+                                               curr_feature_arr[:, np.newaxis]),
                                               axis=1)
             else:
-                features_arr = curr_feature_arr
+                features_arr = curr_feature_arr[:, np.newaxis]
     labels = [label for label in song.labels if label in labels_to_use]
     return features_arr, labels, np.asarray(feature_inds)
