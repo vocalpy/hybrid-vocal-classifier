@@ -11,6 +11,7 @@ import scipy.signal
 #from hvc
 import hvc.audiofileIO
 
+
 def readrecf(filename):
     """
     reads .rec files output by EvTAF
@@ -28,7 +29,7 @@ def readrecf(filename):
                 
             if line == "":  # if End Of File
                 break
-            elif line == "\n": # if blank line
+            elif line == "\n":  # if blank line
                 continue
             elif "Catch" in line:
                 ind = line.find('=')
@@ -92,6 +93,7 @@ def readrecf(filename):
                 rec_dict['header']=header
     return rec_dict
 
+
 def load_cbin(filename,channel=0):
     """
     loads .cbin files output by EvTAF. 
@@ -120,6 +122,7 @@ def load_cbin(filename,channel=0):
     sample_freq = rec_dict['sample_freq']
     return data, sample_freq
 
+
 def load_notmat(filename):
     """
     loads .not.mat files created by evsonganaly.m.
@@ -145,6 +148,7 @@ def load_notmat(filename):
                          " .cbin")
 
     return loadmat(filename,squeeze_me=True)
+
 
 def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     """
@@ -256,6 +260,7 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
 
     return all_syls, all_labels
 
+
 def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     """
     filters raw audio to smooth signal
@@ -269,7 +274,8 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
         sampling frequency
     freq_cutoffs: list
         two-element list of integers, [low freq., high freq.]
-        bandpass filter applied with this list defining pass band
+        bandpass filter applied with this list defining pass band.
+        If None is passed, defaults to [500, 10000].
     smooth_win : integer
         size of smoothing window in milliseconds
 
@@ -286,6 +292,8 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     """
 
     Nyquist_rate = samp_freq / 2
+    if freq_cutoffs is None:
+        freq_cutoffs = [500, 10000]
     if rawsong.shape[-1] < 387:
         numtaps = 64
     elif rawsong.shape[-1] < 771:
@@ -304,8 +312,10 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     # for linear FIR, filter length is filter order + 1
     b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)
     a = np.zeros((numtaps+1,))
-    a[0] = 1 # make an "all-zero filter"
-    filtsong = scipy.signal.filtfilt(b, a, rawsong)
+    a[0] = 1  # make an "all-zero filter"
+    padlen = np.max((b.shape[-1] - 1, a.shape[-1] - 1))
+    filtsong = scipy.signal.filtfilt(b, a, rawsong, padlen=padlen)
+    import pdb;pdb.set_trace()
     squared_song = np.power(filtsong, 2)
     len = np.round(samp_freq * smooth_win / 1000).astype(int)
     h = np.ones((len,)) / len
