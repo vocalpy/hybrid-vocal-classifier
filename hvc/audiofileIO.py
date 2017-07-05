@@ -516,7 +516,8 @@ class Song:
                                      .format(filename))
                 self.onsets_s = song_dict['onsets'] / 1000
                 self.offsets_s = song_dict['offsets'] / 1000
-                self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
+                # subtract one because of Python's zero indexing (first sample is sample zero)
+                self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int) - 1
                 self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
             elif file_format == 'koumura':
                 if annote_filename:
