@@ -18,7 +18,7 @@ test_parse:
           - knn
         data_dirs:
           - ./test_data/cbins
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdef
       - #2
@@ -47,8 +47,8 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032212
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         segment_params:
@@ -70,8 +70,8 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032212
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         spect_params:
@@ -119,8 +119,8 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032212
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         segment_params:
@@ -155,8 +155,8 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032212
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdefghjk
         spect_params:
@@ -193,8 +193,8 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - C:\Data\gy6gy6\010217
-          - C:\Data\gy6gy6\010317
+          - C:\DATA\gy6or6\032212
+          - C:\DATA\gy6or6\032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdef
 
