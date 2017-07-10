@@ -205,8 +205,12 @@ def from_file(filename,
                 else:
                     neuralnet_inputs_dict[current_feature] = curr_neuralnet_input
             else:
-                neuralnet_inputs_dict = {}
-                neuralnet_inputs_dict[current_feature] = curr_neuralnet_input
+                neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
     labels = [label for label in song.labels if label in labels_to_use]
-    return features_arr, labels, np.asarray(feature_inds)
+    if 'features_arr' in locals() and 'neuralnet_inputs_dict' in locals():
+        return features_arr, neuralnet_inputs_dict, labels, np.asarray(feature_inds)
+    elif 'features_arr' in locals() and 'neuralnet_inputs_dict' not in locals():
+        return features_arr, labels, np.asarray(feature_inds)
+    elif 'neuralnet_inputs_dict' in locals() and 'features_arr' not in locals():
+        return neuralnet_inputs_dict, labels

@@ -58,23 +58,26 @@ class TestFromFile:
         with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
             ftr_grps = yaml.load(ftr_grp_yaml)
 
-        knn_ftrs = hvc.features.extract.from_file(cbin,
-                                                  file_format='evtaf',
-                                                  spect_params={'ref':'tachibana'},
-                                                  feature_list=ftr_grps['knn'],
-                                                  segment_params=segment_params,
-                                                  labels_to_use='iabcdefghjk')
+        knn_ftrs, labels, feature_inds = hvc.features.extract.from_file(cbin,
+                                                                        file_format='evtaf',
+                                                                        spect_params={'ref': 'tachibana'},
+                                                                        feature_list=ftr_grps['knn'],
+                                                                        segment_params=segment_params,
+                                                                        labels_to_use='iabcdefghjk')
+        assert type(knn_ftrs) == np.ndarray
 
-        svm_ftrs = hvc.features.extract.from_file(cbin,
-                                                  file_format='evtaf',
-                                                  spect_params={'ref': 'tachibana'},
-                                                  feature_list=ftr_grps['svm'],
-                                                  segment_params=segment_params,
-                                                  labels_to_use='iabcdefghjk')
+        svm_ftrs, labels, feature_inds = hvc.features.extract.from_file(cbin,
+                                                                        file_format='evtaf',
+                                                                        spect_params={'ref': 'tachibana'},
+                                                                        feature_list=ftr_grps['svm'],
+                                                                        segment_params=segment_params,
+                                                                        labels_to_use='iabcdefghjk')
+        assert type(svm_ftrs) == np.ndarray
 
-        neuralnet_ftrs = hvc.features.extract.from_file(cbin,
-                                                        file_format='evtaf',
-                                                        spect_params={'ref': 'tachibana'},
-                                                        feature_list=['flatwindow'],
-                                                        segment_params=segment_params,
-                                                        labels_to_use='iabcdefghjk')
+        neuralnet_ftrs, labels = hvc.features.extract.from_file(cbin,
+                                                                file_format='evtaf',
+                                                                spect_params={'ref': 'tachibana'},
+                                                                feature_list=['flatwindow'],
+                                                                segment_params=segment_params,
+                                                                labels_to_use='iabcdefghjk')
+        assert type(neuralnet_ftrs) == dict
