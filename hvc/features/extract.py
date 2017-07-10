@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from . import tachibana, knn
+from . import tachibana, knn, neuralnet
 from hvc import audiofileIO
 
 single_syl_features_switch_case_dict = {
@@ -46,8 +46,11 @@ multiple_syl_features_switch_case_dict = {
     'following syllable duration': knn.foll_duration,
     'preceding silent gap duration': knn.pre_gapdur,
     'following silent gap duration': knn.foll_gapdur
- }
+}
 
+neural_net_features_switch_case_dict = {
+    'flatwindow': neuralnet.flatwindow,
+}
 
 def from_file(filename,
               file_format,
@@ -189,5 +192,21 @@ def from_file(filename,
                                               axis=1)
             else:
                 features_arr = curr_feature_arr[:, np.newaxis]
+        elif current_feature in neural_net_features_switch_case_dict:
+            curr_neuralnet_input = neural_net_features_switch_case_dict[current_feature](song,
+                                                                                         spect_params)
+            if 'neuralnet_inputs_dict' in locals():
+                if current_feature in neuralnet_inputs_dict:
+                    if type(neuralnet_inputs_dict[current_feature]) is np.ndarray:
+                        neuralnet_inputs_dict[current_feature] = \
+                            np.concatenate((neuralnet_inputs_dict[current_feature],
+                                            curr_neuralnet_input),
+                                           axis=-1)
+                else:
+                    neuralnet_inputs_dict[current_feature] = curr_neuralnet_input
+            else:
+                neuralnet_inputs_dict = {}
+                neuralnet_inputs_dict[current_feature] = curr_neuralnet_input
+
     labels = [label for label in song.labels if label in labels_to_use]
     return features_arr, labels, np.asarray(feature_inds)

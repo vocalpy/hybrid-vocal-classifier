@@ -197,8 +197,7 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     return model
 
 def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
-    """
-    DCNN model but flatten output of sliding window, pass to fully connected layer.
+    """DCNN model but flatten output of sliding window, pass to fully connected layer.
     """
     
     model = Sequential()
@@ -274,8 +273,7 @@ def naive_LSTM(input_shape,num_syllable_classes):
     return model
 
 def VGG_16(input_shape,num_syllable_classes,weights_path=None):
-    """
-    VGG_16 convnet
+    """VGG_16 convnet
     based on https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3
     """
     model = Sequential()

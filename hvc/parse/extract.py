@@ -11,18 +11,18 @@ import warnings
 import yaml
 import numpy as np
 
-# from hvc
-from hvc.features.extract import single_syl_features_switch_case_dict
-from hvc.features.extract import multiple_syl_features_switch_case_dict
-VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
-                 list(multiple_syl_features_switch_case_dict.keys())
-
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
+
+with open(os.path.join(dir_path, 'features.yml')) as features_yml:
+    VALID_FEATURES = yaml.load(features_yml)['features']
 
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
+# feature groups in separate file from feature list because
+# want to validate feature groups against feature list
+# and some features are not in feature group
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
 

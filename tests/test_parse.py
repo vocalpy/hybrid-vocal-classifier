@@ -10,7 +10,16 @@ import hvc.parse.extract as extract
 with open('./test_data/config.yaml/test_parse_extract.config.yml', 'r') as yaml_file:
     test_yaml_extract = yaml.load(yaml_file)
 
+
 class TestParseExtract:
+
+    def test_features(self):
+        with open('../hvc/parse/features.yml') as features_yml:
+            VALID_FEATURES = yaml.load(features_yml)['features']
+        with open('../hvc/parse/feature_groups.yml') as ftr_grps_yml:
+            FTR_GROUPS = yaml.load(ftr_grps_yml)
+        for ftr_group in FTR_GROUPS.values():
+            assert set(ftr_group) < set(VALID_FEATURES)
 
     def test_extract_parse(self):
 
