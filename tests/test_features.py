@@ -42,3 +42,39 @@ class TestFromFile:
                                                                     labels_to_use='iabcdefghjk',
                                                                     segment_params=segment_params)
         assert np.alltrue(np.isnan(ftr_arr[19, :]))
+
+    def test_cbin(self):
+        segment_params = {
+            'threshold': 1500,
+            'min_syl_dur': 0.01,
+            'min_silent_dur': 0.006
+        }
+
+        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        song = hvc.audiofileIO.Song(filename=cbin,
+                                    file_format='evtaf',
+                                    segment_params=segment_params)
+
+        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+            ftr_grps = yaml.load(ftr_grp_yaml)
+
+        knn_ftrs = hvc.features.extract.from_file(cbin,
+                                                  file_format='evtaf',
+                                                  spect_params={'ref':'tachibana'},
+                                                  feature_list=ftr_grps['knn'],
+                                                  segment_params=segment_params,
+                                                  labels_to_use='iabcdefghjk')
+
+        svm_ftrs = hvc.features.extract.from_file(cbin,
+                                                  file_format='evtaf',
+                                                  spect_params={'ref': 'tachibana'},
+                                                  feature_list=ftr_grps['svm'],
+                                                  segment_params=segment_params,
+                                                  labels_to_use='iabcdefghjk')
+
+        neuralnet_ftrs = hvc.features.extract.from_file(cbin,
+                                                        file_format='evtaf',
+                                                        spect_params={'ref': 'tachibana'},
+                                                        feature_list=['flatwindow'],
+                                                        segment_params=segment_params,
+                                                        labels_to_use='iabcdefghjk')

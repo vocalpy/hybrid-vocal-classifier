@@ -647,7 +647,7 @@ class Song:
                               'center the syllable/segment of interest within'
                               'the spectrogram, and additionally consume a lot '
                               'of memory.')
-            syl_spect_width_Hz = np.round(syl_spect_width * samp_freq)
+            syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
             if syl_spect_width_Hz > self.rawAudio.shape[-1]:
                 raise ValueError('syl_spect_width, converted to samples, '
                                  'is longer than song file {}.'
@@ -660,8 +660,8 @@ class Song:
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
                 syl_duration_in_samples = offset - onset
-                if syl_duration_in_samples < syl_spect_width_Hz:
-                    raise ValueError('syllable duration of syllable {} with label {}'
+                if syl_duration_in_samples > syl_spect_width_Hz:
+                    raise ValueError('syllable duration of syllable {} with label {} '
                                      'in file {} is greater than '
                                      'width specified for all syllable spectrograms.'
                                      .format(ind, label, self.filename))
@@ -683,8 +683,7 @@ class Song:
                         # if right width greater than length of file
                         right_width = self.rawAudio.shape[-1] - offset
                         left_width = width_diff - right_width
-                    syl_audio = self.rawAudio[:, onset - left_width:
-                    offset + right_width]
+                    syl_audio = self.rawAudio[onset - left_width:offset + right_width]
                 else:
                     syl_audio = self.rawAudio[onset:offset]
 
