@@ -65,6 +65,8 @@ class TestFromFile:
                                                                         segment_params=segment_params,
                                                                         labels_to_use='iabcdefghjk')
         assert type(knn_ftrs) == np.ndarray
+        assert knn_ftrs.shape[-1] == np.unique(feature_inds).shape[-1]
+        assert knn_ftrs.shape[-1] == len(ftr_grps['knn'])
 
         svm_ftrs, labels, feature_inds = hvc.features.extract.from_file(cbin,
                                                                         file_format='evtaf',
@@ -73,6 +75,8 @@ class TestFromFile:
                                                                         segment_params=segment_params,
                                                                         labels_to_use='iabcdefghjk')
         assert type(svm_ftrs) == np.ndarray
+        assert svm_ftrs.shape[-1] == feature_inds.shape[-1]
+        assert np.unique(feature_inds).shape[-1] == len(ftr_grps['svm'])
 
         neuralnet_ftrs, labels = hvc.features.extract.from_file(cbin,
                                                                 file_format='evtaf',
