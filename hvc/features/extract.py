@@ -86,17 +86,25 @@ def from_file(filename,
 
     Returns
     -------
-    features_arr : m-by-n numpy array
-        where each column n is a feature or one element of a multi-column feature
-        (e.g. spectrum is a multi-column feature)
-        and each row m represents one syllable
-    labels : list of chars
-        of length m, one label for each syllable in features_arr
-    feature_inds : 1-d numpy array of ints
-        indexing array used by hvc/extract to split feature_arr back up into
-        feature groups
-        Array will be of length n where n is number of columns in features_arr,
-        but unique(feature_inds) = len(feature_list)
+    extract_dict : dict
+        with following keys:
+            labels : list of chars
+                of length m, one label for each syllable in features_arr
+                Always returned.
+            features_arr : m-by-n numpy array
+                where each column n is a feature or one element of a multi-column feature
+                (e.g. spectrum is a multi-column feature)
+                and each row m represents one syllable
+                Returned for all non-"neuralnet input" features.
+            feature_inds : 1-d numpy array of ints
+                indexing array used by hvc/extract to split feature_arr back up into
+                feature groups
+                Array will be of length n where n is number of columns in features_arr,
+                but unique(feature_inds) = len(feature_list)
+                Returned for all non-"neuralnet input" features.
+            neuralnet_inputs_dict : dict
+                dict where keys are names of a neuralnet model and value is corresponding
+                input for each model, e.g., 2-d array containing spectrogram
     """
 
     song = audiofileIO.Song(filename, file_format, segment_params)
@@ -106,7 +114,7 @@ def from_file(filename,
         warnings.warn('No labels in {0} matched labels to use: {1}\n'
                       'Did not extract features from file.'
                       .format(filename, labels_to_use))
-        return None, None, None
+        return None
 
     # initialize indexing array for features
     # used to split back up into feature groups
@@ -208,9 +216,11 @@ def from_file(filename,
                 neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
     labels = [label for label in song.labels if label in labels_to_use]
-    if 'features_arr' in locals() and 'neuralnet_inputs_dict' in locals():
-        return features_arr, neuralnet_inputs_dict, labels, np.asarray(feature_inds)
-    elif 'features_arr' in locals() and 'neuralnet_inputs_dict' not in locals():
-        return features_arr, labels, np.asarray(feature_inds)
-    elif 'neuralnet_inputs_dict' in locals() and 'features_arr' not in locals():
-        return neuralnet_inputs_dict, labels
+    # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
+    extract_dict = {'labels': labels}
+    if 'features_arr' in locals():
+        extract_dict['features_arr'] = features_arr
+        extract_dict['feature_inds'] = np.asarray(feature_inds)
+    if 'neuralnet_inputs_dict' in locals():
+        extract_dict['neuralnet_inputs_dict'] = neuralnet_inputs_dict
+    return extract_dict

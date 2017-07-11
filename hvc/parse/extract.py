@@ -343,18 +343,27 @@ def _validate_todo_list_dict(todo_list_dict,index):
 # main function that validates yaml file #
 ##########################################
 
+
 def validate_yaml(extract_config_yaml):
     """
     validates config from extract YAML file
 
     Parameters
     ----------
-    extract_config_yaml : dictionary, config as loaded with YAML module
+    extract_config_yaml : dict
+        dict should be config from YAML file as loaded with pyyaml.
 
     Returns
     -------
     extract_config_dict : dictionary, after validation of all keys
     """
+
+    if type(extract_config_yaml) is not dict:
+        raise ValueError('extract_config_yaml passed to parse.extract was '
+                         'not recognized as a dict, instead was a {}.'
+                         'Must pass a dict containing config loaded from YAML'
+                         'file or a str that is a YAML filename.'
+                         .format(type(extract_config_yaml)))
 
     if 'todo_list' not in extract_config_yaml:
         raise KeyError('extract config does not have required key \'todo_list\'')
