@@ -1,4 +1,5 @@
-svm:
+features:
+  # svm
   - mean spectrum
   - mean delta spectrum
   - mean cepstrum
@@ -23,8 +24,7 @@ svm:
   - zero crossings
   - mean amplitude
   - mean delta amplitude
-
-knn:
+  # knn
   - duration group
   - preceding syllable duration
   - following syllable duration
@@ -34,3 +34,5 @@ knn:
   - mean spectral entropy
   - mean hi lo ratio
   - delta smoothed rectified amplitude
+  # neural net
+  - flatwindow

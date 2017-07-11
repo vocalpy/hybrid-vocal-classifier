@@ -48,12 +48,11 @@ class TestAudiofileIO:
             spect_maker = hvc.audiofileIO.Spectrogram(spect_func='scipy',
                                                       ref='tachibana')
 
-
     def test_Spectrogram_make(self, has_window_error):
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
@@ -103,7 +102,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
@@ -123,7 +122,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin  = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
@@ -134,6 +133,7 @@ class TestAudiofileIO:
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
 
+        # test that make_syl_spects works with spect params given individually
         spect_params = {
             'nperseg': 512,
             'noverlap': 480,
@@ -141,11 +141,21 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params)
         wav_song.make_syl_spects(spect_params)
 
+        # test make_syl_spects works with 'ref' set to 'tachibana'
         cbin_song.make_syl_spects(spect_params={'ref': 'tachibana'})
         wav_song.make_syl_spects(spect_params={'ref': 'tachibana'})
 
+        # test make_syl_spects works with 'ref' set to 'koumura'
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
         wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
+
+        # test that make_syl_spects works the same way when
+        #
+        cbin_song = hvc.audiofileIO.Song(filename=cbin,
+                                         file_format='evtaf',
+                                         segment_params=segment_params)
+        cbin_song.set_syls_to_use('iabcdefghjk')
+
 
     def check_window_error_set_to_nan(self, has_window_error):
         """check that, if an audio file raises a window error for Spectrogram.make

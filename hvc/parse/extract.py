@@ -11,18 +11,18 @@ import warnings
 import yaml
 import numpy as np
 
-# from hvc
-from hvc.features.extract import single_syl_features_switch_case_dict
-from hvc.features.extract import multiple_syl_features_switch_case_dict
-VALID_FEATURES = list(single_syl_features_switch_case_dict.keys()) + \
-                 list(multiple_syl_features_switch_case_dict.keys())
-
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
+
+with open(os.path.join(dir_path, 'features.yml')) as features_yml:
+    VALID_FEATURES = yaml.load(features_yml)['features']
 
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
+# feature groups in separate file from feature list because
+# want to validate feature groups against feature list
+# and some features are not in feature group
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
 
@@ -343,18 +343,27 @@ def _validate_todo_list_dict(todo_list_dict,index):
 # main function that validates yaml file #
 ##########################################
 
+
 def validate_yaml(extract_config_yaml):
     """
     validates config from extract YAML file
 
     Parameters
     ----------
-    extract_config_yaml : dictionary, config as loaded with YAML module
+    extract_config_yaml : dict
+        dict should be config from YAML file as loaded with pyyaml.
 
     Returns
     -------
     extract_config_dict : dictionary, after validation of all keys
     """
+
+    if type(extract_config_yaml) is not dict:
+        raise ValueError('extract_config_yaml passed to parse.extract was '
+                         'not recognized as a dict, instead was a {}.'
+                         'Must pass a dict containing config loaded from YAML'
+                         'file or a str that is a YAML filename.'
+                         .format(type(extract_config_yaml)))
 
     if 'todo_list' not in extract_config_yaml:
         raise KeyError('extract config does not have required key \'todo_list\'')

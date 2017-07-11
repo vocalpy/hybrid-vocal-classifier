@@ -35,10 +35,60 @@ class TestFromFile:
             'min_silent_dur': 0.006
         }
         with pytest.warns(UserWarning):
-            ftr_arr, labels, inds =  hvc.features.extract.from_file(filename=filename,
-                                                                    file_format='evtaf',
-                                                                    feature_list=svm_features,
-                                                                    spect_params={'ref': 'koumura'},
-                                                                    labels_to_use='iabcdefghjk',
-                                                                    segment_params=segment_params)
+             extract_dict = hvc.features.extract.from_file(filename=filename,
+                                                           file_format='evtaf',
+                                                           feature_list=svm_features,
+                                                           spect_params={'ref': 'koumura'},
+                                                           labels_to_use='iabcdefghjk',
+                                                           segment_params=segment_params)
+        ftr_arr = extract_dict['features_arr']
         assert np.alltrue(np.isnan(ftr_arr[19, :]))
+
+    def test_cbin(self):
+        segment_params = {
+            'threshold': 1500,
+            'min_syl_dur': 0.01,
+            'min_silent_dur': 0.006
+        }
+
+        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        song = hvc.audiofileIO.Song(filename=cbin,
+                                    file_format='evtaf',
+                                    segment_params=segment_params)
+
+        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+            ftr_grps = yaml.load(ftr_grp_yaml)
+
+        extract_dict = hvc.features.extract.from_file(cbin,
+                                                      file_format='evtaf',
+                                                      spect_params={'ref': 'tachibana'},
+                                                      feature_list=ftr_grps['knn'],
+                                                      segment_params=segment_params,
+                                                      labels_to_use='iabcdefghjk')
+        knn_ftrs = extract_dict['features_arr']
+        feature_inds = extract_dict['feature_inds']
+        assert type(knn_ftrs) == np.ndarray
+        assert knn_ftrs.shape[-1] == np.unique(feature_inds).shape[-1]
+        assert knn_ftrs.shape[-1] == len(ftr_grps['knn'])
+
+        extract_dict = hvc.features.extract.from_file(cbin,
+                                                      file_format='evtaf',
+                                                      spect_params={'ref': 'tachibana'},
+                                                      feature_list=ftr_grps['svm'],
+                                                      segment_params=segment_params,
+                                                      labels_to_use='iabcdefghjk')
+
+        svm_ftrs = extract_dict['features_arr']
+        feature_inds = extract_dict['feature_inds']
+        assert type(svm_ftrs) == np.ndarray
+        assert svm_ftrs.shape[-1] == feature_inds.shape[-1]
+        assert np.unique(feature_inds).shape[-1] == len(ftr_grps['svm'])
+
+        extract_dict = hvc.features.extract.from_file(cbin,
+                                                      file_format='evtaf',
+                                                      spect_params={'ref': 'tachibana'},
+                                                      feature_list=['flatwindow'],
+                                                      segment_params=segment_params,
+                                                      labels_to_use='iabcdefghjk')
+        neuralnet_ftrs = extract_dict['neuralnet_inputs_dict']
+        assert type(neuralnet_ftrs) == dict

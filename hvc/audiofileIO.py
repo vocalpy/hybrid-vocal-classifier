@@ -589,7 +589,9 @@ class Song:
 
     def make_syl_spects(self,
                         spect_params,
-                        syl_spect_width=-1):
+                        syl_spect_width=-1,
+                        set_syl_spects=True,
+                        return_spects=False):
         """Make spectrograms from syllables.
         This method isolates making spectrograms from selecting syllables
         to use so that spectrograms can be loaded 'lazily', e.g., if only
@@ -601,18 +603,28 @@ class Song:
         spect_params : dict
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
-        syl_spect_duration : int
+        syl_spect_width : int
             Optional parameter to set constant duration for each spectrogram of a
             syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
             Used for creating inputs to neural network where each input
             must be of a fixed size.
             Default value is -1; in this case, the width of the spectrogram will
-            be the duration of the spectrogram as determined by the segmentation
-            algorithm in evsonganaly.m, i.e. the onset and offset that are stored
-            in the .cbin.not.mat file.
+            be the duration of the syllable as determined by the segmentation
+            algorithm, i.e. the onset and offset that are stored in an annotation file.
             If a different value is given, then the duration of each spectrogram
             will be that value. Note that if any individual syllable has a duration
             greater than syl_spect_duration, the function raises an error.
+        set_syl_spects : bool
+            if True, creates syllable objects for each segment in song,
+             as defined by onsets and offsets,
+             and assigns to each syllable's `spect` property the
+            spectrogram of that segment.
+            Default is True.
+        return_spects : bool
+            if True, return spectrograms.
+            Can be used without affecting syllables that have already been set
+            for a song.
+            Default is False.
         """
 
         if not hasattr(self, 'syls_to_use'):
@@ -628,7 +640,18 @@ class Song:
             self.sampFreq = samp_freq
 
         if syl_spect_width > 0:
-            syl_spect_width_Hz = np.round(syl_spect_width * samp_freq)
+            if syl_spect_width > 1:
+                warnings.warn('syl_spect_width set greater than 1; note that '
+                              'this parameter is in units of seconds, so using '
+                              'a value greater than one will make it hard to '
+                              'center the syllable/segment of interest within'
+                              'the spectrogram, and additionally consume a lot '
+                              'of memory.')
+            syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
+            if syl_spect_width_Hz > self.rawAudio.shape[-1]:
+                raise ValueError('syl_spect_width, converted to samples, '
+                                 'is longer than song file {}.'
+                                 .format(self.filename))
 
         all_syls = []
 
@@ -637,11 +660,11 @@ class Song:
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
                 syl_duration_in_samples = offset - onset
-                if syl_duration_in_samples < syl_spect_width_Hz:
-                    raise ValueError('syllable duration of syllable {} with label {}'
+                if syl_duration_in_samples > syl_spect_width_Hz:
+                    raise ValueError('syllable duration of syllable {} with label {} '
                                      'in file {} is greater than '
                                      'width specified for all syllable spectrograms.'
-                                     .format(ind, label, cbin))
+                                     .format(ind, label, self.filename))
 
             if self.syls_to_use[ind]:
                 if 'syl_spect_width_Hz' in locals():
@@ -654,14 +677,12 @@ class Song:
                     right_width = width_diff - left_width
                     if left_width > onset:  # if duration before onset is less than left_width
                         # (could happen with first onset)
-                        left_width = 0
-                        right_width = width_diff - offset
+                        syl_audio = self.rawAudio[0:syl_spect_width_Hz]
                     elif offset + right_width > self.rawAudio.shape[-1]:
                         # if right width greater than length of file
-                        right_width = self.rawAudio.shape[-1] - offset
-                        left_width = width_diff - right_width
-                    syl_audio = self.rawAudio[:, onset - left_width:
-                    offset + right_width]
+                        syl_audio = self.rawAudio[-syl_spect_width_Hz:]
+                    else:
+                        syl_audio = self.rawAudio[onset - left_width:offset + right_width]
                 else:
                     syl_audio = self.rawAudio[onset:offset]
 
@@ -690,5 +711,10 @@ class Song:
                                     label)
 
                 all_syls.append(curr_syl)
+        if set_syl_spects:
+            self.syls = all_syls
 
-        self.syls = all_syls
+        if return_spects:
+            # stack with dimensions (samples, height, width)
+            return np.stack([syl.spect for syl in all_syls])
+
