@@ -171,7 +171,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
                            format(key))
     return validated_todo_list_dict
 
-VALID_SELECT_KEYS = set(['global','todo_list'])
+VALID_SELECT_KEYS = set(['global', 'todo_list'])
 VALID_GLOBAL_KEYS = set(['num_replicates',
                          'num_test_samples',
                          'num_train_samples',

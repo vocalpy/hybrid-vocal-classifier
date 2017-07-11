@@ -99,7 +99,7 @@ def select(config_file):
         for num_samples_ind, num_train_samples in enumerate(num_train_samples_list):
             for replicate in range(num_replicates):
                 print('Training models with {0} samples, replicate #{1}'
-                      .format(num_train_samples,replicate))
+                      .format(num_train_samples, replicate))
                 train_IDs = grab_n_samples_by_song(feature_file['song_IDs'],
                                                    feature_file['labels'],
                                                    num_train_samples,
@@ -122,7 +122,7 @@ def select(config_file):
 
                     if model_dict['model'] in ['svm','knn']:
                         #use 'advanced indexing' to get only sample rows and only feature models
-                        features_train = feature_file['features'][train_IDs[:,np.newaxis],
+                        features_train = feature_file['features'][train_IDs[:, np.newaxis],
                                                                   feature_inds]
                         scaler = StandardScaler()
                         features_train = scaler.fit_transform(features_train)
@@ -131,17 +131,17 @@ def select(config_file):
                                                                  feature_inds]
                         features_test = scaler.transform(features_test)
 
-                        print('fitting model. ',end='')
+                        print('fitting model. ', end='')
                         clf.fit(features_train, labels_train)
                         score = clf.score(features_test, labels_test)
-                        print('score on test set: {:05.2f} '.format(score),end='')
+                        print('score on test set: {:05.4f} '.format(score), end='')
                         score_arr[num_samples_ind, replicate, model_ind] = score
                         pred_labels = clf.predict(features_test)
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
                         acc_by_label, avg_acc = get_acc_by_label(labels_test,
                                                                  pred_labels,
                                                                  feature_file['labelset'])
-                        print(', average accuracy on test set: {:05.2f}'.format(avg_acc))
+                        print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
                         model_output_dir = os.path.join(output_dir,model_dict['model'])
                         if not os.path.isdir(model_output_dir):
@@ -170,11 +170,11 @@ def select(config_file):
             'feature_file': todo['feature_file'],
             'num_train_samples_list': num_train_samples_list,
             'num_replicates': num_replicates,
-            'model_dict' : model_dict,
+            'model_dict': model_dict,
             'test_IDs': test_IDs,
             'train_IDs_arr': train_IDs_arr,
-            'score_arr' : score_arr,
-            'avg_acc_arr' : avg_acc_arr,
-            'pred_labels_arr' : pred_labels_arr,
+            'score_arr': score_arr,
+            'avg_acc_arr': avg_acc_arr,
+            'pred_labels_arr': pred_labels_arr,
         }
-        joblib.dump(output_dict,output_filename)
+        joblib.dump(output_dict, output_filename)

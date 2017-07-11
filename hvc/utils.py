@@ -194,7 +194,7 @@ def grab_n_samples_by_song(song_IDs,
                            labels,
                            num_samples,
                            song_ID_list = None,
-                           seed=42,
+                           seed=None,
                            return_popped_songlist=False,
                            use_random_dot_org=False):
     """Creates list of sample IDs for training or test set.
@@ -219,7 +219,7 @@ def grab_n_samples_by_song(song_IDs,
         If None, all IDs from song_IDs are used, i.e., np.unique(song_IDs)
         Default is None.
     seed : int
-        seed for random number generator. Default is 42.
+        seed for random number generator. Default is None.
     return_popped_songlist : Bool
         if True, return song_ID_list with IDs of songs assigned popped off.
         This is used when creating the test set so that the training set does not contain
@@ -241,12 +241,13 @@ def grab_n_samples_by_song(song_IDs,
     if use_random_dot_org:
         try:
             interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
-        except (HTTPError, URLError): # i.e., if random service not available
+        except (HTTPError, URLError):  # i.e., if random service not available
             print('random.org service not working. Defaulting to Python random module')
             random.seed(seed)
             random.shuffle(song_ID_list_copy_to_pop)
     else:
-        random.seed(seed)
+        if seed:
+            random.seed(seed)
         random.shuffle(song_ID_list_copy_to_pop)
 
     #outer while loop to make sure there's more than one sample for each class
