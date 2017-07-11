@@ -677,13 +677,12 @@ class Song:
                     right_width = width_diff - left_width
                     if left_width > onset:  # if duration before onset is less than left_width
                         # (could happen with first onset)
-                        left_width = 0
-                        right_width = width_diff - offset
+                        syl_audio = self.rawAudio[0:syl_spect_width_Hz]
                     elif offset + right_width > self.rawAudio.shape[-1]:
                         # if right width greater than length of file
-                        right_width = self.rawAudio.shape[-1] - offset
-                        left_width = width_diff - right_width
-                    syl_audio = self.rawAudio[onset - left_width:offset + right_width]
+                        syl_audio = self.rawAudio[-syl_spect_width_Hz:]
+                    else:
+                        syl_audio = self.rawAudio[onset - left_width:offset + right_width]
                 else:
                     syl_audio = self.rawAudio[onset:offset]
 
@@ -716,4 +715,6 @@ class Song:
             self.syls = all_syls
 
         if return_spects:
-            return [syl.spect for syl in all_syls]
+            # stack with dimensions (samples, height, width)
+            return np.stack([syl.spect for syl in all_syls])
+
