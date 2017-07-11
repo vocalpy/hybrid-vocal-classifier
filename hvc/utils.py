@@ -69,6 +69,7 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
         song_IDs_vec = ftr_file['song_IDs_vec'].flatten()
         return samples, labels, song_IDs_vec
 
+
 def filter_samples(samples,labels,labels_to_filter,song_ID_vec=None,remove=False):
     """
     filter_samples(samples,labels,labels_to_keep,song_ID_vec=None,remove=False)
@@ -115,6 +116,7 @@ def filter_labels(labels,labelset):
     labels = labels[labels_to_keep]
     return labels
 
+
 def grid_search(X,y):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector classifier.
@@ -139,6 +141,7 @@ def grid_search(X,y):
         % (grid.best_params_, grid.best_score_))
     return grid.best_params_, grid.best_score_
 
+
 def uniqify_filename_list(filename_list, idfun=None):
    # based on code by Peter Bengtsson
    # https://www.peterbe.com/plog/uniqifiers-benchmark
@@ -152,6 +155,7 @@ def uniqify_filename_list(filename_list, idfun=None):
        seen[marker] = 1
        result.append(item)
    return result
+
 
 def find_best_k(train_samples,train_labels,test_samples,test_labels):
     """find_best_k(train_samples,train_labels,holdout_samples,holdout_labels)
@@ -189,6 +193,7 @@ def find_best_k(train_samples,train_labels,test_samples,test_labels):
     k = num_nabes_list[scores.argmax()] #argmax returns index of max val
     print("best k was {} with accuracy of {}".format(k,np.max(scores)))
     return scores, k
+
 
 def grab_n_samples_by_song(song_IDs,
                            labels,
@@ -291,6 +296,7 @@ def grab_n_samples_by_song(song_IDs,
     else:
         return sample_IDs
 
+
 def get_acc_by_label(labels,pred_labels,labelset):
     """accuracy averaged across classes
 
@@ -308,6 +314,7 @@ def get_acc_by_label(labels,pred_labels,labelset):
     avg_acc : scalar
         average accuracy across labels, i.e., numpy.mean(acc_by_label)
     """
+
     acc_by_label = np.zeros((len(labelset)))
     for ind,label in enumerate(labelset):
         label_ids = np.in1d(labels,label) #find all occurrences of label in test data
