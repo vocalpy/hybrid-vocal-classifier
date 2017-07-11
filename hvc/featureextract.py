@@ -48,8 +48,16 @@ TODO_TEMPLATE = """  todo_list:
       output_dir: {1}"""
 
 
+def timestamp():
+    """timestampe for dir + file names
+    Use to make sure each dir/file has unique identifier
+    (so we don't load the wrong data with joblib because
+    both data files have the same name)
+    """
+    return datetime.now().strftime('%y%m%d_%H%M%S')
+
+
 def write_select_config(summary_ftr_file_dict,
-                       timestamp,
                        summary_filename,
                        output_dir):
     """writes summary output dict from extract to a config file for select
@@ -60,8 +68,6 @@ def write_select_config(summary_ftr_file_dict,
     ----------
     summary_ftr_file_dict : dictionary
         as defined in featureextract.extract
-    timestamp : string
-        time stamp from feature files, added to select config filename
     summary_filename : string
         name of summary feature file
     output_dir : string
@@ -74,7 +80,7 @@ def write_select_config(summary_ftr_file_dict,
     Doesn't return anything, just saves .yml file
     """
 
-    select_config_filename = 'select.config.from_extract_output_' + timestamp + '.yml'
+    select_config_filename = 'select.config.from_' + summary_filename + '.yml'
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
         for model_name, model_ID in summary_ftr_file_dict['feature_list_group_ID_dict'].items():
@@ -100,6 +106,7 @@ def extract(config_file):
     config_file : string
         filename of YAML file that configures feature extraction    
     """
+
     extract_config = parse_config(config_file, 'extract')
     print('Parsed extract config.')
 
@@ -108,9 +115,7 @@ def extract(config_file):
     todo_list = extract_config['todo_list']
     for ind, todo in enumerate(todo_list):
 
-        timestamp = datetime.now().strftime('%y%m%d_%H%M')
-
-        print('Completing item {} of {} in to-do list'.format(ind+1,len(todo_list)))
+        print('Completing item {} of {} in to-do list'.format(ind+1, len(todo_list)))
         file_format = todo['file_format']
         if file_format == 'evtaf':
             if 'evfuncs' not in sys.modules:
@@ -121,9 +126,10 @@ def extract(config_file):
 
         feature_list = todo['feature_list']
 
-        output_dir = todo['output_dir'] + 'extract_output_' + timestamp
-        if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+        output_dir = 'extract_output_' + timestamp()
+        output_dir_with_path = os.path.join(todo['output_dir'] + output_dir)
+        if not os.path.isdir(output_dir_with_path):
+            os.mkdir(output_dir_with_path)
 
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
@@ -183,8 +189,8 @@ def extract(config_file):
             # get dir name without the rest of path so it doesn't have separators in the name
             # because those can't be in filename
             just_dir_name = os.getcwd().split(os.path.sep)[-1]
-            feature_file = os.path.join(output_dir,
-                                        'features_from_' + just_dir_name + '_created_' + timestamp)
+            feature_file = os.path.join(output_dir_with_path,
+                                        'features_from_' + just_dir_name + '_created_' + timestamp())
             feature_file_dict = {
                 'labels': all_labels,
                 'feature_list': todo['feature_list'],
@@ -214,8 +220,9 @@ def extract(config_file):
         # after looping through all data_dirs for this todo_item #
         ##########################################################
         print('making summary file')
-        os.chdir(output_dir)
-        summary_filename = os.path.join(output_dir, 'summary_feature_file_created_' + timestamp)
+        os.chdir(output_dir_with_path)
+        summary_filename = 'summary_feature_file_created_' + timestamp()
+        summary_filename_with_path = os.path.join(output_dir_with_path, summary_filename)
         ftr_output_files = glob.glob('*features_from_*')
         if len(ftr_output_files) > 1:
             #make a 'summary' data file
@@ -232,6 +239,7 @@ def extract(config_file):
                 if 'spect_params' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
                 else:
+
                     if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
                         raise ValueError('mismatch between spect_params in {} '
                                          'and other feature files'.format(feature_file))
@@ -326,7 +334,6 @@ def extract(config_file):
 
         if 'feature_list_group_ID' in summary_ftr_file_dict:
             write_select_config(summary_ftr_file_dict,
-                                timestamp,
                                 summary_filename,
                                 todo['output_dir'])
     os.chdir(home_dir)
