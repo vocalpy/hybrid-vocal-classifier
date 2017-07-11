@@ -76,6 +76,8 @@ def select(config_file):
 
         feature_file = joblib.load(todo['feature_file'])
         labels = np.asarray(feature_file['labels'])
+        # call grab_n_samples this first time to get indices for test/validation set
+        # and a list of song IDs from which we will draw the training set indices below
         test_IDs, train_song_ID_list = grab_n_samples_by_song(feature_file['song_IDs'],
                                                               feature_file['labels'],
                                                               num_test_samples,
@@ -100,6 +102,12 @@ def select(config_file):
             for replicate in range(num_replicates):
                 print('Training models with {0} samples, replicate #{1}'
                       .format(num_train_samples, replicate))
+                # here we call grab_n_samples again with the train_song_ID_list
+                # from above. currently each fold is a random grab without
+                # anything like k-folds.
+                # For testing on large datasets this is okay but in situations
+                # where we're data-limited it's less than ideal, the whole point
+                # is to not have to hand-label a large data set
                 train_IDs = grab_n_samples_by_song(feature_file['song_IDs'],
                                                    feature_file['labels'],
                                                    num_train_samples,
@@ -117,10 +125,14 @@ def select(config_file):
                         clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
                                                              'distance')
 
-                    feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                           model_dict['feature_list_indices'])
+                    if model_dict['feature_list_indices'] == 'all':
+                        feature_inds = np.ones((
+                            feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                    else:
+                        feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                               model_dict['feature_list_indices'])
 
-                    if model_dict['model'] in ['svm','knn']:
+                    if model_dict['model'] in ['svm', 'knn']:
                         #use 'advanced indexing' to get only sample rows and only feature models
                         features_train = feature_file['features'][train_IDs[:, np.newaxis],
                                                                   feature_inds]
@@ -149,9 +161,12 @@ def select(config_file):
                         model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
                                                                                num_train_samples,
                                                                                replicate)
-                        model_filename = os.path.join(model_output_dir,model_fname_str)
-                        model_feature_list = [feature_file['feature_list'][ind]
-                                              for ind in model_dict['feature_list_indices']]
+                        model_filename = os.path.join(model_output_dir, model_fname_str)
+                        if model_dict['feature_list_indices'] == 'all':
+                            model_feature_list = feature_file['feature_list']
+                        else:
+                            model_feature_list = [feature_file['feature_list'][ind]
+                                                  for ind in model_dict['feature_list_indices']]
                         model_output_dict = {
                             'model_feature_list': model_feature_list,
                             'model': clf,

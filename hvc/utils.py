@@ -43,8 +43,9 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
         sample m(sub i) belongs to in the samples array. E.g., if elements 15-37
         have the value "3", then all those samples belong to the third song.
         Used to relate number of songs to number of samples.  
-    """   
-    if ftr_file_type=='knn':
+    """
+
+    if ftr_file_type == 'knn':
         FEATURES_TO_USE = np.r_[0:6,7:10,11] # using np._r to build index array 
         #load 'cell array' from .mat file. ftr_file is a dictionary of numpy 
         #record arrays
@@ -55,14 +56,14 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
         samples = np.hstack(ftr_file['feature_cell'][1,:])
         samples = samples[:,FEATURES_TO_USE] #discard unused features
 
-    elif ftr_file_type=='svm':
+    elif ftr_file_type == 'svm':
         ftr_file = loadmat(fname)
         samples = ftr_file['features_mat']
 
-    if purpose=='classify':
+    if purpose == 'classify':
         return samples
 
-    elif purpose=='train':
+    elif purpose == 'train':
         # flatten because matlab vectors are imported as 2d numpy arrays with one row
         labels = ftr_file['label_vec'].flatten()
         labels = labels.view(np.uint32) # convert from unicode to long 
@@ -191,7 +192,7 @@ def find_best_k(train_samples,train_labels,test_samples,test_labels):
         clf.fit(train_samples,train_labels)
         scores[ind] = clf.score(test_samples,test_labels)
     k = num_nabes_list[scores.argmax()] #argmax returns index of max val
-    print("best k was {} with accuracy of {}".format(k,np.max(scores)))
+    print("best k was {} with accuracy of {}".format(k, np.max(scores)))
     return scores, k
 
 
@@ -208,10 +209,17 @@ def grab_n_samples_by_song(song_IDs,
     This way we approximate natural distribution of syllables from a random draw
     of songs while at the same time using a constant # of samples.
 
-    Parameters:
+    In practice the way this function gets used by modelselect.select is that
+    it's called one time to  get indices for a test set, along with a
+    popped_songlist. Then it's called again repeatedly with the popped_songlist
+    to get a random draw of indices/samples for training sets.
+
+    Parameters
+    ----------
     song_IDs : list of ints
         song ID for each sample in sample set. E.g., if
-        sample_song_IDs[10:20]==31, that means all those samples in the set came from song #31.
+        sample_song_IDs[10:20]==31, that means all those
+         samples in the set came from song #31
     labels : list of chars
         label for each sample in sample set. Used to verify that randomly
         drawn subset contains at least 2 examples of each label/class. This is necessary
@@ -224,17 +232,21 @@ def grab_n_samples_by_song(song_IDs,
         If None, all IDs from song_IDs are used, i.e., np.unique(song_IDs)
         Default is None.
     seed : int
-        seed for random number generator. Default is None.
-    return_popped_songlist : Bool
+        seed for random number generator.
+        Default is None.
+    return_popped_songlist : bool
         if True, return song_ID_list with IDs of songs assigned popped off.
         This is used when creating the test set so that the training set does not contain
         any songs in the test set.
-    use_random_dot_org : Bool
+    use_random_dot_org: bool
         if True, use random.org API to get truly random numbers for shuffling song IDs.
         default is False. When True, can slow down script if website hangs.
-    
-    Returns:
-        sample_IDs, song_ID_list_copy_to_pop
+
+    Returns
+    -------
+    sample_IDs :
+
+    song_ID_list_copy_to_pop :
     """
 
     song_IDs_arr = np.asarray(song_IDs)
@@ -292,7 +304,7 @@ def grab_n_samples_by_song(song_IDs,
                 random.shuffle(song_ID_list_copy_to_pop)
 
     if return_popped_songlist:
-        return sample_IDs,song_ID_list_copy_to_pop
+        return sample_IDs, song_ID_list_copy_to_pop
     else:
         return sample_IDs
 

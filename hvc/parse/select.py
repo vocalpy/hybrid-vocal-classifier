@@ -62,12 +62,15 @@ def _validate_model_list(model_list):
                     raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
                                      .format(type(model_val)))
                 if type(model_val) == str:
-                    try:
-                        model_val = [int(num) for num in model_val.split(',')]
-                    except ValueError:
-                        raise ValueError('feature_list_indices parsed as a string '
-                                         'but could not convert following to list of ints: {}'
-                                         .format(model_val))
+                    if model_val == 'all':
+                        continue  # just keep as 'all'
+                    else:
+                        try:
+                            model_val = [int(num) for num in model_val.split(',')]
+                        except ValueError:
+                            raise ValueError('feature_list_indices parsed as a string '
+                                             'but could not convert following to list of ints: {}'
+                                             .format(model_val))
                 if not all([type(item_val) is int for item_val in model_val]):
                     raise ValueError('all indices in \'feature_list_indices\' should be integers')
                 validated_model_dict[model_key] = model_val
