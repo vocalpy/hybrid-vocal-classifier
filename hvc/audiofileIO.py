@@ -603,7 +603,7 @@ class Song:
         spect_params : dict
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.
-        syl_spect_width : int
+        syl_spect_width : float
             Optional parameter to set constant duration for each spectrogram of a
             syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
             Used for creating inputs to neural network where each input

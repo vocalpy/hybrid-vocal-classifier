@@ -19,6 +19,7 @@ from sklearn.externals import joblib
 from .parseconfig import parse_config
 from .utils import filter_samples, grab_n_samples_by_song, get_acc_by_label
 
+
 def select(config_file):
     """main function that runs model selection.
     Doesn't return anything, saves model files and summary file.
@@ -119,24 +120,26 @@ def select(config_file):
                 train_IDs_arr[num_samples_ind, replicate] = train_IDs
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
-                    if model_dict['model'] == 'svm':
-                        print('training svm. ', end='')
-                        clf = SVC(C=model_dict['hyperparameters']['C'],
+
+                    #if-elif that switches based on model type, start with sklearn models
+                    if model_dict['model'] in ['svm', 'knn']:
+                        if model_dict['model'] == 'svm':
+                            print('training svm. ', end='')
+                            clf = SVC(C=model_dict['hyperparameters']['C'],
                                       gamma=model_dict['hyperparameters']['gamma'],
                                       decision_function_shape='ovr')
-                    elif model_dict['model'] == 'knn':
-                        print('training knn. ', end='')
-                        clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
-                                                             'distance')
+                        elif model_dict['model'] == 'knn':
+                            print('training knn. ', end='')
+                            clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
+                                                                 'distance')
 
-                    if model_dict['feature_list_indices'] == 'all':
-                        feature_inds = np.ones((
-                            feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
-                    else:
-                        feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                               model_dict['feature_list_indices'])
+                        if model_dict['feature_list_indices'] == 'all':
+                            feature_inds = np.ones((
+                                feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                        else:
+                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                   model_dict['feature_list_indices'])
 
-                    if model_dict['model'] in ['svm', 'knn']:
                         #use 'advanced indexing' to get only sample rows and only feature models
                         features_train = feature_file['features'][train_IDs[:, np.newaxis],
                                                                   feature_inds]
@@ -182,6 +185,18 @@ def select(config_file):
                         }
                         joblib.dump(model_output_dict,
                                     model_filename)
+
+                    # if-elif that switches based on model type, end sklearn, start keras models
+                    elif model_dict['model'] == 'flatwindow':
+                        if 'convert_labels_categorical' not in locals():
+                            from hvc.neuralnet.utils import convert_labels_categorical
+
+                        labels_test_onehot = convert_labels_categorical(labels_test)
+
+                        num_channels, num_freqbins, num_timebins = train_spects[0].shape
+                        input_shape = (num_channels, num_freqbins, num_timebins)
+                        flatwindow = hvc.neuralnet.models.DCNN_flatwindow(input_shape=input_shape,
+                                                                          num_syllable_classes=num_syl_classes)
 
         # after looping through all samples + replicates
         output_dict = {
