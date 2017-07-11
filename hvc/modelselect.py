@@ -188,10 +188,50 @@ def select(config_file):
 
                     # if-elif that switches based on model type, end sklearn, start keras models
                     elif model_dict['model'] == 'flatwindow':
+                        spects = feature_file['neuralnet_inputs']['flatwindow']
+
                         if 'convert_labels_categorical' not in locals():
                             from hvc.neuralnet.utils import convert_labels_categorical
 
-                        labels_test_onehot = convert_labels_categorical(labels_test)
+                        if 'labels_test_onehot' not in locals():
+                            labels_test_onehot = \
+                                convert_labels_categorical(feature_file['labelset'],
+                                                           labels_test)
+
+                        if 'test_spects' not in locals():
+                            # get spects for test set,
+                            # also add axis so correct input_shape for keras.conv_2d
+                            test_spects = spects[test_IDs, :, :, np.newaxis]
+
+                        labels_train_onehot = \
+                            convert_labels_categorical(feature_file['labelset'],
+                                                       labels_train)
+
+                        # get spects for train set,
+                        # also add axis so correct input_shape for keras.conv_2d
+                        train_spects = spects[train_IDs, :, :, np.newaxis]
+
+                        # scale all spects by mean and std of training set
+                        spect_scaler = StandardScaler()
+                        import pdb;pdb.set_trace()
+                        # concatenate all spects then rotate so Hz bins are 'features'
+                        spect_scaler.fit(np.rot90(
+                            np.hstack(train_spects[:, :, :, 0])
+                        ))
+
+                        # scale all spectrograms
+                        for spect_ind in range(train_spects.shape[0]):
+                            train_spects_subset[spect_ind, :, :, 0] = \
+                                np.rot90(spect_scaler.transform(
+                                    np.rot90(train_spects_subset[spect_ind, :, :, 0])), 3)
+                        for spect_ind in range(validat_spects.shape[0]):
+                            validat_spects[spect_ind, 0, :, :] = np.rot90(spect_scaler.transform(
+                                np.rot90(validat_spects[spect_ind, 0, :, :])), 3)
+
+                        test_spects_scaled = np.zeros((test_syl_spects.shape))
+                        for spect_ind in range(test_syl_spects.shape[0]):
+                            test_spects_scaled[spect_ind, 0, :, :] = np.rot90(spect_scaler.transform(
+                                np.rot90(test_syl_spects[spect_ind, 0, :, :])), 3)
 
                         num_channels, num_freqbins, num_timebins = train_spects[0].shape
                         input_shape = (num_channels, num_freqbins, num_timebins)

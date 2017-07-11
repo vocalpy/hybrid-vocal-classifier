@@ -139,6 +139,10 @@ def _validate_todo_list_dict(todo_list_dict, index):
                 raise OSError('{} is not found as a file'.format(val))
             try:
                 joblib.load(val)
+                ###################################################
+                # here should check that either 'features' or     #
+                # 'neuralnet_inputs' is in 'feature_file'         #
+                ###################################################
             except:
                 raise IOError('Unable to open {}'.format(val))
 
