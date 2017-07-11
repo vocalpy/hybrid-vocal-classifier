@@ -10,8 +10,8 @@ import copy
 import numpy as np
 from sklearn.externals import joblib
 
-VALID_MODELS = set(['knn','svm','neuralnet'])
-VALID_MODEL_DICT_KEYS = set(['model','feature_list_indices','hyperparameters'])
+VALID_MODELS = {'knn', 'svm', 'flatwindow'}
+VALID_MODEL_DICT_KEYS = {'model', 'feature_list_indices', 'hyperparameters'}
 
 def _validate_model_list(model_list):
     """
@@ -75,13 +75,14 @@ def _validate_model_list(model_list):
                     raise ValueError('all indices in \'feature_list_indices\' should be integers')
                 validated_model_dict[model_key] = model_val
             elif model_key == 'model':
+                hyperparam_keys = set(model_dict['hyperparameters'].keys())
                 if model_val == 'knn':
-                    if set(model_dict['hyperparameters'].keys()) != set(['k']):
+                    if hyperparam_keys != {'k'}:
                         raise KeyError('invalid keys in \'knn\' hyperparameters')
                     if type(model_dict['hyperparameters']['k']) != int:
                         raise ValueError('value for \'k\' should be an integer')
                 elif model_val == 'svm':
-                    if set(model_dict['hyperparameters'].keys()) != set(['C','gamma']):
+                    if hyperparam_keyskeys != {'C', 'gamma'}:
                         raise KeyError('invalid keys in \'svm\' hyperparameters')
                     C = model_dict['hyperparameters']['C']
                     if  type(C) != float and type(C) != int:
@@ -89,12 +90,15 @@ def _validate_model_list(model_list):
                     gamma = model_dict['hyperparameters']['gamma']
                     if  type(gamma) != float and type(gamma) != int:
                         raise ValueError('gamma value for svm should be float or int')
+                elif model_val == 'flatwindow':
+                    if hyperparam_keys != {'batch size', 'epochs'}:
+                        raise KeyError('invalid keys in \'flatwindow\' hyperparameters')
         validated_model_list[ind] = validated_model_dict
     return validated_model_list
 
-VALID_NUM_SAMPLES_KEYS = set(['start','stop','step'])
-REQUIRED_TODO_KEYS = set(['feature_file','output_dir'])
-OPTIONAL_TODO_KEYS = set(['num_test_samples','num_train_samples','num_replicates','models'])
+VALID_NUM_SAMPLES_KEYS = {'start', 'stop', 'step'}
+REQUIRED_TODO_KEYS = {'feature_file', 'output_dir'}
+OPTIONAL_TODO_KEYS = {'num_test_samples', 'num_train_samples', 'num_replicates', 'models'}
 
 def _validate_todo_list_dict(todo_list_dict, index):
     """
@@ -155,7 +159,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
                 raise ValueError('{} should be a dict but parsed as {}'
                                  .format(key, type(val)))
             else:
-                samples_keys = set(['start', 'stop', 'step'])
+                samples_keys = {'start', 'stop', 'step'}
                 if set(glob_val.keys()) != samples_keys:
                     raise KeyError('incorrect keys in {}'.format(glob_key))
                 else:
@@ -174,11 +178,11 @@ def _validate_todo_list_dict(todo_list_dict, index):
                            format(key))
     return validated_todo_list_dict
 
-VALID_SELECT_KEYS = set(['global', 'todo_list'])
-VALID_GLOBAL_KEYS = set(['num_replicates',
-                         'num_test_samples',
-                         'num_train_samples',
-                         'models'])
+VALID_SELECT_KEYS = {'global', 'todo_list'}
+VALID_GLOBAL_KEYS = {'num_replicates',
+                     'num_test_samples',
+                     'num_train_samples',
+                     'models'}
 
 def validate_yaml(select_config_yaml):
     """
