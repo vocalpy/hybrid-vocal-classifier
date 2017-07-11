@@ -59,6 +59,10 @@ def select(config_file):
                 if 'neighbors' not in locals():
                     from sklearn import neighbors
 
+            elif model_dict['model'] == 'flatwindow':
+                if 'flatwindow' not in locals():
+                    from hvc.neuralnet.models import flatwindow
+
         if 'num_test_samples' in todo:
             num_test_samples = todo['num_test_samples']
         else:

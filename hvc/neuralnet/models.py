@@ -196,7 +196,7 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     
     return model
 
-def DCNN_flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
+def flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
     """DCNN model but flatten output of sliding window, pass to fully connected layer.
     """
     
