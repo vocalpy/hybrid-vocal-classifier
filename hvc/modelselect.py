@@ -190,6 +190,9 @@ def select(config_file):
                     elif model_dict['model'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
 
+                        if 'flatwindow' not in locals():
+                            from hvc.neuralnet.models import flatwindow
+
                         if 'convert_labels_categorical' not in locals():
                             from hvc.neuralnet.utils import convert_labels_categorical
 
@@ -229,10 +232,45 @@ def select(config_file):
                         train_spects_scaled = train_spects_scaled[:, :, :, np.newaxis]
                         test_spects_scaled = test_spects_scaled[:, :, :, np.newaxis]
 
-                        num_samples, num_freqbins, num_timebins, num_channels = train_spects[0].shape
+                        num_samples, num_freqbins, num_timebins, num_channels = train_spects_scaled.shape
                         input_shape = (num_freqbins, num_timebins, num_channels)
-                        flatwindow = hvc.neuralnet.models.DCNN_flatwindow(input_shape=input_shape,
-                                                                          num_syllable_classes=num_syl_classes)
+                        flatwin = flatwindow(input_shape=input_shape,
+                                             num_syllable_classes=num_syl_classes)
+                        import pdb;pdb.set_trace()
+                        filename = bird_ID + '_' + 'flatwindow_training_' + now_str + \
+                                   '.log'
+                        csv_logger = CSVLogger(filename,
+                                               separator=',',
+                                               append=True)
+                        weights_filename = bird_ID + '_' + "weights " + now_str + \
+                                           ".best.hdf5"
+                        checkpoint = ModelCheckpoint(weights_filename,
+                                                     monitor='val_acc',
+                                                     verbose=1,
+                                                     save_best_only=True,
+                                                     save_weights_only=True,
+                                                     mode='max')
+                        earlystop = EarlyStopping(monitor='val_acc',
+                                                  min_delta=0,
+                                                  patience=20,
+                                                  verbose=1,
+                                                  mode='auto')
+                        callbacks_list = [csv_logger, checkpoint, earlystop]
+
+                        flatwindow.fit(train_spects,
+                                       train_labels,
+                                       validation_data=(validat_spects, validat_labels),
+                                       batch_size=model_dict['batch size'],
+                                       nb_epoch=model_dict['epochs'],
+                                       callbacks=callbacks_list,
+                                       verbose=1)
+
+                    pred_labels = flatwindow.predict_classes(test_spects_scaled,
+                                                             batch_size=32,
+                                                             verbose=1)
+                    acc_by_label, avg_acc = hvc.utils.get_acc_by_label(test_syl_labels_zero_to_n,
+                                                                       pred_labels,
+                                                                       classes_zero_to_n)
 
         # after looping through all samples + replicates
         output_dict = {

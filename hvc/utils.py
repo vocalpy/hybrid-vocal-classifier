@@ -2,6 +2,7 @@
 import copy
 import random
 from urllib.error import HTTPError
+from datetime import datetime
 
 #from dependencies
 import numpy as np
@@ -13,6 +14,15 @@ from sklearn import neighbors
 
 #from hvc
 from .randomdotorg import RandomDotOrg
+
+
+def timestamp():
+    """timestampe for dir + file names
+    Use to make sure each dir/file has unique identifier
+    (so we don't load the wrong data with joblib because
+    both data files have the same name)
+    """
+    return datetime.now().strftime('%y%m%d_%H%M%S')
 
 
 def load_from_mat(fname,ftr_file_type,purpose='train'):

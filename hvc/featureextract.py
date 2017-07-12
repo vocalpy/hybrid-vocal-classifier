@@ -6,7 +6,6 @@ feature extraction
 import sys
 import os
 import glob
-from datetime import datetime
 
 # from dependencies
 import numpy as np
@@ -15,6 +14,7 @@ from sklearn.externals import joblib
 # from hvc
 from .parseconfig import parse_config
 from . import features
+from .utils import timestamp
 
 SELECT_TEMPLATE = """select:
   global:
@@ -46,15 +46,6 @@ TODO_TEMPLATE = """  todo_list:
     -
       feature_file : {0}
       output_dir: {1}"""
-
-
-def timestamp():
-    """timestampe for dir + file names
-    Use to make sure each dir/file has unique identifier
-    (so we don't load the wrong data with joblib because
-    both data files have the same name)
-    """
-    return datetime.now().strftime('%y%m%d_%H%M%S')
 
 
 def write_select_config(summary_ftr_file_dict,
