@@ -13,6 +13,9 @@ class WindowError(Exception):
     pass
 
 
+class SegmentParametersMismatchError(Exception):
+    pass
+
 class Spectrogram:
     """class for making spectrograms.
     Abstracts out function calls so user just has to put spectrogram parameters
@@ -408,6 +411,9 @@ class Song:
     used for feature extraction
     """
 
+    class SegmentParametersMismatchError(SegmentParametersMismatchError):
+        pass
+
     def __init__(self,
                  filename,
                  file_format,
@@ -503,15 +509,15 @@ class Song:
                 # in .not.mat files saved by evsonganaly,
                 # onsets and offsets are in units of ms, have to convert to s
                 if segment_params['threshold'] != song_dict['threshold']:
-                    raise ValueError('\'threshold\' parameter for {} does not match parameter '
+                    raise Song.SegmentParametersMismatchError('\'threshold\' parameter for {} does not match parameter '
                                      'value for segment_params[\'threshold\'].'
                                      .format(filename))
                 if segment_params['min_syl_dur'] != song_dict['min_dur']/1000:
-                    raise ValueError('\'min_dur\' parameter for {} does not match parameter '
+                    raise Song.SegmentParametersMismatchError('\'min_dur\' parameter for {} does not match parameter '
                                      'value for segment_params[\'min_syl_dur\'].'
                                      .format(filename))
                 if segment_params['min_silent_dur'] != song_dict['min_int']/1000:
-                    raise ValueError('\'min_int\' parameter for {} does not match parameter '
+                    raise Song.SegmentParametersMismatchError('\'min_int\' parameter for {} does not match parameter '
                                      'value for segment_params[\'min_silent_dur\'].'
                                      .format(filename))
                 self.onsets_s = song_dict['onsets'] / 1000
@@ -599,7 +605,6 @@ class Song:
 
         Parameters
         ----------
-
         spect_params : dict
             keys should be parameters for Spectrogram.__init__,
             see the docstring for those keys.

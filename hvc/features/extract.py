@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 
 from . import tachibana, knn, neuralnet
-from hvc import audiofileIO
+from hvc.audiofileIO import Song
 
 single_syl_features_switch_case_dict = {
     'mean spectrum': tachibana.mean_spectrum,
@@ -107,7 +107,15 @@ def from_file(filename,
                 input for each model, e.g., 2-d array containing spectrogram
     """
 
-    song = audiofileIO.Song(filename, file_format, segment_params)
+    try:
+        song = Song(filename, file_format, segment_params)
+    except Song.SegmentParametersMismatchError:
+        warnings.warn('Mismatch between declared segmenting parameters '
+                      'and parameters in annotation file for {}.\n'
+                      'Did not extract features from file.'
+                      .format(filename))
+        return None
+
     song.set_syls_to_use(labels_to_use)
 
     if np.all(song.syls_to_use == False):
