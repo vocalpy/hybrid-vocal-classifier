@@ -2,7 +2,7 @@ import numpy as np
 
 from keras.models import Sequential, Model
 from keras.layers.core import Activation, Dense, Dropout, Flatten, Reshape
-from keras.layers.convolutional import Convolution2D, MaxPooling2D, \
+from keras.layers.convolutional import Conv2D, MaxPooling2D, \
                                        Convolution3D, ZeroPadding2D
 from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import TimeDistributed
@@ -54,7 +54,7 @@ def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
         (number of classes, number of windows)
     
     Inputs:
-        input_shape -- tuple, shape of inputs to first Convolution2D layer. Expects a shape (1,freq_bins,time_bins)
+        input_shape -- tuple, shape of inputs to first Conv2D layer. Expects a shape (1,freq_bins,time_bins)
                        where there freq_bins and time_bins are output from hvc.utils.make_spect_from_song.
         num_syllable_classes -- number of classes of syllables, i.e. labels. This value determines
                                 the number of values in the output after running through the softmax layer.
@@ -68,16 +68,16 @@ def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
     
     model = Sequential()
    
-    model.add(Convolution2D(16,5, 5, activation='relu', name='conv1_1',input_shape=input_shape))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv1_2'))
+    model.add(Conv2D(16, (5, 5), activation='relu', name='conv1_1',input_shape=input_shape))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv1_2'))
     model.add(MaxPooling2D((2,2), strides=(2,2),name='pool1'))
     
-    model.add(Convolution2D(16,5, 5, activation='relu', name='conv2_1'))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv2_2'))
+    model.add(Conv2D(16, (5, 5), activation='relu', name='conv2_1'))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv2_2'))
     model.add(MaxPooling2D((2,2), strides=(2,2),name='pool2'))
     
-    model.add(Convolution2D(16,4, 4, activation='relu', name='conv3_1'))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv3_2'))
+    model.add(Conv2D(16,4, 4, activation='relu', name='conv3_1'))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv3_2'))
     model.add(MaxPooling2D((2,2), strides=(2,2),name='pool3'))
     
     #calculate shape that local window would have after passing through convolution + pooling layers.
@@ -94,11 +94,11 @@ def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
             s = layer.strides[0]
             local_window_timebins = pool_out_size(local_window_timebins,f,s)
                 
-    model.add(Convolution2D(240,local_window_freqbins,local_window_timebins,activation='relu', name='full'))
+    model.add(Conv2D(240,local_window_freqbins,local_window_timebins,activation='relu', name='full'))
     #pretty sure last softmax layer in model consists of yet another convolution where the
     #number of filters equals the number of syllable classes. And he uses identity activation
 
-    model.add(Convolution2D(num_syllable_classes,1,1,activation='linear'))
+    model.add(Conv2D(num_syllable_classes,1,1,activation='linear'))
     #This yields a 3-D output (neglecting the 1st batch size dimension):
     #(number of syllable classes, number of time bins from sliding window, 1).
     #The third dimension is just an artifact of using a convolution so we reshape.
@@ -130,24 +130,24 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     model = Sequential()
    
     model.add(TimeDistributed(
-        (Convolution2D(16,5, 5, activation='relu', name='conv1_1')),
+        (Conv2D(16, (5, 5), activation='relu', name='conv1_1')),
         input_shape=input_shape))
     model.add(TimeDistributed(
-        (Convolution2D(16,1, 1, activation='relu', name='conv1_2'))))
+        (Conv2D(16, (1, 1), activation='relu', name='conv1_2'))))
     model.add(TimeDistributed(
         (MaxPooling2D((2,2), strides=(2,2),name='pool1'))))
     
     model.add(TimeDistributed(
-        (Convolution2D(16,5, 5, activation='relu', name='conv2_1'))))
+        (Conv2D(16, (5, 5), activation='relu', name='conv2_1'))))
     model.add(TimeDistributed(
-        (Convolution2D(16,1, 1, activation='relu', name='conv2_2'))))
+        (Conv2D(16, (1, 1), activation='relu', name='conv2_2'))))
     model.add(TimeDistributed(
         (MaxPooling2D((2,2), strides=(2,2),name='pool2'))))
 
     model.add(TimeDistributed(
-        (Convolution2D(16,4, 4, activation='relu', name='conv3_1'))))
+        (Conv2D(16,4, 4, activation='relu', name='conv3_1'))))
     model.add(TimeDistributed(
-        (Convolution2D(16,1, 1, activation='relu', name='conv3_2'))))
+        (Conv2D(16, (1, 1), activation='relu', name='conv3_2'))))
     model.add(TimeDistributed(
         (MaxPooling2D((2,2), strides=(2,2),name='pool3'))))
     
@@ -166,7 +166,7 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
             local_window_timebins = pool_out_size(local_window_timebins,f,s)
     
     model.add(TimeDistributed(
-        (Convolution2D(240,
+        (Conv2D(240,
                        local_window_freqbins,
                        local_window_timebins,
                        activation='relu',
@@ -175,7 +175,7 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     # where the number of filters equals the number of syllable classes. And he
     # uses identity activation
     model.add(TimeDistributed(
-        (Convolution2D(num_syllable_classes,1,1,activation='linear'))))
+        (Conv2D(num_syllable_classes,1,1,activation='linear'))))
     #This yields a 3-D output (neglecting the 1st batch size dimension):
     #(number of syllable classes, number of time bins from sliding window, 1).
     #The third dimension is just an artifact of using a convolution so we reshape.
@@ -196,23 +196,24 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
     
     return model
 
-def flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
+
+def flatwindow(input_shape, num_label_classes, local_window_timebins=96):
     """DCNN model but flatten output of sliding window, pass to fully connected layer.
     """
     
     model = Sequential()
    
-    model.add(Convolution2D(16,5, 5, activation='relu', name='conv1_1',input_shape=input_shape))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv1_2'))
-    model.add(MaxPooling2D((2,2), strides=(2,2),name='pool1'))
+    model.add(Conv2D(16, (5, 5), activation='relu', name='conv1_1', input_shape=input_shape))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv1_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool1'))
     
-    model.add(Convolution2D(16,5, 5, activation='relu', name='conv2_1'))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv2_2'))
-    model.add(MaxPooling2D((2,2), strides=(2,2),name='pool2'))
+    model.add(Conv2D(16, (5, 5), activation='relu', name='conv2_1'))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv2_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool2'))
     
-    model.add(Convolution2D(16,4, 4, activation='relu', name='conv3_1'))
-    model.add(Convolution2D(16,1, 1, activation='relu', name='conv3_2'))
-    model.add(MaxPooling2D((2,2), strides=(2,2),name='pool3'))
+    model.add(Conv2D(16, (4, 4), activation='relu', name='conv3_1'))
+    model.add(Conv2D(16, (1, 1), activation='relu', name='conv3_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool3'))
     
     #calculate shape that local window would have after passing through
     #convolution + pooling layers.
@@ -221,19 +222,31 @@ def flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
     #But for x axis we need to calculate it
 
     for layer in model.layers:
-        if layer.name.find('conv') > -1: # if this is a convolution layer
-            f = layer.nb_row
-            local_window_timebins = conv_out_size(local_window_timebins,f,0,1)
-        elif layer.name.find('pool') > -1:
+        if type(layer) == Conv2D:  # if this is a convolution layer
+            f = layer.kernel_size[-1]
+            local_window_timebins = conv_out_size(local_window_timebins, f, 0, 1)
+        elif type(layer) == MaxPooling2D:
             f = layer.pool_size[0]
             s = layer.strides[0]
-            local_window_timebins = pool_out_size(local_window_timebins,f,s)
-                
-    model.add(Convolution2D(num_syllable_classes*5,
-                            local_window_freqbins,
-                            local_window_timebins,
-                            activation='relu',
-                            name='full'))
+            local_window_timebins = pool_out_size(local_window_timebins, f, s)
+
+    if not local_window_timebins.is_integer():
+        raise ValueError('computing timebins for "local" window layer in '
+                         'flatwindow model did not result in a whole number, '
+                         'instead resulted in {}.\nPlease check kernel sizes'
+                         .format(local_window_timebins))
+    else:
+        local_window_timebins = int(local_window_timebins)
+
+    # note that with keras 2.0 API, specify kernel dimensions as
+    # **width** first then **height**, so below for our "local window"
+    # layer we want timebins first (window width) and then
+    # freqbins (window height)
+    model.add(Conv2D(num_label_classes*5,
+                     (local_window_timebins,
+                      local_window_freqbins),
+                     activation='relu',
+                     name='full'))
     #pretty sure last softmax layer in model consists of yet another convolution
     #where the number of filters equals the number of syllable classes. And he
     #uses identity activation
@@ -242,7 +255,7 @@ def flatwindow(input_shape,num_syllable_classes,local_window_timebins=96):
     output_ns = model.layers[-1].output_shape[-1]
     model.add(Dense(output_ns))
     model.add(Activation('relu'))
-    model.add(Dense(num_syllable_classes))
+    model.add(Dense(num_label_classes))
     model.add(Activation('softmax'))
 
     #adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -278,39 +291,39 @@ def VGG_16(input_shape,num_syllable_classes,weights_path=None):
     """
     model = Sequential()
     model.add(ZeroPadding2D((1,1),input_shape=input_shape))
-    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(Conv2D(64, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(Conv2D(64, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu'))
+    model.add(Conv2D(128, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu'))
+    model.add(Conv2D(128, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(Conv2D(256, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(Conv2D(256, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu'))
+    model.add(Conv2D(256, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu'))
+    model.add(Conv2D(512, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(Flatten())

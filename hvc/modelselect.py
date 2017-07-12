@@ -233,9 +233,10 @@ def select(config_file):
                         test_spects_scaled = test_spects_scaled[:, :, :, np.newaxis]
 
                         num_samples, num_freqbins, num_timebins, num_channels = train_spects_scaled.shape
+                        num_label_classes = len(feature_file['labelset'])
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
-                                             num_syllable_classes=num_syl_classes)
+                                             num_syllable_classes=num_label_classes)
                         import pdb;pdb.set_trace()
                         filename = bird_ID + '_' + 'flatwindow_training_' + now_str + \
                                    '.log'
