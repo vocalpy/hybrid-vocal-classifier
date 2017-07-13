@@ -13,6 +13,7 @@ from sklearn.externals import joblib
 VALID_MODELS = {'knn', 'svm', 'flatwindow'}
 VALID_MODEL_DICT_KEYS = {'model', 'feature_list_indices', 'hyperparameters'}
 
+
 def _validate_model_list(model_list):
     """
     validates 'model' list that can appear in 'global' or in 'todo_list'

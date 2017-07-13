@@ -215,3 +215,57 @@ test_segment_params:
       threshold: 5000
       min_syl_dur: 0.02
       min_silent_dur: 2 # should be float
+
+test_feature_list_and_group:
+
+  test_single_group_as_str:
+    bird_ID : gy6or6
+    file_format: evtaf
+    feature_group: knn
+    data_dirs:
+      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032312
+    output_dir: C:\Data\gy6gy6\
+    labelset: iabcdef
+
+  test_single_group_as_list:
+    bird_ID : gy6or6
+    file_format: evtaf
+    feature_group:
+      - knn
+    data_dirs:
+      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032312
+    output_dir: C:\Data\gy6gy6\
+    labelset: iabcdef
+
+  test_two_groups_as_list:
+    bird_ID : gy6or6
+    file_format: evtaf
+    feature_group:
+      - knn
+      - svm
+    data_dirs:
+      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032312
+    output_dir: C:\Data\gy6gy6\
+    labelset: iabcdef
+
+  test_feature_list:
+    bird_ID : gy6or6
+    file_format: evtaf
+    feature_list:
+      - duration group
+      - preceding syllable duration
+      - following syllable duration
+      - preceding silent gap duration
+      - following silent gap duration
+      - mean smoothed rectified amplitude
+      - mean spectral entropy
+      - mean hi lo ratio
+      - delta smoothed rectified amplitude
+    data_dirs:
+      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032312
+    output_dir: C:\Data\gy6gy6\
+    labelset: iabcdef
