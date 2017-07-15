@@ -52,6 +52,7 @@ neural_net_features_switch_case_dict = {
     'flatwindow': neuralnet.flatwindow,
 }
 
+
 def from_file(filename,
               file_format,
               feature_list,
