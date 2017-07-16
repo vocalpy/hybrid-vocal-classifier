@@ -11,6 +11,8 @@ introduction to writing the files, please see
 structure
 ---------
 Every `extract.config.yml` file should be written in YAML as a dictionary with (key, value) pairs
+In other words, any YAML file that contains a configuration for feature extraction
+should define a dictionary named 'extract` with keys as outlined below.
 
 required key: todo_list
 -----------------------
@@ -134,44 +136,23 @@ example `extract_config.yml`
 ----------------------------
 
 ```YAML
-    spect_params:
-      nperseg: 512
-      noverlap: 480
-      freq_cutoffs: [1000,8000]
-    segment_params:
-      threshold: 5000 # arbitrary units of amplitude
-      min_syl_dur: 0.02 # ms
-      min_silent_dur: 0.002 # ms
+select:
+  num_replicates: 5
+  num_train_samples:
+    start : 100
+    stop : 400
+    step : 100
+  num_test_samples: 400
 
-    todo_list:
-      -
-        bird_ID : gy6or6
-        file_format: evtaf
-        feature_group:
-          - svm
-          - knn
-        data_dirs:
-          - ./test_data/cbins
-          - C:\Data\gy6gy6\010317
-        output_dir: C:\Data\gy6gy6\
-        labelset: iabcdef
-      - #2
-        bird_ID : bl26lb16
-        file_format: evtaf
-        feature_group:
-          - svm
-          - knn
-        data_dirs:
-          - C:\DATA\bl26lb16\041912
-          - C:\DATA\bl26lb16\042012
-        output_dir: C:\DATA\bl26lb16\
-        labelset: iabcdef
+  models:
+    -
+      model: flatwindow
+      hyperparameters:
+        batch size: 32
+        epochs : 200
+
+  todo_list:
+    - #1
+      feature_file : C:\Data\gy6or6\extract_output_170712_210240\summary_feature_file_created_170712_211433
+      output_dir: C:\Data\gy6or6\
 ```
-
-.. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
-automatic classification of birdsong elements using a linear support vector
- machine." PloS one 9.3 (2014): e92584.
-
-.. [2] Koumura, Takuya, and Kazuo Okanoya. "Automatic recognition of element
-classes and boundaries in the birdsong with variable sequences."
-PloS one 11.7 (2016): e0159188.
