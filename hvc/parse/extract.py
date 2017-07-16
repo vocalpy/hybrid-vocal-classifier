@@ -267,7 +267,7 @@ def _validate_feature_group_and_convert_to_list(feature_group,
                 ftr_grp_ID_dict)
 
 
-def _validate_todo_list_dict(todo_list_dict,index):
+def _validate_todo_list_dict(todo_list_dict, index):
     """
     validates to-do lists
 
@@ -293,7 +293,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
         for extra_key in additional_keys:
             if extra_key not in validate_dict['optional_todo_list_keys']:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
-                               .format(extra_key,index))
+                               .format(extra_key, index))
 
     if 'feature_group' not in todo_list_dict and 'feature_list' not in todo_list_dict:
             raise ValueError('todo_list item #{} does not include feature_group or feature_list'
