@@ -125,7 +125,13 @@ def extract(config_file):
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
             print('Changing to data directory: {}'.format(data_dir))
-            os.chdir(data_dir)
+            try:
+                os.chdir(data_dir)
+            except FileNotFoundError:
+                os.chdir(home_dir)
+                os.chdir(data_dir)
+            except:
+                raise
 
             if 'features_from_all_files' in locals():
                 # from last time through loop
