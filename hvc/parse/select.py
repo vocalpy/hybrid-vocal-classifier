@@ -2,11 +2,11 @@
 YAML parser for select config files
 """
 
-#from standard library
+# from standard library
 import os
 import copy
 
-#from dependencies
+# from dependencies
 import yaml
 import numpy as np
 from sklearn.externals import joblib
@@ -299,7 +299,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
 
         elif key == 'num_test_samples':
             if type(val) != int:
-                raise ValueError('{} in \'global\' should be an integer'.format(key))
+                raise ValueError('{} should be an integer'.format(key))
 
         elif key == 'num_train_samples':
             if type(val) != dict:
@@ -307,12 +307,12 @@ def _validate_todo_list_dict(todo_list_dict, index):
                                  .format(key, type(val)))
             else:
                 samples_keys = {'start', 'stop', 'step'}
-                if set(glob_val.keys()) != samples_keys:
-                    raise KeyError('incorrect keys in {}'.format(glob_key))
+                if set(val.keys()) != samples_keys:
+                    raise KeyError('incorrect keys in {}'.format(key))
                 else:
-                    num_samples = range(glob_val['start'],
-                                        glob_val['stop'],
-                                        glob_val['step'])
+                    num_samples = range(val['start'],
+                                        val['stop'],
+                                        val['step'])
                     validated_select_config['num_train_samples'] = num_samples
 
         elif key == 'output_dir':
@@ -361,11 +361,11 @@ def validate_yaml(select_config_yaml):
         if not all([select_key in todo for todo in select_config_yaml['todo_list']]):
             if select_key not in select_config_yaml:
                 raise KeyError('\'{0}\' not defined for every item in todo_list, '
-                               'but no global {0} is defined. You must either '
+                               'but no default {0} is defined. You must either '
                                'define \'{0}\' in the \'select\' dictionary '
                                '(that any \'{0}\' in a todo_list item will take '
                                'precedence over) or you must define \'{0}\' for'
-                               ' every item in the todo_list.'.format(global_key))
+                               ' every item in the todo_list.'.format(select_key))
 
     validated_select_config = copy.deepcopy(select_config_yaml)
     for key, val in select_config_yaml.items():

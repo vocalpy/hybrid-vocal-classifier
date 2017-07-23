@@ -126,6 +126,7 @@ def extract(config_file):
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
             print('Changing to data directory: {}'.format(data_dir))
+            os.chdir(home_dir)
             os.chdir(data_dir)
 
             if 'features_from_all_files' in locals():
@@ -339,4 +340,5 @@ def extract(config_file):
             write_select_config(summary_ftr_file_dict,
                                 summary_filename,
                                 todo['output_dir'])
-    os.chdir(home_dir)
+
+        os.chdir(home_dir)

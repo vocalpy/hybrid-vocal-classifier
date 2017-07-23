@@ -48,7 +48,7 @@ def select(config_file):
         if 'models' in todo:
             model_list = todo['models']
         else:
-            model_list = select_config['global']['models']
+            model_list = select_config['models']
 
         for model_dict in model_list:
             # import models objects from sklearn + keras if not imported already
@@ -67,17 +67,17 @@ def select(config_file):
         if 'num_test_samples' in todo:
             num_test_samples = todo['num_test_samples']
         else:
-            num_test_samples = select_config['global']['num_test_samples']
+            num_test_samples = select_config['num_test_samples']
 
         if 'num_train_samples' in todo:
             num_train_samples_list = todo['num_train_samples']
         else:
-            num_train_samples_list = select_config['global']['num_train_samples']
+            num_train_samples_list = select_config['num_train_samples']
 
         if 'num_replicates' in todo:
             num_replicates = todo['num_replicates']
         else:
-            num_replicates = select_config['global']['num_replicates']
+            num_replicates = select_config['num_replicates']
 
         feature_file = joblib.load(todo['feature_file'])
         labels = np.asarray(feature_file['labels'])
@@ -266,12 +266,13 @@ def select(config_file):
                                        callbacks=callbacks_list,
                                        verbose=1)
 
-                    pred_labels = flatwindow.predict_classes(test_spects_scaled,
-                                                             batch_size=32,
-                                                             verbose=1)
-                    acc_by_label, avg_acc = hvc.utils.get_acc_by_label(test_syl_labels_zero_to_n,
-                                                                       pred_labels,
-                                                                       classes_zero_to_n)
+                        pred_labels = flatwindow.predict_classes(test_spects_scaled,
+                                                                 batch_size=32,
+                                                                 verbose=1)
+
+                        acc_by_label, avg_acc = hvc.utils.get_acc_by_label(test_syl_labels_zero_to_n,
+                                                                           pred_labels,
+                                                                           classes_zero_to_n)
 
         # after looping through all samples + replicates
         output_dict = {
