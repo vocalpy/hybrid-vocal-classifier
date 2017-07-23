@@ -87,6 +87,7 @@ def write_select_config(summary_ftr_file_dict,
         yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
                                                output_dir))
 
+
 def extract(config_file):
     """main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
@@ -148,23 +149,20 @@ def extract(config_file):
                 print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
                 # segment_params defined for todo_list item takes precedence over any default
                 # defined for `extract` config
-                try:
-                    if 'segment_params' in todo:
-                        extract_dict = features.extract.from_file(songfile,
-                                                                  todo['file_format'],
-                                                                  todo['feature_list'],
-                                                                  extract_config['spect_params'],
-                                                                  todo['labelset'],
-                                                                  todo['segment_params'])
-                    else: # if seg params not defined in to-do, revert to default
-                        extract_dict = features.extract.from_file(songfile,
-                                                                  todo['file_format'],
-                                                                  todo['feature_list'],
-                                                                  extract_config['spect_params'],
-                                                                  todo['labelset'],
-                                                                  extract_config['segment_params'])
-                except ValueError:
-                    import pdb;pdb.set_trace()
+                if 'segment_params' in todo:
+                    extract_dict = features.extract.from_file(songfile,
+                                                              todo['file_format'],
+                                                              todo['feature_list'],
+                                                              extract_config['spect_params'],
+                                                              todo['labelset'],
+                                                              todo['segment_params'])
+                else:  # if seg params not defined in to-do, revert to default
+                    extract_dict = features.extract.from_file(songfile,
+                                                              todo['file_format'],
+                                                              todo['feature_list'],
+                                                              extract_config['spect_params'],
+                                                              todo['labelset'],
+                                                              extract_config['segment_params'])
 
                 if extract_dict is None:
                     # because no labels from labels_to_use were found in songfile

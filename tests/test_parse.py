@@ -4,6 +4,7 @@ test parse module
 
 import pytest
 import yaml
+import numpy as np
 
 import hvc.parse.extract
 import hvc.parse.select
@@ -28,7 +29,7 @@ class TestParseExtract:
         for ftr_group in FTR_GROUPS.values():
             assert set(ftr_group) < set(VALID_FEATURES)
 
-    def test_extract_parse(self):
+    def test_validate_yaml(self):
         test_yaml = test_yaml_extract['test_parse']
         # test whether valid yaml parses *without* throwing error
         hvc.parse.extract.validate_yaml(test_yaml['valid_with_default_spect_and_seg_params'])
@@ -45,9 +46,53 @@ class TestParseExtract:
         with pytest.raises(KeyError):
             hvc.parse.extract.validate_yaml(test_yaml['invalid_missing_segment_params'])
 
-    def test_validate_feature_list_and_group(self):
+    def test_validate_feature_group_and_convert_to_list(self):
 
-        ftr_test_yml = test_yaml_extract['test_feature_list_and_group']
+        # test one feature group as a string
+        ftr_tuple = hvc.parse.extract._validate_feature_group_and_convert_to_list('knn')
+        assert ftr_tuple[0] == FTR_GROUPS['knn']  # 1st item in tuple is feature list
+        assert np.array_equal(ftr_tuple[1],
+                              np.zeros((9,)))  # cuz there are 9 knn features
+        assert ftr_tuple[2] == {'knn': 0}
+
+        # test one feature group as a list
+        ftr_tuple = hvc.parse.extract._validate_feature_group_and_convert_to_list(['knn'])
+        assert ftr_tuple[0] == FTR_GROUPS['knn']
+        assert np.array_equal(ftr_tuple[1],
+                              np.zeros((9,)))  # cuz there are 9 knn features
+        assert ftr_tuple[2] == {'knn': 0}
+
+        # test two feature groups as a list
+        ftr_tuple = hvc.parse.extract._validate_feature_group_and_convert_to_list(['knn',
+                                                                                   'svm'])
+        assert ftr_tuple[0] == FTR_GROUPS['knn'] + FTR_GROUPS['svm']
+        assert np.array_equal(ftr_tuple[1],
+                              np.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1]))
+        assert ftr_tuple[2] == {'knn': 0, 'svm': 1}
+
+        # test feature list and feature group
+        a_feature_list = ['duration group',
+                          'preceding syllable duration',
+                          'following syllable duration',
+                          'preceding silent gap duration',
+                          'following silent gap duration',
+                          'mean smoothed rectified amplitude',
+                          'mean spectral entropy',
+                          'mean hi lo ratio',
+                          'delta smoothed rectified amplitude']
+
+        ftr_tuple = hvc.parse.extract._validate_feature_group_and_convert_to_list(feature_group='knn',
+                                                                                  feature_list=a_feature_list)
+        assert ftr_tuple[0] == a_feature_list + FTR_GROUPS['knn']
+        assert np.array_equal(ftr_tuple[1],
+                              np.asarray(([None] * len(a_feature_list) + [0] * 9)))
+        assert ftr_tuple[2] == {'knn': 0}
+
+    def test_validate_todo_list_dict(self):
+
+        ftr_test_yml = test_yaml_extract['test_validate_todo_list_dict']
 
         str_grp = hvc.parse.extract._validate_todo_list_dict(ftr_test_yml[
                                                        'test_single_group_as_str'],

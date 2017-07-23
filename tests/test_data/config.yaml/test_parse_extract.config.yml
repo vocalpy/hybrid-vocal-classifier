@@ -216,7 +216,7 @@ test_segment_params:
       min_syl_dur: 0.02
       min_silent_dur: 2 # should be float
 
-test_feature_list_and_group:
+test_validate_todo_list_dict:
 
   test_single_group_as_str:
     bird_ID : gy6or6
@@ -264,6 +264,20 @@ test_feature_list_and_group:
       - mean spectral entropy
       - mean hi lo ratio
       - delta smoothed rectified amplitude
+    data_dirs:
+      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032312
+    output_dir: C:\Data\gy6gy6\
+    labelset: iabcdef
+
+  test_feature_list_and_feature_group:
+    bird_ID : gy6or6
+    file_format: evtaf
+    feature_list:
+      - duration group
+      - preceding syllable duration
+    feature_group:
+      - knn
     data_dirs:
       - C:\DATA\gy6or6\032212
       - C:\DATA\gy6or6\032312
