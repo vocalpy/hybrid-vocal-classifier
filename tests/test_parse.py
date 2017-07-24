@@ -5,6 +5,7 @@ test parse module
 import pytest
 import yaml
 import numpy as np
+from sklearn.externals import joblib
 
 import hvc.parse.extract
 import hvc.parse.select
@@ -139,14 +140,39 @@ class TestParseSelect:
 
     def test_validate_model_dict(self):
         test_yaml = test_yaml_select['test_validate_model_dict']
-        hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
-                                              index=0)
-        hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_list'],
-                                              index=0)
+
+        # model dict called with ftr gropu but without ftr_grp_ID_dict or ftr_grp_ID_arr
+        model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
+                                                           index=0)
+        assert model_dict == {'feature_group': 'knn',
+                              'hyperparameters': {'k': 4},
+                              'model': 'knn'}
+        assert 'feature_list_indices' not in model_dict
+
+        # model dict called feature list indices entered as a list
+        model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_list'],
+                                                           index=0)
+        assert model_dict == {'feature_list_indices': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                              'hyperparameters': {'k': 4},
+                              'model': 'knn'}
+
+        ftr_file = joblib.load('.//test_data//feature_files//has_ftr_group_dict_and_arr'
+                               '//summary_feature_file_created_170722_232106')
+        model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
+                                                           index=0,
+                                                           ftr_grp_ID_arr=ftr_file['feature_list_group_ID'],
+                                                           ftr_grp_ID_dict=ftr_file['feature_list_group_ID_dict'])
+        np.testing.assert_equal(model_dict,
+                                {'feature_group': 'knn',
+                                 'feature_list_indices': np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=int),
+                                 'hyperparameters': {'k': 4},
+                                 'model': 'knn'})
 
         with pytest.raises(KeyError):
             hvc.parse.select._validate_model_dict(test_yaml[
                                                       'invalid_dict_with_feature_group_and_list'
                                                   ], index=0)
+
+
 
 #class TestParsePredict()

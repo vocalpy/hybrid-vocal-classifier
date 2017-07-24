@@ -4,10 +4,8 @@ trains models that classify birdsong syllables,
 using algorithms and other parameters specified in config file
 """
 
-#from standard library
-import sys
+# from standard library
 import os
-import glob
 from datetime import datetime
 
 # from dependencies
@@ -15,9 +13,9 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
 
-#from hvc
+# from hvc
 from .parseconfig import parse_config
-from .utils import filter_samples, grab_n_samples_by_song, get_acc_by_label
+from .utils import grab_n_samples_by_song, get_acc_by_label
 
 
 def select(config_file):
@@ -43,7 +41,7 @@ def select(config_file):
         output_dir = todo['output_dir'] + 'select_output_' + timestamp
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
-        output_filename = os.path.join(output_dir,'select_output_' + timestamp)
+        output_filename = os.path.join(output_dir, 'select_output_' + timestamp)
 
         if 'models' in todo:
             model_list = todo['models']
@@ -101,7 +99,7 @@ def select(config_file):
                                    dtype='O')
         train_IDs_arr = np.empty((len(num_train_samples_list),
                                     len(range(num_replicates))),
-                                   dtype='O')
+                                 dtype='O')
 
         for num_samples_ind, num_train_samples in enumerate(num_train_samples_list):
             for replicate in range(num_replicates):
@@ -121,24 +119,27 @@ def select(config_file):
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
 
-                    #if-elif that switches based on model type, start with sklearn models
+                    if model_dict['feature_list_indices'] == 'all':
+                        feature_inds = np.ones((
+                            feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                    else:
+                        feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                               model_dict['feature_list_indices'])
+
+
+                    # if-elif that switches based on model type,
+                    # start with sklearn models
                     if model_dict['model'] in ['svm', 'knn']:
                         if model_dict['model'] == 'svm':
                             print('training svm. ', end='')
                             clf = SVC(C=model_dict['hyperparameters']['C'],
                                       gamma=model_dict['hyperparameters']['gamma'],
                                       decision_function_shape='ovr')
+
                         elif model_dict['model'] == 'knn':
                             print('training knn. ', end='')
                             clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
                                                                  'distance')
-
-                        if model_dict['feature_list_indices'] == 'all':
-                            feature_inds = np.ones((
-                                feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
-                        else:
-                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                                   model_dict['feature_list_indices'])
 
                         #use 'advanced indexing' to get only sample rows and only feature models
                         features_train = feature_file['features'][train_IDs[:, np.newaxis],

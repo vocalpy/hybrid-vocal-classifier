@@ -68,94 +68,123 @@ def _validate_model_dict(model_dict,
                        'feature_group defined in model_dict, not'
                        'clear which to use.')
 
+    # throw an error if both feature_list_indices and
+    # feature_group are defined as keys for model dict
+    if 'feature_list_indices' not in model_dict \
+            and 'feature_group' not in model_dict:
+        raise KeyError('Neither feature_list_indices or'
+                       'feature_group are defined in model_dict,'
+                       'at least one of them must be defined.')
+
     validated_model_dict = copy.deepcopy(model_dict)
-    for model_key, model_val in model_dict.items():
-        if model_key == 'feature_group':
-            # feature group should work as a string or as a list of strings
-            if type(model_val) != str and type (model_val) !=list:
-                raise ValueError('value for feature_group should'
-                                 'be string but parsed as {}'
-                                 .format(type(model_val)))
-            if type(model_val) == str:
-                if model_val not in VALID_FEATURE_GROUPS:
-                    raise ValueError('{} is not a valid feature group.'
-                                     .format(model_val))
-                # get appropriate ID # out of ftr_grp_ID_dict for this model
+
+    if 'feature_list_indices' in model_dict:
+        ftr_list_inds = model_dict['feature_list_indices']
+        if type(ftr_list_inds) != list and type(ftr_list_inds) != str:
+            raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
+                             .format(type(ftr_list_inds)))
+        if type(ftr_list_inds) == str:
+            if ftr_list_inds == 'all':
+                pass  # just keep as 'all'
+            else:
+                try:
+                    ftr_list_inds = [int(num) for num in model_val.split(',')]
+                except ValueError:
+                    raise ValueError('feature_list_indices parsed as a string '
+                                     'but could not convert following to list of ints: {}'
+                                     .format(ftr_list_inds))
+        if not all([type(item_val) is int for item_val in ftr_list_inds]):
+            raise ValueError('all indices in \'feature_list_indices\' should be integers')
+        validated_model_dict['feature_list_indices'] = ftr_list_inds
+
+    if 'feature_group' in model_dict:
+        ftr_grp = model_dict['feature_group']
+        # feature group should work as a string or as a list of strings
+        if type(ftr_grp) != str and type(ftr_grp) != list:
+            raise ValueError('value for feature_group should'
+                             'be string but parsed as {}'
+                             .format(type(ftr_grp)))
+
+        if type(ftr_grp) == str:
+            if ftr_grp not in VALID_FEATURE_GROUPS:
+                raise ValueError('{} is not a valid feature group.'
+                                 .format(ftr_grp))
+            # get appropriate ID # out of ftr_grp_ID_dict for this model
+            # (if called from todo_list so we hve ftr_grp_ID_arr/dict)
+            if ftr_grp_ID_arr is not None and ftr_grp_ID_dict is not None:
                 ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
                 # now find all the indices of features associated with the
                 # feature group for that model
                 ftr_inds = np.where(
-                    np.in1d(ftr_grp_ID_arr, ftr_grp_ID))
-            elif type(model_val) == list:
-                if not all([type(item)==str for item in model_val]):
-                    raise ValueError('Not all items in feature_group list are strings.')
-                ftr_inds = []
-                for model_name in model_val:
-                    if model_name not in VALID_FEATURE_GROUPS:
-                        raise ValueError('{} is not a valid feature group.'
-                                         .format(model_val))
+                    np.in1d(ftr_grp_ID_arr, ftr_grp_ID))[0]  # returns tuple
+            else:
+                ftr_inds = None
+
+            if ftr_inds is not None:
+                validated_model_dict['feature_list_indices'] = ftr_inds
+
+        elif type(ftr_grp) == list:
+            if not all([type(item) == str for item in ftr_grp]):
+                raise ValueError('Not all items in feature_group list are strings.')
+            ftr_inds = []
+            if not all([model_name in VALID_FEATURE_GROUPS
+                        for model_name in ftr_grp]):
+                raise ValueError('{} is not a valid feature group.'
+                                 .format(ftr_grp))
+            # if called from todo_list so we hve ftr_grp_ID_arr/dict
+            if ftr_grp_ID_arr is not None and ftr_grp_ID_dict is not None:
+                import pdb;pdb.set_trace()
+                for model_name in ftr_grp:
                     # get appropriate ID
                     # out of ftr_grp_ID_dict for this model
-                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
+                    ftr_grp_ID = ftr_grp_ID_dict[model_name]
                     # now find all the indices of features associated with the
                     # feature group for that model
                     ftr_inds_this_model = np.where(
-                        np.in1d(ftr_grp_ID_arr, ftr_grp_ID))
+                        np.in1d(ftr_grp_ID_arr, ftr_grp_ID))[0]  # returns tuple
                     ftr_inds.append(ftr_inds_this_model)
                 ftr_inds = np.concatenate(ftr_inds)
-            validated_model_dict['feature_list_indices'] = ftr_inds
+            else:
+                ftr_inds = None
+            if ftr_inds is not None:
+                validated_model_dict['feature_list_indices'] = ftr_inds
 
-        elif model_key == 'feature_list_indices':
-            if type(model_val) != list and type(model_val) != str:
-                raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
-                                 .format(type(model_val)))
-            if type(model_val) == str:
-                if model_val == 'all':
-                    continue  # just keep as 'all'
-                else:
-                    try:
-                        model_val = [int(num) for num in model_val.split(',')]
-                    except ValueError:
-                        raise ValueError('feature_list_indices parsed as a string '
-                                         'but could not convert following to list of ints: {}'
-                                         .format(model_val))
-            if not all([type(item_val) is int for item_val in model_val]):
-                raise ValueError('all indices in \'feature_list_indices\' should be integers')
-            validated_model_dict[model_key] = model_val
+        hyperparams = model_dict['hyperparameters']
+        required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model']].keys())
+        model_dict_hyperparams = set(hyperparams.keys())
+        # if not all keys, i.e. model dict hyperparams is a subset of required
+        if model_dict_hyperparams < required_hyperparams:
+            missing_keys = required_hyperparams - model_dict_hyperparams
+            raise KeyError('missing hyperparameters from model dict for {0}: {1}'
+                           .format(model_dict['model'], missing_keys))
+        # OTOH if extra keys , i.e. required is actually a subset of model dict hyperparams
+        if model_dict_hyperparams > required_hyperparams:
+            extra_keys = model_dict_hyperparams - required_hyperparams
+            raise ValueError('invalid hyperparameters for model for {0}: {1}'
+                             .format(model_dict['model'], extra_keys))
 
-        elif model_key == 'hyperparameters':
-            required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model']].keys())
-            model_dict_hyperparams = set(model_val.keys())
-            # if not all keys, i.e. model dict hyperparams is a subset of required
-            if model_dict_hyperparams < required_hyperparams:
-                missing_keys = required_hyperparams - model_dict_hyperparams
-                raise KeyError('missing hyperparameters from model dict for {0}: {1}'
-                               .format(model_dict['model'],missing_keys))
-            # OTOH if extra keys , i.e. required is actually a subset of model dict hyperparams
-            if model_dict_hyperparams > required_hyperparams:
-                extra_keys = model_dict_hyperparams - required_hyperparams
-                raise ValueError('invalid hyperparameters for model for {0}: {1}'
-                                 .format(model_dict['model'],extra_keys))
-
-            # replace `required hyperparams` set with `required hyperparams` dict
-            # that has param names as keys and valid types as values
-            required_hyperparams = VALID_HYPERPARAMS[model_dict['model']]
-            for hyperparam_name, hyperparam_val in model_val.items():
-                valid_type = required_hyperparams[hyperparam_name]
-                if type(valid_type) != tuple:
-                    # wrap single type in tuple to be able to check if actual
-                    # value type is 'in' valid type(s)
-                    valid_type = (valid_type,)
-                # have to use str representation of object, because that's all you
-                # can load from YAML file, instead of comparing directly with type
-                # itself
-                if type(hyperparam_val).__name__ not in valid_type:
-                    raise ValueError('Type for hyperparameter {0} for a {1}'
-                                     ' model should be {2} but parsed as {3}.'
-                                     .format(hyperparam_name,
-                                             model_dict['model'],
-                                             valid_type,
-                                             type(hyperparam_val)))
+        # for validation,
+        # replace `required hyperparams` set defined above
+        # with `required hyperparams` dict
+        # that has param names as keys and valid types as values
+        # if more than one valid type, then it's a tuple
+        required_hyperparams = VALID_HYPERPARAMS[model_dict['model']]
+        for hyperparam_name, hyperparam_val in hyperparams.items():
+            valid_type = required_hyperparams[hyperparam_name]
+            if type(valid_type) != tuple:
+                # wrap single type in tuple to be able to check if actual
+                # value type is 'in' valid type(s)
+                valid_type = (valid_type,)
+            # have to use str representation of object, because that's all you
+            # can load from YAML file, instead of comparing directly with type
+            # itself
+            if type(hyperparam_val).__name__ not in valid_type:
+                raise ValueError('Type for hyperparameter {0} for a {1}'
+                                 ' model should be {2} but parsed as {3}.'
+                                 .format(hyperparam_name,
+                                         model_dict['model'],
+                                         valid_type,
+                                         type(hyperparam_val)))
 
     return validated_model_dict
 
@@ -286,6 +315,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
 
         if key == 'models':
             if 'ftr_grp_ID_arr' in locals() and 'ftr_grp_ID_dict' in locals():
+                import pdb;pdb.set_trace()
                 validated_todo_list_dict['models'] = _validate_models(val,
                                                                       ftr_grp_ID_dict,
                                                                       ftr_grp_ID_arr)
@@ -347,7 +377,7 @@ def validate_yaml(select_config_yaml):
                          'not recognized as a dict, instead was a {}.'
                          'Must pass a dict containing config loaded from YAML'
                          'file or a str that is a YAML filename.'
-                         .format(type(extract_config_yaml)))
+                         .format(type(select_config_yaml)))
 
     if 'todo_list' not in select_config_yaml:
         raise KeyError('Did not find \`todo_list\` defined in \`select\` config file.')
