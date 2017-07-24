@@ -191,15 +191,15 @@ def validate_segment_params(segment_params):
                            .format(invalid_keys))
     else:
         for key, val in segment_params.items():
-            if key=='threshold':
+            if key == 'threshold':
                 if type(val) != int:
                     raise ValueError('threshold should be int but parsed as {}'
                                      .format(type(val)))
-            elif key=='min_syl_dur':
+            elif key == 'min_syl_dur':
                 if type(val) != float:
                     raise ValueError('min_syl_dur should be float but parsed as {}'
                                      .format(type(val)))
-            elif key=='min_silent_dur':
+            elif key == 'min_silent_dur':
                 if type(val) != float:
                     raise ValueError('min_silent_dur should be float but parsed as {}'
                                      .format(type(val)))
@@ -219,9 +219,38 @@ def _validate_feature_list(feature_list):
 
 def _validate_feature_group_and_convert_to_list(feature_group,
                                                 feature_list=None):
-    """validates feature group, converts to feature list,
-    if passed a feature list then adds features from feature
-    group to already extant feature list
+    """validates feature_group value from todo_list dicts, then converts
+    to feature_list.
+    Since todo_list dicts can include both feature_group and feature_list,
+    this function will accept feature_list from the dict and then append
+    the feature_group features to those already in the feature_list.
+
+    Parameters
+    ----------
+    feature_group : str or list
+        currently valid feature groups: {'svm','knn'}
+        if list, must be a list of strings
+    feature_list : list
+        list of features, default is None.
+        If not None, features from feature groups will be appended to this list.
+
+    Returns
+    -------
+    feature_list : list
+        list of features to extract for each feature group.
+        if feature_list was passed to function along with feature_group, then
+        features from feature group(s) are appended to end of the feature_list
+        passed to the function.
+    feature_group_ID_dict : dict
+        dict where key is a feature group name and value is a corresponding ID, an int.
+        Same length as feature_list.
+        Used by hvc.modelselection.select to determine which columns in feature
+        array belong to which feature group.
+        If feature_list was passed to the function, it does not affect this dict,
+        since the features in that list are not considered part of a feature group
+    feature_list_group_ID_arr : list
+        list of ints of same length as feature_list.
+        If feature_list was passed to function, its features will have value None
     """
 
     if type(feature_group) != str and type(feature_group) != list:
@@ -262,13 +291,12 @@ def _validate_feature_group_and_convert_to_list(feature_group,
 
     if feature_list is not None:
         not_ftr_grp_features = [None] * len(feature_list)
-        feature_list_group_ID = np.asarray(not_ftr_grp_features
-                                           + feature_list_group_ID)
+        feature_list_group_ID = not_ftr_grp_features + feature_list_group_ID
         return (feature_list + ftr_grp_list,
                 feature_list_group_ID,
                 ftr_grp_ID_dict)
     else:
-        feature_list_group_ID = np.asarray(feature_list_group_ID)
+        feature_list_group_ID = feature_list_group_ID
         return (ftr_grp_list,
                 feature_list_group_ID,
                 ftr_grp_ID_dict)

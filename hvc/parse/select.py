@@ -28,7 +28,7 @@ VALID_FEATURE_GROUPS = set(valid_feature_groups_dict.keys())
 def _validate_model_dict(model_dict,
                          index,
                          ftr_grp_ID_dict=None,
-                         ftr_grp_ID_arr=None):
+                         ftr_list_group_ID=None):
     """validates model dictionaries from 'models' list
 
     Parameters
@@ -38,7 +38,7 @@ def _validate_model_dict(model_dict,
     ftr_grp_ID_dict : dict
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument
-    ftr_grp_ID_arr : numpy 1-d vector
+    ftr_list_group_ID : numpy 1-d vector
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument
 
@@ -110,13 +110,13 @@ def _validate_model_dict(model_dict,
                 raise ValueError('{} is not a valid feature group.'
                                  .format(ftr_grp))
             # get appropriate ID # out of ftr_grp_ID_dict for this model
-            # (if called from todo_list so we hve ftr_grp_ID_arr/dict)
-            if ftr_grp_ID_arr is not None and ftr_grp_ID_dict is not None:
+            # (if called from todo_list so we hve ftr_list_group_ID/dict)
+            if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
                 ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
                 # now find all the indices of features associated with the
                 # feature group for that model
                 ftr_inds = np.where(
-                    np.in1d(ftr_grp_ID_arr, ftr_grp_ID))[0]  # returns tuple
+                    np.in1d(ftr_list_group_ID, ftr_grp_ID))[0]  # returns tuple
             else:
                 ftr_inds = None
 
@@ -131,8 +131,8 @@ def _validate_model_dict(model_dict,
                         for model_name in ftr_grp]):
                 raise ValueError('{} is not a valid feature group.'
                                  .format(ftr_grp))
-            # if called from todo_list so we hve ftr_grp_ID_arr/dict
-            if ftr_grp_ID_arr is not None and ftr_grp_ID_dict is not None:
+            # if called from todo_list so we hve ftr_list_group_ID/dict
+            if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
                 import pdb;pdb.set_trace()
                 for model_name in ftr_grp:
                     # get appropriate ID
@@ -141,7 +141,7 @@ def _validate_model_dict(model_dict,
                     # now find all the indices of features associated with the
                     # feature group for that model
                     ftr_inds_this_model = np.where(
-                        np.in1d(ftr_grp_ID_arr, ftr_grp_ID))[0]  # returns tuple
+                        np.in1d(ftr_list_group_ID, ftr_grp_ID))[0]  # returns tuple
                     ftr_inds.append(ftr_inds_this_model)
                 ftr_inds = np.concatenate(ftr_inds)
             else:
@@ -191,7 +191,7 @@ def _validate_model_dict(model_dict,
 
 def _validate_models(models,
                      ftr_grp_ID_dict=None,
-                     ftr_grp_ID_arr=None):
+                     ftr_list_group_ID=None):
     """
     validates 'models' list that can appear in 'select' dictionary
     or in 'todo_list'
@@ -210,7 +210,7 @@ def _validate_models(models,
     ftr_grp_ID_dict : dict
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument
-    ftr_grp_ID_arr : numpy 1-d vector
+    ftr_list_group_ID : numpy 1-d vector
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument
 
@@ -248,11 +248,11 @@ def _validate_models(models,
     validated_models = copy.deepcopy(models)
 
     for index, model_dict in enumerate(models):
-        if 'ftr_grp_ID_dict' in locals() and 'ftr_grp_ID_arr' in locals():
+        if 'ftr_grp_ID_dict' in locals() and 'ftr_list_group_ID' in locals():
             validated_models[index] = _validate_model_dict(model_dict,
                                                            index,
                                                            ftr_grp_ID_dict,
-                                                           ftr_grp_ID_arr)
+                                                           ftr_list_group_ID)
         else:
             validated_models[index] = _validate_model_dict(model_dict,
                                                            index)
@@ -303,7 +303,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
         ftr_file = joblib.load(feature_file)
         feature_file_keys = ftr_file.keys()
         if 'feature_list_group_ID_dict' in feature_file_keys:
-            ftr_grp_ID_arr = ftr_file['feature_list_group_ID']
+            ftr_list_group_ID = ftr_file['feature_list_group_ID']
             ftr_grp_ID_dict = ftr_file['feature_list_group_ID_dict']
         del ftr_file
     except:
@@ -314,11 +314,10 @@ def _validate_todo_list_dict(todo_list_dict, index):
         # valid todo_list_dict keys in alphabetical order
 
         if key == 'models':
-            if 'ftr_grp_ID_arr' in locals() and 'ftr_grp_ID_dict' in locals():
-                import pdb;pdb.set_trace()
+            if 'ftr_list_group_ID' in locals() and 'ftr_grp_ID_dict' in locals():
                 validated_todo_list_dict['models'] = _validate_models(val,
                                                                       ftr_grp_ID_dict,
-                                                                      ftr_grp_ID_arr)
+                                                                      ftr_list_group_ID)
             else:
                 validated_todo_list_dict['models'] = _validate_models(val)
 

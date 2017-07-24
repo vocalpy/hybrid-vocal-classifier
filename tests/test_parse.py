@@ -160,7 +160,7 @@ class TestParseSelect:
                                '//summary_feature_file_created_170722_232106')
         model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
                                                            index=0,
-                                                           ftr_grp_ID_arr=ftr_file['feature_list_group_ID'],
+                                                           ftr_list_grp_ID=ftr_file['feature_list_group_ID'],
                                                            ftr_grp_ID_dict=ftr_file['feature_list_group_ID_dict'])
         np.testing.assert_equal(model_dict,
                                 {'feature_group': 'knn',

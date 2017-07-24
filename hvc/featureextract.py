@@ -229,7 +229,7 @@ def extract(config_file):
         summary_filename_with_path = os.path.join(output_dir_with_path, summary_filename)
         ftr_output_files = glob.glob('*features_from_*')
         if len(ftr_output_files) > 1:
-            #make a 'summary' data file
+            # make a 'summary' data file
             list_of_output_dicts = []
             summary_ftr_file_dict = {}
             for feature_file in ftr_output_files:
