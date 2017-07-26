@@ -17,13 +17,12 @@ from . import features
 from .utils import timestamp
 
 SELECT_TEMPLATE = """select:
-  global:
-    num_replicates: None
-    num_train_samples:
-      start : None
-      stop : None
-      step : None
-    num_test_samples: None
+  num_replicates: None
+  num_train_samples:
+    start : None
+    stop : None
+    step : None
+  num_test_samples: None
 
     models:"""
 
@@ -75,8 +74,9 @@ def write_select_config(summary_ftr_file_dict,
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
         for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
-            inds = np.flatnonzero(summary_ftr_file_dict['feature_list_group_ID']==model_ID).tolist()
-            inds = ', '.join(str(ind) for ind in inds)
+            inds = [ftr_list_ind for ftr_list_ind, grp_ID in
+                    enumerate(summary_ftr_file_dict['feature_list_group_ID'])
+                    if grp_ID == model_ID]
             if model_name == 'svm':
                 hyperparams = SVM_HYPERPARAMS
             elif model_name == 'knn':
@@ -303,8 +303,8 @@ def extract(config_file):
                         if 'feature_list_group_ID' not in summary_ftr_file_dict:
                             summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
                         else:
-                            if any(feature_file_dict['feature_list_group_ID'] !=
-                                           summary_ftr_file_dict['feature_list_group_ID']):
+                            if feature_file_dict['feature_list_group_ID'] != \
+                                           summary_ftr_file_dict['feature_list_group_ID']:
                                 raise ValueError('mismatch between feature_list_group_ID in {} '
                                                  'and other feature files'.format(feature_file))
 
