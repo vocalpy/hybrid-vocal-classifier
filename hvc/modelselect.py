@@ -119,12 +119,28 @@ def select(config_file):
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
 
-                    if model_dict['feature_list_indices'] == 'all':
-                        feature_inds = np.ones((
-                            feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                    # if model_dict specifies using a certain feature group
+                    if 'feature_group' in model_dict:
+                        import pdb;pdb.set_trace()
+                        # determine if we already figured out which features belong to that feature group.
+                        # Can only do that if model_dict defined for todo_list, not if model_dict defined
+                        # at top level of select config file
+                        if 'feature_list_indices' in model_dict:
+                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                   model_dict['feature_list_indices'])
+                        else:
+                            ftr_grp_ID_dict = feature_file['feature_group_ID_dict']
+                            ftr_list_grp_ID = feature_file['feature_list_group_ID']
+                            ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
+                            feature_inds = np.where(
+                                np.in1d(ftr_list_grp_ID, ftr_grp_ID))[0]  # returns tuple
                     else:
-                        feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                               model_dict['feature_list_indices'])
+                        if model_dict['feature_list_indices'] == 'all':
+                            feature_inds = np.ones((
+                                feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                        else:
+                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                   model_dict['feature_list_indices'])
 
 
                     # if-elif that switches based on model type,

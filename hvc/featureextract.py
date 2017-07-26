@@ -74,7 +74,7 @@ def write_select_config(summary_ftr_file_dict,
     select_config_filename = 'select.config.from_' + summary_filename + '.yml'
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
-        for model_name, model_ID in summary_ftr_file_dict['feature_list_group_ID_dict'].items():
+        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
             inds = np.flatnonzero(summary_ftr_file_dict['feature_list_group_ID']==model_ID).tolist()
             inds = ', '.join(str(ind) for ind in inds)
             if model_name == 'svm':
@@ -211,7 +211,7 @@ def extract(config_file):
 
                 if 'feature_list_group_ID' in todo:
                     feature_file_dict['feature_list_group_ID'] = todo['feature_list_group_ID']
-                    feature_file_dict['feature_list_group_ID_dict'] = todo['feature_list_group_ID_dict']
+                    feature_file_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
             if 'neuralnet_inputs_all_files' in locals():
                 feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
@@ -308,13 +308,13 @@ def extract(config_file):
                                 raise ValueError('mismatch between feature_list_group_ID in {} '
                                                  'and other feature files'.format(feature_file))
 
-                        if 'feature_list_group_ID_dict' not in summary_ftr_file_dict:
-                            summary_ftr_file_dict['feature_list_group_ID_dict'] = \
-                                feature_file_dict['feature_list_group_ID_dict']
+                        if 'feature_group_ID_dict' not in summary_ftr_file_dict:
+                            summary_ftr_file_dict['feature_group_ID_dict'] = \
+                                feature_file_dict['feature_group_ID_dict']
                         else:
-                            if feature_file_dict['feature_list_group_ID_dict'] != \
-                                    summary_ftr_file_dict['feature_list_group_ID_dict']:
-                                raise ValueError('mismatch between feature_list_group_ID_dict in {} '
+                            if feature_file_dict['feature_group_ID_dict'] != \
+                                    summary_ftr_file_dict['feature_group_ID_dict']:
+                                raise ValueError('mismatch between feature_group_ID_dict in {} '
                                                  'and other feature files'.format(feature_file))
 
                 # if extracting inputs for neuralnets

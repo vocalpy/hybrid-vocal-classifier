@@ -302,9 +302,9 @@ def _validate_todo_list_dict(todo_list_dict, index):
     try:
         ftr_file = joblib.load(feature_file)
         feature_file_keys = ftr_file.keys()
-        if 'feature_list_group_ID_dict' in feature_file_keys:
+        if 'feature_group_ID_dict' in feature_file_keys:
             ftr_list_group_ID = ftr_file['feature_list_group_ID']
-            ftr_grp_ID_dict = ftr_file['feature_list_group_ID_dict']
+            ftr_grp_ID_dict = ftr_file['feature_group_ID_dict']
         del ftr_file
     except:
         raise IOError('Unable to open {}'.format(feature_file))

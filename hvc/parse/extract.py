@@ -352,7 +352,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
 
         validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
         validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-        validated_todo_list_dict['feature_list_group_ID_dict'] = ftr_grp_valid[2]
+        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
 
     elif 'feature_list' in validated_todo_list_dict and \
                     'feature_group' in validated_todo_list_dict:
@@ -362,7 +362,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
 
         validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
         validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-        validated_todo_list_dict['feature_list_group_ID_dict'] = ftr_grp_valid[2]
+        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
 
     # okay now that we took care of that we can loop through everything else
 
