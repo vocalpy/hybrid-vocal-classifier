@@ -20,7 +20,7 @@ from .utils import grab_n_samples_by_song, get_acc_by_label
 
 def select(config_file):
     """main function that runs model selection.
-    Doesn't return anything, saves model files and summary file.
+    Saves model files and summary file, doesn't return anything.
     
     Parameters
     ----------
@@ -121,27 +121,59 @@ def select(config_file):
 
                     # if model_dict specifies using a certain feature group
                     if 'feature_group' in model_dict:
-                        import pdb;pdb.set_trace()
                         # determine if we already figured out which features belong to that feature group.
                         # Can only do that if model_dict defined for todo_list, not if model_dict defined
                         # at top level of select config file
                         if 'feature_list_indices' in model_dict:
                             feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
                                                    model_dict['feature_list_indices'])
-                        else:
+                        else:  # have to figure out feature list indices
                             ftr_grp_ID_dict = feature_file['feature_group_ID_dict']
                             ftr_list_grp_ID = feature_file['feature_list_group_ID']
-                            ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
-                            feature_inds = np.where(
-                                np.in1d(ftr_list_grp_ID, ftr_grp_ID))[0]  # returns tuple
-                    else:
+                            # figure out what they are by finding ID # corresponding to feature
+                            # group or groups in ID_dict, and then finding all the indices in the
+                            # feature list that have that group ID #, using ftr_list_grp_ID, a list
+                            # the same length as feature list where each element indicates whether
+                            # the element with the same index in the feature list belongs to a
+                            # feature group and if so which one, by ID #
+                            if type(model_dict['feature_group']) == str:
+                                ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
+                                # now find all the indices of features associated with the
+                                # feature group for that model
+                                ftr_list_inds = [ind for ind, val in
+                                                 enumerate(ftr_list_grp_ID)
+                                                 if val == ftr_grp_ID]
+
+                            # if user specified more than one feature group
+                            elif type(model_dict['feature_group']) == list:
+                                ftr_list_inds = []
+                                for ftr_grp in model_dict['feature_group']:
+                                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
+                                    # now find all the indices of features associated with the
+                                    # feature group for that model
+                                    ftr_list_inds.append([ind for ind, val in
+                                                          enumerate(ftr_list_grp_ID)
+                                                          if val == ftr_grp_ID])
+                            # finally use ftr_list_inds to get the actual columns we need from the
+                            # features array. Need to this because multiple columns might belong to
+                            # the same feature, e.g. if the feature is a spectrum
+                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                   ftr_list_inds)
+                            # put feature list indices in model dict so we have it later when
+                            # saving summary file
+                            model_dict['feature_list_indices'] = ftr_list_inds
+
+                    else:  # if no feature group in model dict, use feature list indices
                         if model_dict['feature_list_indices'] == 'all':
                             feature_inds = np.ones((
                                 feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
                         else:
+                            # use 'feature_list_indices' from model_dict to get the actual columns
+                            # we need from the features array. Again, need to this because multiple
+                            # columns might belong to the same feature,
+                            # e.g. if the feature is a spectrum
                             feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
                                                    model_dict['feature_list_indices'])
-
 
                     # if-elif that switches based on model type,
                     # start with sklearn models
@@ -253,8 +285,7 @@ def select(config_file):
                         num_label_classes = len(feature_file['labelset'])
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
-                                             num_syllable_classes=num_label_classes)
-                        import pdb;pdb.set_trace()
+                                             num_label_classes=num_label_classes)
                         filename = bird_ID + '_' + 'flatwindow_training_' + now_str + \
                                    '.log'
                         csv_logger = CSVLogger(filename,
@@ -287,9 +318,9 @@ def select(config_file):
                                                                  batch_size=32,
                                                                  verbose=1)
 
-                        acc_by_label, avg_acc = hvc.utils.get_acc_by_label(test_syl_labels_zero_to_n,
-                                                                           pred_labels,
-                                                                           classes_zero_to_n)
+                        acc_by_label, avg_acc = get_acc_by_label(test_syl_labels_zero_to_n,
+                                                                 pred_labels,
+                                                                 classes_zero_to_n)
 
         # after looping through all samples + replicates
         output_dict = {

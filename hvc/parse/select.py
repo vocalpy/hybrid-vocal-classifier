@@ -133,15 +133,15 @@ def _validate_model_dict(model_dict,
                                  .format(ftr_grp))
             # if called from todo_list so we hve ftr_list_group_ID/dict
             if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
-                import pdb;pdb.set_trace()
                 for model_name in ftr_grp:
                     # get appropriate ID
                     # out of ftr_grp_ID_dict for this model
                     ftr_grp_ID = ftr_grp_ID_dict[model_name]
                     # now find all the indices of features associated with the
                     # feature group for that model
-                    ftr_inds_this_model = np.where(
-                        np.in1d(ftr_list_group_ID, ftr_grp_ID))[0]  # returns tuple
+                    ftr_inds_this_model = [ind for ind, val in
+                                           enumerate(ftr_list_group_ID)
+                                           if val == ftr_grp_ID]  # returns tuple
                     ftr_inds.append(ftr_inds_this_model)
                 ftr_inds = np.concatenate(ftr_inds)
             else:
