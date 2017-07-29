@@ -37,10 +37,12 @@ def _validate_model_dict(model_dict,
     index : int
     ftr_grp_ID_dict : dict
         from feature file. validate_yaml checks whether it is
-        defined in feature_file and if so passes as an argument
+        defined in feature_file and if so passes as an argument.
+        Default is None.
     ftr_list_group_ID : numpy 1-d vector
         from feature file. validate_yaml checks whether it is
-        defined in feature_file and if so passes as an argument
+        defined in feature_file and if so passes as an argument.
+        Default is None.
 
     Returns
     -------
@@ -60,94 +62,100 @@ def _validate_model_dict(model_dict,
                        'list of model dictionaries: {1}'
                        .format(index, invalid_keys))
 
-    # throw an error if both feature_list_indices and
-    # feature_group are defined as keys for model dict
-    if 'feature_list_indices' in model_dict \
-            and 'feature_group' in model_dict:
-        raise KeyError('both feature_list_indices and'
-                       'feature_group defined in model_dict, not'
-                       'clear which to use.')
-
-    # throw an error if both feature_list_indices and
-    # feature_group are defined as keys for model dict
-    if 'feature_list_indices' not in model_dict \
-            and 'feature_group' not in model_dict:
-        raise KeyError('Neither feature_list_indices or'
-                       'feature_group are defined in model_dict,'
-                       'at least one of them must be defined.')
-
     validated_model_dict = copy.deepcopy(model_dict)
 
-    if 'feature_list_indices' in model_dict:
-        ftr_list_inds = model_dict['feature_list_indices']
-        if type(ftr_list_inds) != list and type(ftr_list_inds) != str:
-            raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
-                             .format(type(ftr_list_inds)))
-        if type(ftr_list_inds) == str:
-            if ftr_list_inds == 'all':
-                pass  # just keep as 'all'
-            else:
-                try:
-                    ftr_list_inds = [int(num) for num in model_val.split(',')]
-                except ValueError:
-                    raise ValueError('feature_list_indices parsed as a string '
-                                     'but could not convert following to list of ints: {}'
-                                     .format(ftr_list_inds))
-        if not all([type(item_val) is int for item_val in ftr_list_inds]):
-            raise ValueError('all indices in \'feature_list_indices\' should be integers')
-        validated_model_dict['feature_list_indices'] = ftr_list_inds
+    # if this is a model that uses features extracted from syllables
+    # (i.e. scalar / vector, not spectrograms)
+    # need to validate feature groups, etc.
+    # For neural net models, don't need to do this
+    if 'feature_group' and 'feature_list_indices' in \
+            validate_dict['valid_model_keys'][model_dict['model']]:
+        # throw an error if both feature_list_indices and
+        # feature_group are defined as keys for model dict
+        if 'feature_list_indices' in model_dict \
+                and 'feature_group' in model_dict:
+            raise KeyError('both feature_list_indices and'
+                           'feature_group defined in model_dict, not'
+                           'clear which to use.')
 
-    if 'feature_group' in model_dict:
-        ftr_grp = model_dict['feature_group']
-        # feature group should work as a string or as a list of strings
-        if type(ftr_grp) != str and type(ftr_grp) != list:
-            raise ValueError('value for feature_group should'
-                             'be string but parsed as {}'
-                             .format(type(ftr_grp)))
+        # throw an error if both feature_list_indices and
+        # feature_group are defined as keys for model dict
+        if 'feature_list_indices' not in model_dict \
+                and 'feature_group' not in model_dict:
+            raise KeyError('Neither feature_list_indices or '
+                           'feature_group are defined in model_dict,'
+                           'at least one of them must be defined.')
 
-        if type(ftr_grp) == str:
-            if ftr_grp not in VALID_FEATURE_GROUPS:
-                raise ValueError('{} is not a valid feature group.'
-                                 .format(ftr_grp))
-            # get appropriate ID # out of ftr_grp_ID_dict for this model
-            # (if called from todo_list so we hve ftr_list_group_ID/dict)
-            if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
-                ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
-                # now find all the indices of features associated with the
-                # feature group for that model
-                ftr_inds = np.where(
-                    np.in1d(ftr_list_group_ID, ftr_grp_ID))[0]  # returns tuple
-            else:
-                ftr_inds = None
+        if 'feature_list_indices' in model_dict:
+            ftr_list_inds = model_dict['feature_list_indices']
+            if type(ftr_list_inds) != list and type(ftr_list_inds) != str:
+                raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
+                                 .format(type(ftr_list_inds)))
+            if type(ftr_list_inds) == str:
+                if ftr_list_inds == 'all':
+                    pass  # just keep as 'all'
+                else:
+                    try:
+                        ftr_list_inds = [int(num) for num in model_val.split(',')]
+                    except ValueError:
+                        raise ValueError('feature_list_indices parsed as a string '
+                                         'but could not convert following to list of ints: {}'
+                                         .format(ftr_list_inds))
+            if not all([type(item_val) is int for item_val in ftr_list_inds]):
+                raise ValueError('all indices in \'feature_list_indices\' should be integers')
+            validated_model_dict['feature_list_indices'] = ftr_list_inds
 
-            if ftr_inds is not None:
-                validated_model_dict['feature_list_indices'] = ftr_inds
+        if 'feature_group' in model_dict:
+            ftr_grp = model_dict['feature_group']
+            # feature group should work as a string or as a list of strings
+            if type(ftr_grp) != str and type(ftr_grp) != list:
+                raise ValueError('value for feature_group should'
+                                 'be string but parsed as {}'
+                                 .format(type(ftr_grp)))
 
-        elif type(ftr_grp) == list:
-            if not all([type(item) == str for item in ftr_grp]):
-                raise ValueError('Not all items in feature_group list are strings.')
-            ftr_inds = []
-            if not all([model_name in VALID_FEATURE_GROUPS
-                        for model_name in ftr_grp]):
-                raise ValueError('{} is not a valid feature group.'
-                                 .format(ftr_grp))
-            # if called from todo_list so we hve ftr_list_group_ID/dict
-            if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
-                for model_name in ftr_grp:
-                    # get appropriate ID
-                    # out of ftr_grp_ID_dict for this model
-                    ftr_grp_ID = ftr_grp_ID_dict[model_name]
+            if type(ftr_grp) == str:
+                if ftr_grp not in VALID_FEATURE_GROUPS:
+                    raise ValueError('{} is not a valid feature group.'
+                                     .format(ftr_grp))
+                # get appropriate ID # out of ftr_grp_ID_dict for this model
+                # (if called from todo_list so we hve ftr_list_group_ID/dict)
+                if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
+                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
                     # now find all the indices of features associated with the
                     # feature group for that model
-                    ftr_inds_this_model = [ind for ind, val in
-                                           enumerate(ftr_list_group_ID)
-                                           if val == ftr_grp_ID]  # returns tuple
-                    ftr_inds.append(ftr_inds_this_model)
-                ftr_inds = np.concatenate(ftr_inds)
-            else:
-                ftr_inds = None
-            if ftr_inds is not None:
-                validated_model_dict['feature_list_indices'] = ftr_inds
+                    ftr_inds = np.where(
+                        np.in1d(ftr_list_group_ID, ftr_grp_ID))[0]  # returns tuple
+                else:
+                    ftr_inds = None
+
+                if ftr_inds is not None:
+                    validated_model_dict['feature_list_indices'] = ftr_inds
+
+            elif type(ftr_grp) == list:
+                if not all([type(item) == str for item in ftr_grp]):
+                    raise ValueError('Not all items in feature_group list are strings.')
+                ftr_inds = []
+                if not all([model_name in VALID_FEATURE_GROUPS
+                            for model_name in ftr_grp]):
+                    raise ValueError('{} is not a valid feature group.'
+                                     .format(ftr_grp))
+                # if called from todo_list so we hve ftr_list_group_ID/dict
+                if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
+                    for model_name in ftr_grp:
+                        # get appropriate ID
+                        # out of ftr_grp_ID_dict for this model
+                        ftr_grp_ID = ftr_grp_ID_dict[model_name]
+                        # now find all the indices of features associated with the
+                        # feature group for that model
+                        ftr_inds_this_model = [ind for ind, val in
+                                               enumerate(ftr_list_group_ID)
+                                               if val == ftr_grp_ID]  # returns tuple
+                        ftr_inds.append(ftr_inds_this_model)
+                    ftr_inds = np.concatenate(ftr_inds)
+                else:
+                    ftr_inds = None
+                if ftr_inds is not None:
+                    validated_model_dict['feature_list_indices'] = ftr_inds
 
         hyperparams = model_dict['hyperparameters']
         required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model']].keys())

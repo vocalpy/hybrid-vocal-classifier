@@ -15,7 +15,7 @@ from sklearn.externals import joblib
 
 # from hvc
 from .parseconfig import parse_config
-from .utils import grab_n_samples_by_song, get_acc_by_label
+from .utils import grab_n_samples_by_song, get_acc_by_label, timestamp
 
 
 def select(config_file):
@@ -37,11 +37,11 @@ def select(config_file):
 
         print('Completing item {} of {} in to-do list'.format(ind+1,len(todo_list)))
 
-        timestamp = datetime.now().strftime('%y%m%d_%H%M')
-        output_dir = todo['output_dir'] + 'select_output_' + timestamp
+        a_timestamp = timestamp()
+        output_dir = todo['output_dir'] + 'select_output_' + a_timestamp
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
-        output_filename = os.path.join(output_dir, 'select_output_' + timestamp)
+        output_filename = os.path.join(output_dir, 'select_output_' + a_timestamp)
 
         if 'models' in todo:
             model_list = todo['models']
@@ -61,6 +61,7 @@ def select(config_file):
             elif model_dict['model'] == 'flatwindow':
                 if 'flatwindow' not in locals():
                     from hvc.neuralnet.models import flatwindow
+                    from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 
         if 'num_test_samples' in todo:
             num_test_samples = todo['num_test_samples']
@@ -163,7 +164,10 @@ def select(config_file):
                             # saving summary file
                             model_dict['feature_list_indices'] = ftr_list_inds
 
-                    else:  # if no feature group in model dict, use feature list indices
+                    elif 'feature_list_indices' in model_dict and\
+                            'feature_group' not in model_dict:
+                        # if no feature group in model dict, use feature list indices
+                        # Note that for neuralnet models, there will be neither
                         if model_dict['feature_list_indices'] == 'all':
                             feature_inds = np.ones((
                                 feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
@@ -239,9 +243,6 @@ def select(config_file):
                     elif model_dict['model'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
 
-                        if 'flatwindow' not in locals():
-                            from hvc.neuralnet.models import flatwindow
-
                         if 'convert_labels_categorical' not in locals():
                             from hvc.neuralnet.utils import convert_labels_categorical
 
@@ -286,13 +287,17 @@ def select(config_file):
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
                                              num_label_classes=num_label_classes)
-                        filename = bird_ID + '_' + 'flatwindow_training_' + now_str + \
-                                   '.log'
+                        filename = ''.join(['flatwindow_training_',
+                                            '{}_samples_'.format(num_train_samples),
+                                            'replicate_{}'.format(replicate),
+                                            '.log'])
                         csv_logger = CSVLogger(filename,
                                                separator=',',
                                                append=True)
-                        weights_filename = bird_ID + '_' + "weights " + now_str + \
-                                           ".best.hdf5"
+                        weights_filename = ''.join(['weights_',
+                                                    '{}_samples_'.format(num_train_samples),
+                                                    'replicate_{}'.format(replicate),
+                                                    '.best.hdf5'])
                         checkpoint = ModelCheckpoint(weights_filename,
                                                      monitor='val_acc',
                                                      verbose=1,
@@ -306,17 +311,18 @@ def select(config_file):
                                                   mode='auto')
                         callbacks_list = [csv_logger, checkpoint, earlystop]
 
-                        flatwindow.fit(train_spects,
-                                       train_labels,
-                                       validation_data=(validat_spects, validat_labels),
-                                       batch_size=model_dict['batch size'],
-                                       nb_epoch=model_dict['epochs'],
-                                       callbacks=callbacks_list,
-                                       verbose=1)
+                        flatwin.fit(train_spects_scaled,
+                                    labels_train_onehot,
+                                    validation_data=(test_spects_scaled,
+                                                     labels_test_onehot),
+                                    batch_size=model_dict['hyperparameters']['batch size'],
+                                    epochs=model_dict['hyperparameters']['epochs'],
+                                    callbacks=callbacks_list,
+                                    verbose=1)
 
-                        pred_labels = flatwindow.predict_classes(test_spects_scaled,
-                                                                 batch_size=32,
-                                                                 verbose=1)
+                        pred_labels = flatwin.predict_classes(test_spects_scaled,
+                                                              batch_size=32,
+                                                              verbose=1)
 
                         acc_by_label, avg_acc = get_acc_by_label(test_syl_labels_zero_to_n,
                                                                  pred_labels,
