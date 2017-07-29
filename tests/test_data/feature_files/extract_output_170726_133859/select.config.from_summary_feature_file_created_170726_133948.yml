@@ -1,0 +1,20 @@
+select:
+  global:
+    num_replicates: None
+    num_train_samples:
+      start : None
+      stop : None
+      step : None
+    num_test_samples: None
+
+    models:
+    -
+      model: knn
+      feature_list_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      hyperparameters:
+        k : None
+
+  todo_list:
+    -
+      feature_file : summary_feature_file_created_170726_133948
+      output_dir: C:\Data\gy6or6\

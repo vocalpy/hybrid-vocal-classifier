@@ -148,10 +148,10 @@ def select(config_file):
                             elif type(model_dict['feature_group']) == list:
                                 ftr_list_inds = []
                                 for ftr_grp in model_dict['feature_group']:
-                                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
+                                    ftr_grp_ID = ftr_grp_ID_dict[ftr_grp]
                                     # now find all the indices of features associated with the
                                     # feature group for that model
-                                    ftr_list_inds.append([ind for ind, val in
+                                    ftr_list_inds.extend([ind for ind, val in
                                                           enumerate(ftr_list_grp_ID)
                                                           if val == ftr_grp_ID])
                             # finally use ftr_list_inds to get the actual columns we need from the
