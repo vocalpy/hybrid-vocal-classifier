@@ -215,29 +215,31 @@ def select(config_file):
                                                                  feature_file['labelset'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
-                        model_output_dir = os.path.join(output_dir,model_dict['model'])
-                        if not os.path.isdir(model_output_dir):
-                            os.mkdir(model_output_dir)
-                        model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
-                                                                               num_train_samples,
-                                                                               replicate)
-                        model_filename = os.path.join(model_output_dir, model_fname_str)
-                        if model_dict['feature_list_indices'] == 'all':
-                            model_feature_list = feature_file['feature_list']
-                        else:
-                            model_feature_list = [feature_file['feature_list'][ind]
-                                                  for ind in model_dict['feature_list_indices']]
-                        model_output_dict = {
-                            'model_feature_list': model_feature_list,
-                            'model': clf,
-                            'config_file': config_file,
-                            'feature_file': todo['feature_file'],
-                            'test_IDs': test_IDs,
-                            'train_IDs': train_IDs,
-                            'scaler': scaler
-                        }
-                        joblib.dump(model_output_dict,
-                                    model_filename)
+
+                        # # save info associated with model such as indices of training samples
+                        # model_output_dir = os.path.join(output_dir,model_dict['model'])
+                        # if not os.path.isdir(model_output_dir):
+                        #     os.mkdir(model_output_dir)
+                        # model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
+                        #                                                        num_train_samples,
+                        #                                                        replicate)
+                        # model_filename = os.path.join(model_output_dir, model_fname_str)
+                        # if model_dict['feature_list_indices'] == 'all':
+                        #     model_feature_list = feature_file['feature_list']
+                        # else:
+                        #     model_feature_list = [feature_file['feature_list'][ind]
+                        #                           for ind in model_dict['feature_list_indices']]
+                        # model_output_dict = {
+                        #     'model_feature_list': model_feature_list,
+                        #     'model': clf,
+                        #     'config_file': config_file,
+                        #     'feature_file': todo['feature_file'],
+                        #     'test_IDs': test_IDs,
+                        #     'train_IDs': train_IDs,
+                        #     'scaler': scaler
+                        # }
+                        # joblib.dump(model_output_dict,
+                        #             model_filename)
 
                     # if-elif that switches based on model type, end sklearn, start keras models
                     elif model_dict['model'] == 'flatwindow':
@@ -250,9 +252,10 @@ def select(config_file):
                             from hvc.neuralnet.utils import SpectScaler
 
                         if 'labels_test_onehot' not in locals():
-                            labels_test_onehot = \
+                            labels_test_onehot, labels_test_zero_to_n, classes_zero_to_n = \
                                 convert_labels_categorical(feature_file['labelset'],
-                                                           labels_test)
+                                                           labels_test,
+                                                           return_zero_to_n=True)
 
                         if 'test_spects' not in locals():
                             # get spects for test set,
@@ -287,17 +290,27 @@ def select(config_file):
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
                                              num_label_classes=num_label_classes)
-                        filename = ''.join(['flatwindow_training_',
-                                            '{}_samples_'.format(num_train_samples),
-                                            'replicate_{}'.format(replicate),
-                                            '.log'])
-                        csv_logger = CSVLogger(filename,
+
+                        model_output_dir = os.path.join(output_dir, model_dict['model'])
+                        if not os.path.isdir(model_output_dir):
+                            os.mkdir(model_output_dir)
+                        model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
+                                                                               num_train_samples,
+                                                                               replicate)
+                        model_filename = os.path.join(model_output_dir, model_fname_str)
+                        csv_str = ''.join(['flatwindow_training_',
+                                           '{}_samples_'.format(num_train_samples),
+                                           'replicate_{}'.format(replicate),
+                                           '.log'])
+                        csv_filename = os.path.join(model_output_dir, csv_str)
+                        csv_logger = CSVLogger(csv_filename,
                                                separator=',',
                                                append=True)
-                        weights_filename = ''.join(['weights_',
-                                                    '{}_samples_'.format(num_train_samples),
-                                                    'replicate_{}'.format(replicate),
-                                                    '.best.hdf5'])
+                        weights_str = ''.join(['weights_',
+                                               '{}_samples_'.format(num_train_samples),
+                                               'replicate_{}'.format(replicate),
+                                               '.best.hdf5'])
+                        weights_filename = os.path.join(model_output_dir, weights_str)
                         checkpoint = ModelCheckpoint(weights_filename,
                                                      monitor='val_acc',
                                                      verbose=1,
@@ -324,9 +337,52 @@ def select(config_file):
                                                               batch_size=32,
                                                               verbose=1)
 
-                        acc_by_label, avg_acc = get_acc_by_label(test_syl_labels_zero_to_n,
+                        acc_by_label, avg_acc = get_acc_by_label(labels_test_zero_to_n,
                                                                  pred_labels,
                                                                  classes_zero_to_n)
+
+                # save info associated with model such as indices of training samples.
+                # Note this is done outside the if/elif list for switching between
+                # models.
+                model_output_dir = os.path.join(output_dir, model_dict['model'])
+                if not os.path.isdir(model_output_dir):
+                    os.mkdir(model_output_dir)
+                model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
+                                                                       num_train_samples,
+                                                                       replicate)
+                model_filename = os.path.join(model_output_dir, model_fname_str)
+                model_output_dict = {
+                    'config_file': config_file,
+                    'feature_file': todo['feature_file'],
+                    'test_IDs': test_IDs,
+                    'train_IDs': train_IDs,
+                }
+
+                if 'clf' in locals():
+                    model_output_dict['clf'] = clf
+
+                if 'scaler' in locals():
+                    model_output_dict['scaler'] = scaler
+                    # have to delete scaler
+                    # so it's not still in memory next loop
+                    # (e.g. because a different model that doesn't use scaler
+                    # is tested in next loop)
+                    del scaler
+                elif 'spect_scaler' in locals():
+                    model_output_dict['spect_scaler'] = spect_scaler
+                    del spect_scaler
+
+                if model_dict['model'] in ['svm', 'knn']:
+                    # to be able to extract features for predictions
+                    # on unlabeled data set, need list of features
+                    if model_dict['feature_list_indices'] == 'all':
+                        model_feature_list = feature_file['feature_list']
+                    else:
+                        model_feature_list = [feature_file['feature_list'][ind]
+                                              for ind in model_dict['feature_list_indices']]
+                    model_output_dict['model_feature_list'] = model_feature_list
+                joblib.dump(model_output_dict,
+                            model_filename)
 
         # after looping through all samples + replicates
         output_dict = {

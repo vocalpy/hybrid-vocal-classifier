@@ -65,7 +65,7 @@ class SpectScaler:
         return z_norm_spects
 
 
-def convert_labels_categorical(labelset,labels):
+def convert_labels_categorical(labelset, labels, return_zero_to_n=False):
     """convert array of labels to matrix of one-hot vectors
     where each vector is the training label for a neural net.
     Can then be supplied as output to conditional crossentropy
@@ -75,6 +75,11 @@ def convert_labels_categorical(labelset,labels):
     ----------
     labelset : str
     labels : vector
+    return_zero_to_n : bool
+        if True, returns labels but with values in vector replaced by ints
+        so that there are zero to n-1 unique ints in the labels_zero_to_n
+        vector.
+        Default is False.
 
     Returns
     -------
@@ -92,4 +97,9 @@ def convert_labels_categorical(labelset,labels):
     label_map = dict(zip(labelset, classes_zero_to_n))
     labels_zero_to_n = np.asarray([label_map[label] for label in labels])
     # so we can then convert to array of binary / one-hot vectors for training
-    return to_categorical(labels_zero_to_n, num_syl_classes)
+    if return_zero_to_n:
+        return to_categorical(labels_zero_to_n, num_syl_classes),\
+               labels_zero_to_n,\
+               classes_zero_to_n
+    else:
+        return to_categorical(labels_zero_to_n, num_syl_classes)
