@@ -52,7 +52,7 @@ class TestAudiofileIO:
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
@@ -102,7 +102,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
@@ -122,7 +122,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)

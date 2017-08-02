@@ -51,7 +51,7 @@ class TestFromFile:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
