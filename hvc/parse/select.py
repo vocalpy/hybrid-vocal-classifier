@@ -101,8 +101,11 @@ def _validate_model_dict(model_dict,
                         raise ValueError('feature_list_indices parsed as a string '
                                          'but could not convert following to list of ints: {}'
                                          .format(ftr_list_inds))
-            if not all([type(item_val) is int for item_val in ftr_list_inds]):
-                raise ValueError('all indices in \'feature_list_indices\' should be integers')
+
+            if ftr_list_inds != 'all':
+                if not all([type(item_val) is int for item_val in ftr_list_inds]):
+                    raise ValueError('all indices in \'feature_list_indices\''
+                                     ' should be integers')
             validated_model_dict['feature_list_indices'] = ftr_list_inds
 
         if 'feature_group' in model_dict:

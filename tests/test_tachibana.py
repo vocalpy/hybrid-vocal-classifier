@@ -7,13 +7,9 @@ import glob
 
 # from dependencies
 import yaml
-import numpy as np
-from sklearn.externals import joblib
 import pytest
 
 import hvc.audiofileIO
-from hvc.features.extract import single_syl_features_switch_case_dict
-from hvc.features.extract import multiple_syl_features_switch_case_dict
 from hvc.features import tachibana
 
 with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:

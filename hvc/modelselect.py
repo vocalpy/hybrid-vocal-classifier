@@ -40,7 +40,7 @@ def select(config_file):
         a_timestamp = timestamp()
         output_dir = todo['output_dir'] + 'select_output_' + a_timestamp
         if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+            os.makedirs(output_dir)
         output_filename = os.path.join(output_dir, 'select_output_' + a_timestamp)
 
         if 'models' in todo:
@@ -293,7 +293,7 @@ def select(config_file):
 
                         model_output_dir = os.path.join(output_dir, model_dict['model'])
                         if not os.path.isdir(model_output_dir):
-                            os.mkdirs(model_output_dir)
+                            os.makedirs(model_output_dir)
                         model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
                                                                                num_train_samples,
                                                                                replicate)
@@ -346,7 +346,7 @@ def select(config_file):
                 # models.
                 model_output_dir = os.path.join(output_dir, model_dict['model'])
                 if not os.path.isdir(model_output_dir):
-                    os.mkdir(model_output_dir)
+                    os.makedirs(model_output_dir)
                 model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
                                                                        num_train_samples,
                                                                        replicate)

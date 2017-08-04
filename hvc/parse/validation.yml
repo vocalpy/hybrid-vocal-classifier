@@ -40,8 +40,8 @@ hyperparameters:
     k: int
 
   svm:
-    C: int
-    gamma: int
+    C: !!python/tuple [int, float]
+    gamma: !!python/tuple [int, float]
 
   flatwindow:
     epochs: int
