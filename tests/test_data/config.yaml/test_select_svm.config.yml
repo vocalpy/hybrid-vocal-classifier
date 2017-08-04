@@ -1,21 +1,20 @@
 select:
-  global:
-    num_replicates: 5
-    num_train_samples:
-      start : 100
-      stop : 400
-      step : 100
-    num_test_samples: 400
+  num_replicates: 5
+  num_train_samples:
+    start : 100
+    stop : 400
+    step : 100
+  num_test_samples: 400
 
-    models:
-      -
-        model: svm
-        feature_list_indices: all
-        hyperparameters:
-          C : 1
-          gamma : 0.01
+  models:
+    -
+      model: svm
+      feature_list_indices: all
+      hyperparameters:
+        C : 1
+        gamma : 0.01
 
   todo_list:
     - #1
-      feature_file : C:\Data\gy6or6\extract_output_170711_0100\summary_feature_file_created_170711_0100
+      feature_file : .\test_data\feature_files\svm\extract_output_170803_231646\summary_feature_file_created_170803_232205
       output_dir: C:\Data\gy6gy6\
