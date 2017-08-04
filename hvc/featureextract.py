@@ -17,13 +17,12 @@ from . import features
 from .utils import timestamp
 
 SELECT_TEMPLATE = """select:
-  global:
-    num_replicates: None
-    num_train_samples:
-      start : None
-      stop : None
-      step : None
-    num_test_samples: None
+  num_replicates: None
+  num_train_samples:
+    start : None
+    stop : None
+    step : None
+  num_test_samples: None
 
     models:"""
 
@@ -74,9 +73,10 @@ def write_select_config(summary_ftr_file_dict,
     select_config_filename = 'select.config.from_' + summary_filename + '.yml'
     with open(select_config_filename, 'w') as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
-        for model_name, model_ID in summary_ftr_file_dict['feature_list_group_ID_dict'].items():
-            inds = np.flatnonzero(summary_ftr_file_dict['feature_list_group_ID']==model_ID).tolist()
-            inds = ', '.join(str(ind) for ind in inds)
+        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
+            inds = [ftr_list_ind for ftr_list_ind, grp_ID in
+                    enumerate(summary_ftr_file_dict['feature_list_group_ID'])
+                    if grp_ID == model_ID]
             if model_name == 'svm':
                 hyperparams = SVM_HYPERPARAMS
             elif model_name == 'knn':
@@ -86,6 +86,7 @@ def write_select_config(summary_ftr_file_dict,
                                                      hyperparams))
         yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
                                                output_dir))
+
 
 def extract(config_file):
     """main function that runs feature extraction.
@@ -125,13 +126,8 @@ def extract(config_file):
         data_dirs = todo['data_dirs']
         for data_dir in data_dirs:
             print('Changing to data directory: {}'.format(data_dir))
-            try:
-                os.chdir(data_dir)
-            except FileNotFoundError:
-                os.chdir(home_dir)
-                os.chdir(data_dir)
-            except:
-                raise
+            os.chdir(home_dir)
+            os.chdir(data_dir)
 
             if 'features_from_all_files' in locals():
                 # from last time through loop
@@ -154,23 +150,20 @@ def extract(config_file):
                 print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
                 # segment_params defined for todo_list item takes precedence over any default
                 # defined for `extract` config
-                try:
-                    if 'segment_params' in todo:
-                        extract_dict = features.extract.from_file(songfile,
-                                                                  todo['file_format'],
-                                                                  todo['feature_list'],
-                                                                  extract_config['spect_params'],
-                                                                  todo['labelset'],
-                                                                  todo['segment_params'])
-                    else: # if seg params not defined in to-do, revert to default
-                        extract_dict = features.extract.from_file(songfile,
-                                                                  todo['file_format'],
-                                                                  todo['feature_list'],
-                                                                  extract_config['spect_params'],
-                                                                  todo['labelset'],
-                                                                  extract_config['segment_params'])
-                except ValueError:
-                    import pdb;pdb.set_trace()
+                if 'segment_params' in todo:
+                    extract_dict = features.extract.from_file(songfile,
+                                                              todo['file_format'],
+                                                              todo['feature_list'],
+                                                              extract_config['spect_params'],
+                                                              todo['labelset'],
+                                                              todo['segment_params'])
+                else:  # if seg params not defined in to-do, revert to default
+                    extract_dict = features.extract.from_file(songfile,
+                                                              todo['file_format'],
+                                                              todo['feature_list'],
+                                                              extract_config['spect_params'],
+                                                              todo['labelset'],
+                                                              extract_config['segment_params'])
 
                 if extract_dict is None:
                     # because no labels from labels_to_use were found in songfile
@@ -218,7 +211,7 @@ def extract(config_file):
 
                 if 'feature_list_group_ID' in todo:
                     feature_file_dict['feature_list_group_ID'] = todo['feature_list_group_ID']
-                    feature_file_dict['feature_list_group_ID_dict'] = todo['feature_list_group_ID_dict']
+                    feature_file_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
             if 'neuralnet_inputs_all_files' in locals():
                 feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
@@ -236,7 +229,7 @@ def extract(config_file):
         summary_filename_with_path = os.path.join(output_dir_with_path, summary_filename)
         ftr_output_files = glob.glob('*features_from_*')
         if len(ftr_output_files) > 1:
-            #make a 'summary' data file
+            # make a 'summary' data file
             list_of_output_dicts = []
             summary_ftr_file_dict = {}
             for feature_file in ftr_output_files:
@@ -310,18 +303,18 @@ def extract(config_file):
                         if 'feature_list_group_ID' not in summary_ftr_file_dict:
                             summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
                         else:
-                            if any(feature_file_dict['feature_list_group_ID'] !=
-                                           summary_ftr_file_dict['feature_list_group_ID']):
+                            if feature_file_dict['feature_list_group_ID'] != \
+                                           summary_ftr_file_dict['feature_list_group_ID']:
                                 raise ValueError('mismatch between feature_list_group_ID in {} '
                                                  'and other feature files'.format(feature_file))
 
-                        if 'feature_list_group_ID_dict' not in summary_ftr_file_dict:
-                            summary_ftr_file_dict['feature_list_group_ID_dict'] = \
-                                feature_file_dict['feature_list_group_ID_dict']
+                        if 'feature_group_ID_dict' not in summary_ftr_file_dict:
+                            summary_ftr_file_dict['feature_group_ID_dict'] = \
+                                feature_file_dict['feature_group_ID_dict']
                         else:
-                            if feature_file_dict['feature_list_group_ID_dict'] != \
-                                    summary_ftr_file_dict['feature_list_group_ID_dict']:
-                                raise ValueError('mismatch between feature_list_group_ID_dict in {} '
+                            if feature_file_dict['feature_group_ID_dict'] != \
+                                    summary_ftr_file_dict['feature_group_ID_dict']:
+                                raise ValueError('mismatch between feature_group_ID_dict in {} '
                                                  'and other feature files'.format(feature_file))
 
                 # if extracting inputs for neuralnets
@@ -347,4 +340,5 @@ def extract(config_file):
             write_select_config(summary_ftr_file_dict,
                                 summary_filename,
                                 todo['output_dir'])
-    os.chdir(home_dir)
+
+        os.chdir(home_dir)

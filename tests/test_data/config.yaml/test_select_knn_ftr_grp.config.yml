@@ -1,0 +1,19 @@
+select:
+  num_replicates: 5
+  num_train_samples:
+    start : 100
+    stop : 400
+    step : 100
+  num_test_samples: 400
+
+  models:
+    -
+      model: knn
+      feature_group: knn
+      hyperparameters:
+        k : 4
+
+  todo_list:
+    - #1
+      feature_file : .\test_data\feature_files\extract_output_170726_133859\summary_feature_file_created_170726_133948
+      output_dir: C:\Data\gy6gy6\

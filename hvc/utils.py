@@ -319,7 +319,7 @@ def grab_n_samples_by_song(song_IDs,
         return sample_IDs
 
 
-def get_acc_by_label(labels,pred_labels,labelset):
+def get_acc_by_label(labels, pred_labels, labelset):
     """accuracy averaged across classes
 
     Parameters:

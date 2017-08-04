@@ -14,3 +14,35 @@ optional_todo_list_keys:
   - segment_params
   - feature_group
   - feature_list
+
+valid_models:
+  - knn
+  - svm
+  - flatwindow
+
+valid_model_keys:
+  knn:
+    - feature_list_indices
+    - feature_group
+    - hyperparameters
+
+  svm:
+    - feature_list_indices
+    - feature_group
+    - hyperparameters
+
+  flatwindow:
+    - hyperparameters
+
+hyperparameters:
+# key is hyperparam. name, value is valid type
+  knn:
+    k: int
+
+  svm:
+    C: !!python/tuple [int, float]
+    gamma: !!python/tuple [int, float]
+
+  flatwindow:
+    epochs: int
+    batch size: int

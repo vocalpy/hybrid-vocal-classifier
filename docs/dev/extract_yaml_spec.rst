@@ -72,10 +72,17 @@ Every dict in a `todo_list` has the following **required** keys:
         named features. See the list of named features here:
         :doc:`named_features`
 
-If `feature_group` is a list then it
    * feature_group : str or list
         named group of features, list if more than one group
         {'knn','svm'}
+
+   * Note that a `todo_list` can define *both* a `feature_list`
+and a `feature_group`. In this case features from the `feature_group`
+are added to the `feature_list`.
+
+Additional variables are added to the feature files that are output by
+`featureextract.extract` to keep track of which features belong to which
+feature group.
 
 specification for spect_params and segment_params dictionaries
 --------------------------------------------------------------

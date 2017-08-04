@@ -191,15 +191,15 @@ def validate_segment_params(segment_params):
                            .format(invalid_keys))
     else:
         for key, val in segment_params.items():
-            if key=='threshold':
+            if key == 'threshold':
                 if type(val) != int:
                     raise ValueError('threshold should be int but parsed as {}'
                                      .format(type(val)))
-            elif key=='min_syl_dur':
+            elif key == 'min_syl_dur':
                 if type(val) != float:
                     raise ValueError('min_syl_dur should be float but parsed as {}'
                                      .format(type(val)))
-            elif key=='min_silent_dur':
+            elif key == 'min_silent_dur':
                 if type(val) != float:
                     raise ValueError('min_silent_dur should be float but parsed as {}'
                                      .format(type(val)))
@@ -218,33 +218,60 @@ def _validate_feature_list(feature_list):
 
 
 def _validate_feature_group_and_convert_to_list(feature_group,
-                                                feature_list=[]):
-    """validates feature group, converts to feature list,
-    if passed a feature list then adds features from feature
-    group to already extant feature list
+                                                feature_list=None):
+    """validates feature_group value from todo_list dicts, then converts
+    to feature_list.
+    Since todo_list dicts can include both feature_group and feature_list,
+    this function will accept feature_list from the dict and then append
+    the feature_group features to those already in the feature_list.
+
+    Parameters
+    ----------
+    feature_group : str or list
+        currently valid feature groups: {'svm','knn'}
+        if list, must be a list of strings
+    feature_list : list
+        list of features, default is None.
+        If not None, features from feature groups will be appended to this list.
+
+    Returns
+    -------
+    feature_list : list
+        list of features to extract for each feature group.
+        if feature_list was passed to function along with feature_group, then
+        features from feature group(s) are appended to end of the feature_list
+        passed to the function.
+    feature_group_ID_dict : dict
+        dict where key is a feature group name and value is a corresponding ID, an int.
+        Same length as feature_list.
+        Used by hvc.modelselection.select to determine which columns in feature
+        array belong to which feature group.
+        If feature_list was passed to the function, it does not affect this dict,
+        since the features in that list are not considered part of a feature group
+    feature_list_group_ID_arr : list
+        list of ints of same length as feature_list.
+        If feature_list was passed to function, its features will have value None
     """
 
     if type(feature_group) != str and type(feature_group) != list:
         raise TypeError('feature_group parsed as {} but it should be'
                         ' either a string or a list. Please check config'
                         ' file formatting.'.format(type(feature_group)))
-    elif type(feature_group) == str:
+
+    # if user entered list with just one element
+    if type(feature_group) == list and len(feature_group) == 1:
+        # just take that one element, assuming it is str,
+        # i.e. name of feature group
+        feature_group = feature_group[0]
+
+    if type(feature_group) == str:
         if feature_group not in valid_feature_groups_dict:
             raise ValueError('{} not found in valid feature groups'.format(feature_group))
         else:
             ftr_grp_list = valid_feature_groups_dict[feature_group]
             _validate_feature_list(ftr_grp_list)  # sanity check
-            return feature_list + ftr_grp_list
-
-    # if user entered list with just one element
-    elif type(feature_group) == list and len(feature_group) == 1:
-        feature_group = feature_group[0]
-        if feature_group not in valid_feature_groups_dict:
-            raise ValueError('{} not found in valid feature groups'.format(feature_group))
-        else:
-            ftr_grp_list = valid_feature_groups_dict[feature_group]
-            _validate_feature_list(ftr_grp_list)
-            return feature_list + ftr_grp_list
+            ftr_grp_ID_dict = {feature_group: 0}
+            feature_list_group_ID = [0] * len(ftr_grp_list)
 
     elif type(feature_group) == list:
         # if a list of feature groups
@@ -261,8 +288,16 @@ def _validate_feature_group_and_convert_to_list(feature_group,
                 feature_list_group_ID.extend([grp_ind] * len(valid_feature_groups_dict[ftr_grp]))
                 ftr_grp_ID_dict[ftr_grp] = grp_ind
         _validate_feature_list(ftr_grp_list)
-        feature_list_group_ID = np.asarray(feature_list_group_ID)
+
+    if feature_list is not None:
+        not_ftr_grp_features = [None] * len(feature_list)
+        feature_list_group_ID = not_ftr_grp_features + feature_list_group_ID
         return (feature_list + ftr_grp_list,
+                feature_list_group_ID,
+                ftr_grp_ID_dict)
+    else:
+        feature_list_group_ID = feature_list_group_ID
+        return (ftr_grp_list,
                 feature_list_group_ID,
                 ftr_grp_ID_dict)
 
@@ -315,12 +350,9 @@ def _validate_todo_list_dict(todo_list_dict, index):
             _validate_feature_group_and_convert_to_list(
                 validated_todo_list_dict['feature_group'])
 
-        if type(ftr_grp_valid) == list:
-            validated_todo_list_dict['feature_list'] = ftr_grp_valid
-        elif type(ftr_grp_valid) == tuple:
-            validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
-            validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-            validated_todo_list_dict['feature_list_group_ID_dict'] = ftr_grp_valid[2]
+        validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
+        validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
+        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
 
     elif 'feature_list' in validated_todo_list_dict and \
                     'feature_group' in validated_todo_list_dict:
@@ -328,12 +360,9 @@ def _validate_todo_list_dict(todo_list_dict, index):
             validated_todo_list_dict['feature_group'],
             validated_todo_list_dict['feature_list'])
 
-        if type(ftr_grp_valid) == list:
-            validated_todo_list_dict['feature_list'] = ftr_grp_valid
-        elif type(ftr_grp_valid) == tuple:
-            validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
-            validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-            validated_todo_list_dict['feature_list_group_ID_dict'] = ftr_grp_valid[2]
+        validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
+        validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
+        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
 
     # okay now that we took care of that we can loop through everything else
 
