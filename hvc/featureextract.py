@@ -119,7 +119,7 @@ def extract(config_file):
         feature_list = todo['feature_list']
 
         output_dir = 'extract_output_' + timestamp()
-        output_dir_with_path = os.path.join(todo['output_dir'] + output_dir)
+        output_dir_with_path = os.path.join(todo['output_dir'], output_dir)
         if not os.path.isdir(output_dir_with_path):
             os.mkdir(output_dir_with_path)
 
