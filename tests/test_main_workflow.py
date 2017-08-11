@@ -62,7 +62,6 @@ def rewrite_config(config_dir,
                     val_tuple[0],
                     val_tuple[1]
                 )
-                break
 
     # write to file in temporary configs dir
     tmp_config_path = os.path.join(str(config_dir), config_filename)
