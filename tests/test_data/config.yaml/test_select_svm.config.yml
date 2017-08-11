@@ -16,5 +16,5 @@ select:
 
   todo_list:
     - #1
-      feature_file : .\test_data\feature_files\svm\extract_output_170803_231646\summary_feature_file_created_170803_232205
-      output_dir: C:\Data\gy6gy6\
+      feature_file : replace with feature_file
+      output_dir: replace with tmp_output_dir
