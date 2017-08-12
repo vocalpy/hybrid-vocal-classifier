@@ -87,9 +87,8 @@ def check_extract_output(output_dir):
         # and the number of rows in features should equal number of labels
         for ftr_dict in ftr_dicts:
             labels = ftr_dict['labels']
-            if 'features' in ftr_dict:
-                features = ftr_dict['features']
-                assert features.shape[0] == len(labels)
+            features = ftr_dict['features']
+            assert features.shape[0] == len(labels)
 
         # make sure number of features i.e. columns is constant across feature matrices
         ftr_cols = [ftr_dict['features'].shape[1] for ftr_dict in ftr_dicts]
@@ -99,16 +98,41 @@ def check_extract_output(output_dir):
     if any(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
         # then all feature dicts should have spectrograms
         assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
+        neuralnet_keys = [ftr_dict['neuralnets_input_dict'].keys()
+                          for ftr_dict in ftr_dicts]
+        # make sure keys are all the same for neuralnets_input_dict from every ftr_dict
+        for ind, keyset in enumerate(neuralnet_keys):
+            other_keysets = neuralnet_keys[:ind] + neuralnet_keys[(ind+1):]
+            assert keyset.difference(other_keysets) == set()
+        # if they are all the same, then save that set of keys
+        # to compare with summary feature dict below
+        neuralnet_keys = neuralnet_keys[0]
+
+        for ftr_dict in ftr_dicts:
+            labels = ftr_dict['labels']
+            for key, val in ftr_dict['neuralnet_inputs_dict']:
+                assert val.shape[0] == len(labels)
 
     # make sure rows in summary dict features == sum of rows of each ftr file features
     summary_file = glob.glob(os.path.join(output_dir, 'summary_feature_file_*'))
     # (should only be one summary file)
     assert len(summary_file) == 1
     summary_dict = joblib.load(summary_file[0])
-    sum_ftr_rows = summary_dict['features'].shape[0]
-    total_ftr_dict_rows = sum([ftr_dict['features'].shape[0]
-                               for ftr_dict in ftr_dicts])
-    assert sum_ftr_rows == total_ftr_dict_rows
+    if all(['features' in ftr_dict for ftr_dict in ftr_dicts]):
+        sum_ftr_rows = summary_dict['features'].shape[0]
+        total_ftr_dict_rows = sum([ftr_dict['features'].shape[0]
+                                   for ftr_dict in ftr_dicts])
+        assert sum_ftr_rows == total_ftr_dict_rows
+
+    if all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
+        assert summary_dict['neuralnet_inputs_dict'].keys() == neuralnet_keys
+        for key, val in summary_dict['neuralnet_inputs_dict']:
+            import pdb;pdb.set_trace()
+            sum_ftr_rows = summary_dict['neuralnets_input_dict'][key].shape[0]
+            total_ftr_dict_rows = sum(
+                [ftr_dict['neuralnet_inputs_dict'][key].shape[0]
+                 for ftr_dict in ftr_dicts])
+            assert sum_ftr_rows == total_ftr_dict_rows
 
     return True  # because called with assert
 
@@ -151,7 +175,7 @@ def test_01_knn(tmp_config_dir, tmp_output_dir):
         hvc.select(tmp_config_path)
 
 
-def test_02__multiple_ftr_groups(tmp_config_dir, tmp_output_dir):
+def test_02_multiple_ftr_groups(tmp_config_dir, tmp_output_dir):
     """
     """
 
@@ -215,6 +239,43 @@ def test_03_svm(tmp_config_dir, tmp_output_dir):
     feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
     feature_file = feature_file[0]  # because glob returns list
     select_config_filename = 'test_select_svm.config.yml'
+    tmp_config_path = rewrite_config(tmp_config_dir,
+                                     replace_dict={'feature_file':
+                                                       ('replace with feature_file',
+                                                        feature_file),
+                                                   'output_dir':
+                                                       ('replace with tmp_output_dir',
+                                                        str(tmp_output_dir))},
+                                     config_filename=select_config_filename)
+    hvc.select(tmp_config_path)
+
+
+def test_04_flatwindow(tmp_config_dir, tmp_output_dir):
+    """
+    """
+
+    # have to put tmp_output_dir into yaml file
+    extract_config_filename = 'test_extract_flatwindow.config.yml'
+    tmp_config_path = rewrite_config(tmp_config_dir,
+                                     replace_dict={'output_dir':
+                                                       ('replace with tmp_output_dir',
+                                                        str(tmp_output_dir))},
+                                     config_filename=extract_config_filename)
+    hvc.extract(tmp_config_path)
+
+    extract_outputs = list(
+        filter(os.path.isdir, glob.glob(os.path.join(
+            str(tmp_output_dir),
+            '*extract*'))
+               )
+    )
+    extract_outputs.sort(key=os.path.getmtime)
+    extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
+    assert check_extract_output(extract_output_dir)
+
+    feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
+    feature_file = feature_file[0]  # because glob returns list
+    select_config_filename = 'test_select_flatwindow.config.yml'
     tmp_config_path = rewrite_config(tmp_config_dir,
                                      replace_dict={'feature_file':
                                                        ('replace with feature_file',

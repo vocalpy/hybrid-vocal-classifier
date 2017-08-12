@@ -217,31 +217,6 @@ def select(config_file):
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
-                        # # save info associated with model such as indices of training samples
-                        # model_output_dir = os.path.join(output_dir,model_dict['model'])
-                        # if not os.path.isdir(model_output_dir):
-                        #     os.mkdir(model_output_dir)
-                        # model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
-                        #                                                        num_train_samples,
-                        #                                                        replicate)
-                        # model_filename = os.path.join(model_output_dir, model_fname_str)
-                        # if model_dict['feature_list_indices'] == 'all':
-                        #     model_feature_list = feature_file['feature_list']
-                        # else:
-                        #     model_feature_list = [feature_file['feature_list'][ind]
-                        #                           for ind in model_dict['feature_list_indices']]
-                        # model_output_dict = {
-                        #     'model_feature_list': model_feature_list,
-                        #     'model': clf,
-                        #     'config_file': config_file,
-                        #     'feature_file': todo['feature_file'],
-                        #     'test_IDs': test_IDs,
-                        #     'train_IDs': train_IDs,
-                        #     'scaler': scaler
-                        # }
-                        # joblib.dump(model_output_dict,
-                        #             model_filename)
-
                     # if-elif that switches based on model type, end sklearn, start keras models
                     elif model_dict['model'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
