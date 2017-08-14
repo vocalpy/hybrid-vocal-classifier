@@ -137,11 +137,19 @@ def check_extract_output(output_dir):
     return True  # because called with assert
 
 
-def check_select_output(output_dir):
+def check_select_output(config_dir, output_dir):
     """
     """
 
+    select_summary = glob.glob(os.path.join(output_dir,
+                                            '*summary*'))
+    assert len(select_summary) == 1
+
+    # now check for every model in config
+    # if there is corresponding folder with model files etc
+
     return True
+
 
 test_config_tuples = [
     ('test_extract_knn.config.yml',
@@ -207,32 +215,3 @@ def test_main_workflow(tmp_config_dir, tmp_output_dir):
             except IndexError:  # because pop from empty list
                 break
 
-
-# def test_04_flatwindow(tmp_config_dir, tmp_output_dir):
-#     """
-#     """
-#
-#     # have to put tmp_output_dir into yaml file
-#     extract_config_filename = 'test_extract_flatwindow.config.yml'
-#     tmp_config_path = rewrite_config(tmp_config_dir,
-#                                      replace_dict={'output_dir':
-#                                                        ('replace with tmp_output_dir',
-#                                                         str(tmp_output_dir))},
-#                                      config_filename=extract_config_filename)
-#     hvc.extract(tmp_config_path)
-#
-#     assert check_extract_output(extract_output_dir)
-#
-#     feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
-#     feature_file = feature_file[0]  # because glob returns list
-#     select_config_filename = 'test_select_flatwindow.config.yml'
-#     tmp_config_path = rewrite_config(tmp_config_dir,
-#                                      replace_dict={'feature_file':
-#                                                        ('replace with feature_file',
-#                                                         feature_file),
-#                                                    'output_dir':
-#                                                        ('replace with tmp_output_dir',
-#                                                         str(tmp_output_dir))},
-#                                      config_filename=select_config_filename)
-#     hvc.select(tmp_config_path)
-#
