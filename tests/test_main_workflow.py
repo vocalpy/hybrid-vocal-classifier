@@ -137,151 +137,102 @@ def check_extract_output(output_dir):
     return True  # because called with assert
 
 
+def check_select_output(output_dir):
+    """
+    """
+
+    return True
+
+test_config_tuples = [
+    ('test_extract_knn.config.yml',
+     ['test_select_knn_ftr_list_inds.config.yml',
+      'test_select_knn_ftr_grp.config.yml']
+     ),
+    ('test_extract_multiple_feature_groups.config.yml',
+     ['test_select_multiple_ftr_grp.config.yml']
+     ),
+    ('test_extract_svm.config.yml',
+     ['test_select_svm.config.yml']
+     ),
+    ('test_extract_flatwindow.config.yml',
+     ['test_select_flatwindow.config.yml']
+     )
+]
+
+
 #########################
 #     actual tests      #
 #########################
-def test_01_knn(tmp_config_dir, tmp_output_dir):
+def test_main_workflow(tmp_config_dir, tmp_output_dir):
     """
     """
 
-    # have to put tmp_output_dir into yaml file
-    extract_config_filename = 'test_extract_knn.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=extract_config_filename)
-    hvc.extract(tmp_config_path)
-    extract_output_dir = glob.glob(os.path.join(
-        str(tmp_output_dir),
-        '*extract*'))[0]  # [0] because glob returns a list
-    assert check_extract_output(extract_output_dir)
+    for test_config_tuple in test_config_tuples:
 
-    feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
-    feature_file = feature_file[0]  # because glob returns list
-
-    select_config_filenames = ['test_select_knn_ftr_list_inds.config.yml',
-                              'test_select_knn_ftr_grp.config.yml']
-
-    for select_config_filename in select_config_filenames:
+        extract_config_filename = test_config_tuple[0]
+        # have to put tmp_output_dir into yaml file
         tmp_config_path = rewrite_config(tmp_config_dir,
-                                         replace_dict={'feature_file':
-                                                           ('replace with feature_file',
-                                                            feature_file),
-                                                       'output_dir':
+                                         replace_dict={'output_dir':
                                                            ('replace with tmp_output_dir',
                                                             str(tmp_output_dir))},
-                                         config_filename=select_config_filename)
-        hvc.select(tmp_config_path)
+                                         config_filename=extract_config_filename)
+        hvc.extract(tmp_config_path)
+        extract_outputs = list(
+            filter(os.path.isdir, glob.glob(os.path.join(
+                str(tmp_output_dir),
+                '*extract*'))
+                   )
+        )
+        extract_outputs.sort(key=os.path.getmtime)
+        extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
+        assert check_extract_output(extract_output_dir)
+
+        feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
+        feature_file = feature_file[0]  # because glob returns list
+
+        select_config_filenames = test_config_tuple[1]
+
+        while True:
+            try:
+                select_config_filename = select_config_filenames.pop()
+                tmp_config_path = rewrite_config(tmp_config_dir,
+                                                 replace_dict={'feature_file':
+                                                                   ('replace with feature_file',
+                                                                    feature_file),
+                                                               'output_dir':
+                                                                   ('replace with tmp_output_dir',
+                                                                    str(tmp_output_dir))},
+                                                 config_filename=select_config_filename)
+                hvc.select(tmp_config_path)
+            except IndexError:  # because pop from empty list
+                break
 
 
-def test_02_multiple_ftr_groups(tmp_config_dir, tmp_output_dir):
-    """
-    """
-
-    # have to put tmp_output_dir into yaml file
-    extract_config_filename = 'test_extract_multiple_feature_groups.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=extract_config_filename)
-    hvc.extract(tmp_config_path)
-
-    extract_outputs = list(
-        filter(os.path.isdir, glob.glob(os.path.join(
-            str(tmp_output_dir),
-            '*extract*'))
-               )
-    )
-    extract_outputs.sort(key=os.path.getmtime)
-    extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
-
-    assert check_extract_output(extract_output_dir)
-
-    feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
-    feature_file = feature_file[0]  # because glob returns list
-    select_config_filename = 'test_select_multiple_ftr_grp.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'feature_file':
-                                                       ('replace with feature_file',
-                                                        feature_file),
-                                                   'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=select_config_filename)
-    hvc.select(tmp_config_path)
-
-
-def test_03_svm(tmp_config_dir, tmp_output_dir):
-    """
-    """
-
-    # have to put tmp_output_dir into yaml file
-    extract_config_filename = 'test_extract_svm.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=extract_config_filename)
-    hvc.extract(tmp_config_path)
-
-    extract_outputs = list(
-        filter(os.path.isdir, glob.glob(os.path.join(
-            str(tmp_output_dir),
-            '*extract*'))
-               )
-    )
-    extract_outputs.sort(key=os.path.getmtime)
-    extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
-    assert check_extract_output(extract_output_dir)
-
-    feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
-    feature_file = feature_file[0]  # because glob returns list
-    select_config_filename = 'test_select_svm.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'feature_file':
-                                                       ('replace with feature_file',
-                                                        feature_file),
-                                                   'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=select_config_filename)
-    hvc.select(tmp_config_path)
-
-
-def test_04_flatwindow(tmp_config_dir, tmp_output_dir):
-    """
-    """
-
-    # have to put tmp_output_dir into yaml file
-    extract_config_filename = 'test_extract_flatwindow.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=extract_config_filename)
-    hvc.extract(tmp_config_path)
-
-    extract_outputs = list(
-        filter(os.path.isdir, glob.glob(os.path.join(
-            str(tmp_output_dir),
-            '*extract*'))
-               )
-    )
-    extract_outputs.sort(key=os.path.getmtime)
-    extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
-    assert check_extract_output(extract_output_dir)
-
-    feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
-    feature_file = feature_file[0]  # because glob returns list
-    select_config_filename = 'test_select_flatwindow.config.yml'
-    tmp_config_path = rewrite_config(tmp_config_dir,
-                                     replace_dict={'feature_file':
-                                                       ('replace with feature_file',
-                                                        feature_file),
-                                                   'output_dir':
-                                                       ('replace with tmp_output_dir',
-                                                        str(tmp_output_dir))},
-                                     config_filename=select_config_filename)
-    hvc.select(tmp_config_path)
+# def test_04_flatwindow(tmp_config_dir, tmp_output_dir):
+#     """
+#     """
+#
+#     # have to put tmp_output_dir into yaml file
+#     extract_config_filename = 'test_extract_flatwindow.config.yml'
+#     tmp_config_path = rewrite_config(tmp_config_dir,
+#                                      replace_dict={'output_dir':
+#                                                        ('replace with tmp_output_dir',
+#                                                         str(tmp_output_dir))},
+#                                      config_filename=extract_config_filename)
+#     hvc.extract(tmp_config_path)
+#
+#     assert check_extract_output(extract_output_dir)
+#
+#     feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
+#     feature_file = feature_file[0]  # because glob returns list
+#     select_config_filename = 'test_select_flatwindow.config.yml'
+#     tmp_config_path = rewrite_config(tmp_config_dir,
+#                                      replace_dict={'feature_file':
+#                                                        ('replace with feature_file',
+#                                                         feature_file),
+#                                                    'output_dir':
+#                                                        ('replace with tmp_output_dir',
+#                                                         str(tmp_output_dir))},
+#                                      config_filename=select_config_filename)
+#     hvc.select(tmp_config_path)
+#
