@@ -127,7 +127,6 @@ def check_extract_output(output_dir):
     if all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
         assert summary_dict['neuralnet_inputs_dict'].keys() == neuralnet_keys
         for key, val in summary_dict['neuralnet_inputs_dict']:
-            import pdb;pdb.set_trace()
             sum_ftr_rows = summary_dict['neuralnets_input_dict'][key].shape[0]
             total_ftr_dict_rows = sum(
                 [ftr_dict['neuralnet_inputs_dict'][key].shape[0]
@@ -137,16 +136,22 @@ def check_extract_output(output_dir):
     return True  # because called with assert
 
 
-def check_select_output(config_dir, output_dir):
+def check_select_output(config_path, output_dir):
     """
     """
 
-    select_summary = glob.glob(os.path.join(output_dir,
-                                            '*summary*'))
-    assert len(select_summary) == 1
+    select_output = glob.glob(os.path.join(str(output_dir),
+                                            'summary_model_select_file*'))
+    # should only be one summary output file
+    assert len(select_output) == 1
 
     # now check for every model in config
     # if there is corresponding folder with model files etc
+    select_config = hvc.parse_config(config_path, 'select')
+    select_model_names = [model_dict['model']
+                          for model_dict in select_config['models']]
+    select_model_dirs = next(os.walk(output_dir))[1]  # just dirs
+    assert select_model_names == select_model_dirs
 
     return True
 
@@ -212,6 +217,15 @@ def test_main_workflow(tmp_config_dir, tmp_output_dir):
                                                                     str(tmp_output_dir))},
                                                  config_filename=select_config_filename)
                 hvc.select(tmp_config_path)
+                select_outputs = list(
+                    filter(os.path.isdir, glob.glob(os.path.join(
+                        str(tmp_output_dir),
+                        '*select*'))
+                           )
+                )
+                select_outputs.sort(key=os.path.getmtime)
+                select_output_dir = (select_outputs[-1])  # [-1] is newest dir, after sort
+                assert check_select_output(tmp_config_path, select_output_dir)
             except IndexError:  # because pop from empty list
                 break
 

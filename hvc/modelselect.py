@@ -42,7 +42,7 @@ def select(config_file):
                                   'select_output_' + a_timestamp)
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
-        output_filename = os.path.join(output_dir, 'select_output_' + a_timestamp)
+        output_filename = os.path.join(output_dir, 'summary_model_select_file_created_' + a_timestamp)
 
         if 'models' in todo:
             model_list = todo['models']
