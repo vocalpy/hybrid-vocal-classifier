@@ -3,21 +3,16 @@ predict labels for birdsong syllables,
 using already-trained models specified in config file
 """
 
-# #from standard library
-# import glob
-# import sys
-# import os
-# import shelve
-#
-# import numpy as np
-# import scipy.io as scio # to load matlab files
-# import yaml
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.svm import SVC
-# from sklearn import neighbors
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.model_selection import StratifiedKFold
+#from standard library
+import glob
+import sys
+import os
+
+#from dependencies
+import numpy as np
+import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
+import yaml
 
 #from hvc
 from .utils import load_from_mat
@@ -57,10 +52,16 @@ def predict(config_file):
         for data_dir in todo['data_dirs']:
             os.chdir(data_dir)
             if todo['file_format'] == 'evtaf':
-                songfiles = glob.glob('*.not.mat')
+                songfiles = glob.glob('*.cbin')
             elif todo['file_format'] == 'koumura':
                 songfiles = glob.glob('*.wav')
 
+            for file_num, songfile in enumerate(songfiles_list):
+                ftrs_from_curr_file, labels, ftr_inds = features.extract.from_file(songfile,
+                                                                                   todo['file_format'],
+                                                                                   todo['feature_list'],
+                                                                                   extract_config['spect_params'],
+                                                                                   todo['labelset'])
 
             for ftr_file,notmat in zip(ftr_files,notmats):
                 if type(clf)==neighbors.classification.KNeighborsClassifier:

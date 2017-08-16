@@ -139,27 +139,13 @@ specification for spect_params and segment_params dictionaries
             minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
 
 
-example `extract_config.yml`
-----------------------------
+example `extract.config.yml` files
+----------------------------------
+These are some of the `extract.config.yml` files used for testing, found in
+`hybrid-vocal-classifier//tests//test_data//config.yaml//`:
 
-```YAML
-select:
-  num_replicates: 5
-  num_train_samples:
-    start : 100
-    stop : 400
-    step : 100
-  num_test_samples: 400
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_knn.config.yml
 
-  models:
-    -
-      model: flatwindow
-      hyperparameters:
-        batch size: 32
-        epochs : 200
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_svm.config.yml
 
-  todo_list:
-    - #1
-      feature_file : C:\Data\gy6or6\extract_output_170712_210240\summary_feature_file_created_170712_211433
-      output_dir: C:\Data\gy6or6\
-```
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_flatwindow.config.yml

@@ -13,7 +13,7 @@ from sklearn.externals import joblib
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 
-with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
+with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
 REQUIRED_TODO_LIST_KEYS = set(['model_file','file_format','data_dirs'])
@@ -53,7 +53,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
-        elif key=='data_dirs':
+        elif key == 'data_dirs':
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
@@ -62,7 +62,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                         raise ValueError('directory {} in {} is not a valid directory.'
                                          .format(item,key))
 
-        elif key=='file_format':
+        elif key == 'file_format':
             if type(val) != str:
                 raise ValueError('Value {} for key \'file_format\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -81,7 +81,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
             except:
                 raise IOError('Unable to open {}'.format(val))
 
-        else: # if key is not found in list
+        else:  # if key is not found in list
             raise KeyError('key {} in todo_list_dict is an invalid key'.
                             format(key))
     return validated_todo_list_dict
