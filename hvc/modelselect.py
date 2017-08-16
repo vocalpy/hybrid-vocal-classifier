@@ -6,7 +6,7 @@ using algorithms and other parameters specified in config file
 
 # from standard library
 import os
-from datetime import datetime
+import copy
 
 # from dependencies
 import numpy as np
@@ -16,6 +16,22 @@ from sklearn.externals import joblib
 # from hvc
 from .parseconfig import parse_config
 from .utils import grab_n_samples_by_song, get_acc_by_label, timestamp
+
+
+def determine_model_output_folder_name(model_dict):
+    """generates name for folder that holds model files
+    by appending hyperparameter names and values
+    in alphabetical order of hyperparameter name
+    to name of model/algorithm
+    """
+
+    model_dict_copy = copy.copy(model_dict)
+    return model_dict_copy.pop(
+        'model'
+    ) + ''.join('_{!s}{!r}'.format(key, val)
+                for (key, val) in sorted(
+        model_dict['hyperparameters'].items())
+                )
 
 
 def select(config_file):
@@ -42,7 +58,8 @@ def select(config_file):
                                   'select_output_' + a_timestamp)
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
-        output_filename = os.path.join(output_dir, 'summary_model_select_file_created_' + a_timestamp)
+        output_filename = os.path.join(output_dir,
+                                       'summary_model_select_file_created_' + a_timestamp)
 
         if 'models' in todo:
             model_list = todo['models']
@@ -267,7 +284,9 @@ def select(config_file):
                         flatwin = flatwindow(input_shape=input_shape,
                                              num_label_classes=num_label_classes)
 
-                        model_output_dir = os.path.join(output_dir, model_dict['model'])
+                        model_output_dir = os.path.join(output_dir,
+                                                        determine_model_output_folder_name(
+                                                            model_dict))
                         if not os.path.isdir(model_output_dir):
                             os.makedirs(model_output_dir)
                         model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
@@ -320,7 +339,9 @@ def select(config_file):
                 # save info associated with model such as indices of training samples.
                 # Note this is done outside the if/elif list for switching between
                 # models.
-                model_output_dir = os.path.join(output_dir, model_dict['model'])
+                model_output_dir = os.path.join(output_dir,
+                                                determine_model_output_folder_name(
+                                                    model_dict))
                 if not os.path.isdir(model_output_dir):
                     os.makedirs(model_output_dir)
                 model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
