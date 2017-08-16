@@ -14,9 +14,9 @@ extract:
         - knn
         - svm
       data_dirs:
-        - ..\cbins\gy6or6\032312
-        - ..\cbins\gy6or6\032412
+        - .\test_data\cbins\gy6or6\032312
+        - .\test_data\cbins\gy6or6\032412
 
-      output_dir: C:\Data\gy6or6\
+      output_dir: replace with tmp_output_dir
 
       labelset: iabcdefghjk
