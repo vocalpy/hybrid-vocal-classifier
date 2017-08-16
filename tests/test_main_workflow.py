@@ -148,10 +148,14 @@ def check_select_output(config_path, output_dir):
     # now check for every model in config
     # if there is corresponding folder with model files etc
     select_config = hvc.parse_config(config_path, 'select')
-    select_model_names = [model_dict['model']
-                          for model_dict in select_config['models']]
-    select_model_dirs = next(os.walk(output_dir))[1]  # just dirs
-    assert select_model_names == select_model_dirs
+    select_model_dirs = next(
+        os.walk(
+            output_dir)
+    )[1]  # [1] to return just dir names
+    select_model_folder_names = [hvc.modelselect.determine_model_output_folder_name(
+        model_dict) for model_dict in select_config['models']]
+    for folder_name in select_model_folder_names:
+        assert folder_name in select_model_dirs
 
     return True
 
