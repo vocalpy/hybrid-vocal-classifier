@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/78084425.svg)](https://zenodo.org/badge/latestdoi/78084425)
+
 # hybrid-vocal-classifier
 Python package that automates segmenting and labeling vocalizations. 
 The main application of the package is to birdsong, but the long-term goal is to make it easy to segment and label any vocalization.
