@@ -88,6 +88,234 @@ def write_select_config(summary_ftr_file_dict,
                                                output_dir))
 
 
+def _extract(extract_params):
+    """helper function that loops through data dirs,
+    extracts features, saves feature files, and then
+    makes summary feature file.
+    Put into a separate helper function so that it can
+    also be used by labelpredict.predict
+
+    Parameters
+    ----------
+    data_dirs
+    output_dir
+
+    Returns
+    -------
+
+    """
+
+    for data_dir in extract_params['data_dirs']:
+        print('Changing to data directory: {}'.format(data_dir))
+        os.chdir(extract_params['home_dir'])
+        os.chdir(data_dir)
+
+        if 'features_from_all_files' in locals():
+            # from last time through loop
+            # (need to re-initialize for each directory)
+            del features_from_all_files
+
+        if 'neuralnet_inputs_dict' in locals():
+            del neuralnet_inputs_dict
+
+        if extract_params['file_format'] == 'evtaf':
+            songfiles_list = glob.glob('*.cbin')
+        elif extract_params['file_format'] == 'koumura':
+            songfiles_list = glob.glob('*.wav')
+
+        num_songfiles = len(songfiles_list)
+        all_labels = []
+        song_IDs = []
+        song_ID_counter = 0
+        for file_num, songfile in enumerate(songfiles_list):
+            print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
+            # segment_params defined for todo_list item takes precedence over any default
+            # defined for `extract` config
+            extract_dict = features.extract.from_file(songfile,
+                                                      extract_params['file_format'],
+                                                      extract_params['feature_list'],
+                                                      extract_params['spect_params'],
+                                                      extract_params['labelset'],
+                                                      extract_params['segment_params'])
+
+            if extract_dict is None:
+                # because no labels from labels_to_use were found in songfile
+                continue
+
+            all_labels.extend(extract_dict['labels'])
+            song_IDs.extend([song_ID_counter] * len(extract_dict['labels']))
+            song_ID_counter += 1
+
+            if 'features_arr' in extract_dict:
+                if 'features_from_all_files' in locals():
+                    features_from_all_files = np.concatenate((features_from_all_files,
+                                                              extract_dict['features_arr']),
+                                                             axis=0)
+                else:
+                    features_from_all_files = extract_dict['features_arr']
+
+            if 'neuralnet_inputs_dict' in extract_dict:
+                if 'neuralnet_inputs_all_files' in locals():
+                    for key, val in neuralnet_inputs_all_files.items():
+                        new_val = np.concatenate((neuralnet_inputs_all_files[key],
+                                                  extract_dict['neuralnet_inputs_dict'][key]))
+                        neuralnet_inputs_all_files[key] = new_val
+                else:
+                    neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
+
+        # get dir name without the rest of path so it doesn't have separators in the name
+        # because those can't be in filename
+        just_dir_name = os.getcwd().split(os.path.sep)[-1]
+        feature_file = os.path.join(extract_params['output_dir'],
+                                    'features_from_' + just_dir_name + '_created_' + timestamp())
+        feature_file_dict = {
+            'labels': all_labels,
+            'feature_list': extract_params['feature_list'],
+            'spect_params': extract_params['spect_params'],
+            'labelset': extract_params['labelset'],
+            'file_format': extract_params['file_format'],
+            'bird_ID': extract_params['bird_ID'],
+            'song_IDs': song_IDs
+        }
+
+        if 'features_from_all_files' in locals():
+            feature_file_dict['features'] = features_from_all_files
+            feature_file_dict['features_arr_column_IDs'] = extract_dict['feature_inds']
+
+            if 'feature_list_group_ID' in extract_params:
+                feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']
+                feature_file_dict['feature_group_ID_dict'] = extract_params['feature_group_ID_dict']
+
+        if 'neuralnet_inputs_all_files' in locals():
+            feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
+
+        joblib.dump(feature_file_dict,
+                    feature_file,
+                    compress=3)
+
+    ##########################################################
+    # after looping through all data_dirs for this todo_item #
+    ##########################################################
+    print('making summary file')
+    os.chdir(extract_params['output_dir'])
+    summary_filename = 'summary_feature_file_created_' + timestamp()
+    summary_filename_with_path = os.path.join(extract_params['output_dir'],
+                                              summary_filename)
+    ftr_output_files = glob.glob('*features_from_*')
+    if len(ftr_output_files) > 1:
+        # make a 'summary' data file
+        list_of_output_dicts = []
+        summary_ftr_file_dict = {}
+        for feature_file in ftr_output_files:
+            feature_file_dict = joblib.load(feature_file)
+
+            if 'labels' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['labels'] = feature_file_dict['labels']
+            else:
+                summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] + feature_file_dict['labels']
+
+            if 'spect_params' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
+            else:
+
+                if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
+                    raise ValueError('mismatch between spect_params in {} '
+                                     'and other feature files'.format(feature_file))
+
+            if 'labelset' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['labelset'] = feature_file_dict['labelset']
+            else:
+                if feature_file_dict['labelset'] != summary_ftr_file_dict['labelset']:
+                    raise ValueError('mismatch between labelset in {} '
+                                     'and other feature files'.format(feature_file))
+
+            if 'file_format' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['file_format'] = feature_file_dict['file_format']
+            else:
+                if feature_file_dict['file_format'] != summary_ftr_file_dict['file_format']:
+                    raise ValueError('mismatch between file_format in {} '
+                                     'and other feature files'.format(feature_file))
+
+            if 'bird_ID' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['bird_ID'] = feature_file_dict['bird_ID']
+            else:
+                if feature_file_dict['bird_ID'] != summary_ftr_file_dict['bird_ID']:
+                    raise ValueError('mismatch between bird_ID in {} '
+                                     'and other feature files'.format(feature_file))
+
+            if 'song_IDs' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
+            else:
+                curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
+                tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
+                summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
+
+            if 'feature_list' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
+            else:
+                if feature_file_dict['feature_list'] != summary_ftr_file_dict['feature_list']:
+                    raise ValueError('mismatch between feature_list in {} '
+                                     'and other feature files'.format(feature_file))
+
+            # only if not-neuralnet features were used
+            if 'features' in feature_file_dict:
+                if 'features' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['features'] = feature_file_dict['features']
+                else:
+                    summary_ftr_file_dict['features'] = np.concatenate((summary_ftr_file_dict['features'],
+                                                                        feature_file_dict['features']))
+
+                if 'features_arr_column_IDs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
+                else:
+                    if any(feature_file_dict['features_arr_column_IDs'] !=
+                                   summary_ftr_file_dict['features_arr_column_IDs']):
+                        raise ValueError('mismatch between features_arr_column_IDs in {} '
+                                         'and other feature files'.format(feature_file))
+
+                if 'feature_list_group_ID' in extract_params:
+                    if 'feature_list_group_ID' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
+                    else:
+                        if feature_file_dict['feature_list_group_ID'] != \
+                                summary_ftr_file_dict['feature_list_group_ID']:
+                            raise ValueError('mismatch between feature_list_group_ID in {} '
+                                             'and other feature files'.format(feature_file))
+
+                    if 'feature_group_ID_dict' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['feature_group_ID_dict'] = \
+                            feature_file_dict['feature_group_ID_dict']
+                    else:
+                        if feature_file_dict['feature_group_ID_dict'] != \
+                                summary_ftr_file_dict['feature_group_ID_dict']:
+                            raise ValueError('mismatch between feature_group_ID_dict in {} '
+                                             'and other feature files'.format(feature_file))
+
+            # if extracting inputs for neuralnets
+            if 'neuralnet_inputs' in feature_file_dict:
+                if 'neuralnet_inputs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['neuralnet_inputs'] = \
+                        feature_file_dict['neuralnet_inputs']
+                else:
+                    for key, val in summary_ftr_file_dict['neuralnet_inputs'].items():
+                        newval = np.concatenate((summary_ftr_file_dict['neuralnet_inputs'][key],
+                                                 feature_file_dict['neuralnet_inputs'][key]))
+                        summary_ftr_file_dict['neuralnet_inputs'][key] = newval
+
+        joblib.dump(summary_ftr_file_dict,
+                    summary_filename)
+
+    else:  # if only one feature_file
+        os.rename(ftr_output_files[0],
+                  summary_filename)
+        summary_ftr_file_dict = joblib.load(summary_filename)
+
+    if 'feature_list_group_ID' in summary_ftr_file_dict:
+        write_select_config(summary_ftr_file_dict,
+                            summary_filename,
+                            extract_params['output_dir'])
+
+
 def extract(config_file):
     """main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
@@ -116,229 +344,37 @@ def extract(config_file):
             if 'koumura' not in sys.modules:
                 from . import koumura
 
-        feature_list = todo['feature_list']
-
         output_dir = 'extract_output_' + timestamp()
         output_dir_with_path = os.path.join(todo['output_dir'], output_dir)
         if not os.path.isdir(output_dir_with_path):
             os.mkdir(output_dir_with_path)
 
-        data_dirs = todo['data_dirs']
-        for data_dir in data_dirs:
-            print('Changing to data directory: {}'.format(data_dir))
-            os.chdir(home_dir)
-            os.chdir(data_dir)
+        extract_params = {
+            'bird_ID': todo['bird_ID'],
+            'feature_list': todo['feature_list'],
+            'output_dir': output_dir_with_path,
+            'home_dir': home_dir,
+            'data_dirs': todo['data_dirs'],
+            'labelset': todo['labelset'],
+            'file_format': todo['file_format']
+        }
 
-            if 'features_from_all_files' in locals():
-                # from last time through loop
-                # (need to re-initialize for each directory)
-                del features_from_all_files
+        # segment_params defined for todo_list item takes precedence over any default
+        # defined for `extract` config
+        if 'segment_params' in todo:
+            extract_params['segment_params'] = todo['segment_params']
+        else:
+            extract_params['segment_params'] = extract_config['segment_params']
 
-            if 'neuralnet_inputs_dict' in locals():
-                del neuralnet_inputs_dict
+        if 'spect_params' in todo:
+            extract_params['spect_params'] = todo['spect_params']
+        else:
+            extract_params['spect_params'] = extract_config['spect_params']
 
-            if file_format == 'evtaf':
-                songfiles_list = glob.glob('*.cbin')
-            elif file_format == 'koumura':
-                songfiles_list = glob.glob('*.wav')
+        if 'feature_list_group_ID' in todo:
+            extract_params['feature_list_group_ID'] = todo['feature_list_group_ID']
+            extract_params['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
-            num_songfiles = len(songfiles_list)
-            all_labels = []
-            song_IDs = []
-            song_ID_counter = 0
-            for file_num, songfile in enumerate(songfiles_list):
-                print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
-                # segment_params defined for todo_list item takes precedence over any default
-                # defined for `extract` config
-                if 'segment_params' in todo:
-                    extract_dict = features.extract.from_file(songfile,
-                                                              todo['file_format'],
-                                                              todo['feature_list'],
-                                                              extract_config['spect_params'],
-                                                              todo['labelset'],
-                                                              todo['segment_params'])
-                else:  # if seg params not defined in to-do, revert to default
-                    extract_dict = features.extract.from_file(songfile,
-                                                              todo['file_format'],
-                                                              todo['feature_list'],
-                                                              extract_config['spect_params'],
-                                                              todo['labelset'],
-                                                              extract_config['segment_params'])
-
-                if extract_dict is None:
-                    # because no labels from labels_to_use were found in songfile
-                    continue
-
-                all_labels.extend(extract_dict['labels'])
-                song_IDs.extend([song_ID_counter] * len(extract_dict['labels']))
-                song_ID_counter += 1
-
-                if 'features_arr' in extract_dict:
-                    if 'features_from_all_files' in locals():
-                        features_from_all_files = np.concatenate((features_from_all_files,
-                                                                  extract_dict['features_arr']),
-                                                                 axis=0)
-                    else:
-                        features_from_all_files = extract_dict['features_arr']
-
-                if 'neuralnet_inputs_dict' in extract_dict:
-                    if 'neuralnet_inputs_all_files' in locals():
-                        for key, val in neuralnet_inputs_all_files.items():
-                            new_val = np.concatenate((neuralnet_inputs_all_files[key],
-                                                     extract_dict['neuralnet_inputs_dict'][key]))
-                            neuralnet_inputs_all_files[key] = new_val
-                    else:
-                        neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
-
-            # get dir name without the rest of path so it doesn't have separators in the name
-            # because those can't be in filename
-            just_dir_name = os.getcwd().split(os.path.sep)[-1]
-            feature_file = os.path.join(output_dir_with_path,
-                                        'features_from_' + just_dir_name + '_created_' + timestamp())
-            feature_file_dict = {
-                'labels': all_labels,
-                'feature_list': todo['feature_list'],
-                'spect_params': extract_config['spect_params'],
-                'labelset': todo['labelset'],
-                'file_format': todo['file_format'],
-                'bird_ID': todo['bird_ID'],
-                'song_IDs': song_IDs
-            }
-
-            if 'features_from_all_files' in locals():
-                feature_file_dict['features'] = features_from_all_files
-                feature_file_dict['features_arr_column_IDs'] = extract_dict['feature_inds']
-
-                if 'feature_list_group_ID' in todo:
-                    feature_file_dict['feature_list_group_ID'] = todo['feature_list_group_ID']
-                    feature_file_dict['feature_group_ID_dict'] = todo['feature_group_ID_dict']
-
-            if 'neuralnet_inputs_all_files' in locals():
-                feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
-
-            joblib.dump(feature_file_dict,
-                        feature_file,
-                        compress=3)
-
-        ##########################################################
-        # after looping through all data_dirs for this todo_item #
-        ##########################################################
-        print('making summary file')
-        os.chdir(output_dir_with_path)
-        summary_filename = 'summary_feature_file_created_' + timestamp()
-        summary_filename_with_path = os.path.join(output_dir_with_path, summary_filename)
-        ftr_output_files = glob.glob('*features_from_*')
-        if len(ftr_output_files) > 1:
-            # make a 'summary' data file
-            list_of_output_dicts = []
-            summary_ftr_file_dict = {}
-            for feature_file in ftr_output_files:
-                feature_file_dict = joblib.load(feature_file)
-
-                if 'labels' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['labels'] = feature_file_dict['labels']
-                else:
-                    summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] + feature_file_dict['labels']
-
-                if 'spect_params' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
-                else:
-
-                    if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
-                        raise ValueError('mismatch between spect_params in {} '
-                                         'and other feature files'.format(feature_file))
-
-                if 'labelset' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['labelset'] = feature_file_dict['labelset']
-                else:
-                    if feature_file_dict['labelset'] != summary_ftr_file_dict['labelset']:
-                        raise ValueError('mismatch between labelset in {} '
-                                         'and other feature files'.format(feature_file))
-
-                if 'file_format' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['file_format'] = feature_file_dict['file_format']
-                else:
-                    if feature_file_dict['file_format'] != summary_ftr_file_dict['file_format']:
-                        raise ValueError('mismatch between file_format in {} '
-                                         'and other feature files'.format(feature_file))
-
-                if 'bird_ID' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['bird_ID'] = feature_file_dict['bird_ID']
-                else:
-                    if feature_file_dict['bird_ID'] != summary_ftr_file_dict['bird_ID']:
-                        raise ValueError('mismatch between bird_ID in {} '
-                                         'and other feature files'.format(feature_file))
-
-                if 'song_IDs' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
-                else:
-                    curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
-                    tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
-                    summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
-
-                if 'feature_list' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
-                else:
-                    if feature_file_dict['feature_list'] != summary_ftr_file_dict['feature_list']:
-                        raise ValueError('mismatch between feature_list in {} '
-                                         'and other feature files'.format(feature_file))
-
-                # only if not-neuralnet features were used
-                if 'features' in feature_file_dict:
-                    if 'features' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['features'] = feature_file_dict['features']
-                    else:
-                        summary_ftr_file_dict['features'] = np.concatenate((summary_ftr_file_dict['features'],
-                                                                         feature_file_dict['features']))
-
-                    if 'features_arr_column_IDs' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
-                    else:
-                        if any(feature_file_dict['features_arr_column_IDs'] !=
-                                       summary_ftr_file_dict['features_arr_column_IDs']):
-                            raise ValueError('mismatch between features_arr_column_IDs in {} '
-                                             'and other feature files'.format(feature_file))
-
-                    if 'feature_list_group_ID' in todo:
-                        if 'feature_list_group_ID' not in summary_ftr_file_dict:
-                            summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
-                        else:
-                            if feature_file_dict['feature_list_group_ID'] != \
-                                           summary_ftr_file_dict['feature_list_group_ID']:
-                                raise ValueError('mismatch between feature_list_group_ID in {} '
-                                                 'and other feature files'.format(feature_file))
-
-                        if 'feature_group_ID_dict' not in summary_ftr_file_dict:
-                            summary_ftr_file_dict['feature_group_ID_dict'] = \
-                                feature_file_dict['feature_group_ID_dict']
-                        else:
-                            if feature_file_dict['feature_group_ID_dict'] != \
-                                    summary_ftr_file_dict['feature_group_ID_dict']:
-                                raise ValueError('mismatch between feature_group_ID_dict in {} '
-                                                 'and other feature files'.format(feature_file))
-
-                # if extracting inputs for neuralnets
-                if 'neuralnet_inputs' in feature_file_dict:
-                    if 'neuralnet_inputs' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['neuralnet_inputs'] = \
-                        feature_file_dict['neuralnet_inputs']
-                    else:
-                        for key, val in summary_ftr_file_dict['neuralnet_inputs'].items():
-                            newval = np.concatenate((summary_ftr_file_dict['neuralnet_inputs'][key],
-                                                     feature_file_dict['neuralnet_inputs'][key]))
-                            summary_ftr_file_dict['neuralnet_inputs'][key] = newval
-
-            joblib.dump(summary_ftr_file_dict,
-                        summary_filename)
-
-        else:  # if only one feature_file
-            os.rename(ftr_output_files[0],
-                      summary_filename)
-            summary_ftr_file_dict = joblib.load(summary_filename)
-
-        if 'feature_list_group_ID' in summary_ftr_file_dict:
-            write_select_config(summary_ftr_file_dict,
-                                summary_filename,
-                                todo['output_dir'])
+        _extract(extract_params)
 
         os.chdir(home_dir)

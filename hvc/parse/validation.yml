@@ -2,14 +2,14 @@ valid_file_formats:
   - evtaf
   - koumura
 
-required_todo_list_keys:
+required_extract_todo_list_keys:
   - bird_ID
   - file_format
   - data_dirs
   - output_dir
   - labelset
 
-optional_todo_list_keys:
+optional_extract_todo_list_keys:
   - spect_params
   - segment_params
   - feature_group
@@ -46,3 +46,12 @@ hyperparameters:
   flatwindow:
     epochs: int
     batch size: int
+
+required_predict_todo_list_keys:
+  - file_format
+  - data_dirs
+  - output_dir
+  - model_file
+
+optional_predict_todo_list_keys:
+  - bird_ID
