@@ -15,6 +15,7 @@ from sklearn.externals import joblib
 import yaml
 
 #from hvc
+from .parseconfig import parse_config
 from .utils import load_from_mat
 
 # used in loop below, see there for explanation
@@ -25,6 +26,7 @@ SHOULD_BE_DOUBLE = ['Fs',
                     'onsets',
                     'sm_win',
                     'threshold']
+
 
 def predict(config_file):
     """main function that does prediction
@@ -63,10 +65,10 @@ def predict(config_file):
                                                                                    extract_config['spect_params'],
                                                                                    todo['labelset'])
 
-            for ftr_file,notmat in zip(ftr_files,notmats):
-                if type(clf)==neighbors.classification.KNeighborsClassifier:
+            for ftr_file, notmat in zip(ftr_files,notmats):
+                if type(clf) == neighbors.classification.KNeighborsClassifier:
                     samples = load_from_mat(ftr_file,'knn','classify')
-                elif type(clf)==SVC:
+                elif type(clf) == SVC:
                     samples = load_from_mat(ftr_file,'svm','classify')
                 samples_scaled = scaler.transform(samples)
                 pred_labels = clf.predict(samples_scaled)

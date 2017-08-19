@@ -16,8 +16,9 @@ dir_path = os.path.dirname(path)
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
-REQUIRED_TODO_LIST_KEYS = set(['model_file','file_format','data_dirs'])
-OPTIONAL_TODO_LIST_KEYS = set(['bird_ID'])
+REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
+OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
+
 
 def _validate_todo_list_dict(todo_list_dict,index):
     """
@@ -81,26 +82,32 @@ def _validate_todo_list_dict(todo_list_dict,index):
             except:
                 raise IOError('Unable to open {}'.format(val))
 
+        elif key == 'output_dir':
+            if type(val) != str:
+                raise ValueError('output_dirs should be a string but it parsed as a {}'
+                                 .format(type(val)))
+
         else:  # if key is not found in list
-            raise KeyError('key {} in todo_list_dict is an invalid key'.
+            raise KeyError('key {} found in todo_list_dict but not validated'.
                             format(key))
     return validated_todo_list_dict
 
-def validate_yaml(select_config_yaml):
+
+def validate_yaml(predict_config_yaml):
     """
     validates config from YAML file
 
     Parameters
     ----------
-    select_config_yaml : dictionary, config as loaded with YAML module
+    predict_config_yaml : dictionary, config as loaded with YAML module
 
     Returns
     -------
-    select_config_dict : dictionary, after validation of all keys
+    predict_config_dict : dictionary, after validation of all keys
     """
 
-    validated_select_config = copy.deepcopy(select_config_yaml)
-    for key, val in select_config_yaml.items():
+    validated_predict_config = copy.deepcopy(predict_config_yaml)
+    for key, val in predict_config_yaml.items():
 
         if key == 'todo_list':
             if type(val) != list:
@@ -114,10 +121,10 @@ def validate_yaml(select_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item, index)
-            validated_select_config['todo_list'] = val
+            validated_predict_config['todo_list'] = val
 
         else:  # if key is not found in list
-            raise KeyError('key {} in \'select\' is an invalid key'.
+            raise KeyError('key {} in \'predict\' is an invalid key'.
                            format(key))
 
-    return validated_select_config
+    return validated_predict_config

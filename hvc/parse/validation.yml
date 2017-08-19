@@ -48,8 +48,10 @@ hyperparameters:
     batch size: int
 
 required_predict_todo_list_keys:
-  - bird_ID
   - file_format
   - data_dirs
   - output_dir
   - model_file
+
+optional_predict_todo_list_keys:
+  - bird_ID
