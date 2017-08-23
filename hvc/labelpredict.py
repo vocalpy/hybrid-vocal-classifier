@@ -9,7 +9,7 @@ import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
 
 # from hvc
-import hvc.featureextract._extract
+import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import load_from_mat
 
