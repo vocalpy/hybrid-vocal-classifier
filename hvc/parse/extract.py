@@ -316,7 +316,9 @@ def _validate_todo_list_dict(todo_list_dict, index):
     todo_list_dict : dictionary after validation, may have new keys added if necessary
     """
 
-    required_todo_list_keys = set(validate_dict['required_todo_list_keys'])
+    required_todo_list_keys = set(validate_dict[
+                                      'required_extract_todo_list_keys'])
+
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
     if not set(todo_list_dict.keys()) >= required_todo_list_keys:
@@ -326,7 +328,7 @@ def _validate_todo_list_dict(todo_list_dict, index):
     else:
         additional_keys = set(todo_list_dict.keys()) - required_todo_list_keys
         for extra_key in additional_keys:
-            if extra_key not in validate_dict['optional_todo_list_keys']:
+            if extra_key not in validate_dict['optional_extract_todo_list_keys']:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
                                .format(extra_key, index))
 

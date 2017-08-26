@@ -3,7 +3,6 @@ import warnings
 import numpy as np
 from scipy.io import wavfile
 import scipy.signal
-from scipy.signal import slepian  # AKA DPSS, window used for FFT
 from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
@@ -16,6 +15,54 @@ class WindowError(Exception):
 class SegmentParametersMismatchError(Exception):
     pass
 
+
+def butter_bandpass(freq_cutoffs, samp_freq, order=8):
+    """returns filter coefficients for Butterworth bandpass filter
+
+    Parameters
+    ----------
+    freq_cutoffs: list
+        low and high frequencies of pass band, e.g. [500, 10000]
+    samp_freq: int
+        sampling frequency
+    order: int
+        of filter, default is 8
+
+    Returns
+    -------
+    b, a: ndarray, ndarray
+    """
+
+    nyquist = 0.5 * samp_freq
+    freq_cutoffs = np.asarray(freq_cutoffs) / nyquist
+    b, a = scipy.signal.butter(order, freq_cutoffs, btype='bandpass')
+    return b, a
+
+
+def butter_bandpass_filter(data, samp_freq, freq_cutoffs, order=8):
+    """applies Butterworth bandpass filter to data
+
+    Parameters
+    ----------
+    data: ndarray
+        1-d array of raw audio data
+    samp_freq: int
+        sampling frequency
+    freq_cutoffs: list
+        low and high frequencies of pass band, e.g. [500, 10000]
+    order: int
+        of filter, default is 8
+
+    Returns
+    -------
+    data: ndarray
+        data after filtering
+    """
+
+    b, a = butter_bandpass(freq_cutoffs, samp_freq, order=order)
+    return scipy.signal.lfilter(b, a, data)
+
+
 class Spectrogram:
     """class for making spectrograms.
     Abstracts out function calls so user just has to put spectrogram parameters
@@ -26,7 +73,7 @@ class Spectrogram:
                  ref=None,
                  nperseg=None,
                  noverlap=None,
-                 freq_cutoffs=None,
+                 freq_cutoffs=[500, 10000],
                  window=None,
                  filter_func=None,
                  spect_func=None,
@@ -53,7 +100,7 @@ class Spectrogram:
             limits of frequency band to keep, e.g. [1000,8000]
             Spectrogram.make keeps the band:
                 freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
-            Default is None.
+            Default is [500, 10000].
         window : str
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
@@ -66,6 +113,7 @@ class Spectrogram:
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
             Default is None.
+            Note this is different from filters applied to isolate frequency band.
         spect_func : str
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
@@ -115,7 +163,8 @@ class Spectrogram:
                 elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
-                    self.window = slepian(self.nperseg, 4 / self.nperseg) #dpss
+                    self.window = scipy.signal.slepian(self.nperseg,
+                                                       4 / self.nperseg)  #dpss
                     self.freqCutoffs = [1000, 8000]
                     self.filterFunc = None
                     self.spectFunc = 'scipy'
@@ -220,6 +269,13 @@ class Spectrogram:
         time_bins : 1-d numpy array
         """
 
+        #below, I set freq_bins to >= freq_cutoffs
+        #so that Koumura default of [1000,8000] returns 112 freq. bins
+        if self.freqCutoffs is not None:
+            raw_audio = butter_bandpass_filter(raw_audio,
+                                               samp_freq,
+                                               self.freqCutoffs)
+
         if self.filterFunc == 'diff':
             raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
@@ -275,13 +331,6 @@ class Spectrogram:
         if self.logTransformSpect:
             spect = np.log10(spect)  # log transform to increase range
 
-        #below, I set freq_bins to >= freq_cutoffs
-        #so that Koumura default of [1000,8000] returns 112 freq. bins
-        if self.freqCutoffs is not None:
-            f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
-                                (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
-            freq_bins = freq_bins[f_inds]
-            spect = spect[f_inds, :]
 
         #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
         spect = np.flipud(spect)
