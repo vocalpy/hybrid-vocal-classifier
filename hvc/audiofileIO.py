@@ -79,7 +79,7 @@ class Spectrogram:
                  ref=None,
                  nperseg=None,
                  noverlap=None,
-                 freq_cutoffs=[500, 10000],
+                 freq_cutoffs=None,
                  window=None,
                  filter_func=None,
                  spect_func=None,
@@ -166,11 +166,12 @@ class Spectrogram:
                 if ref == 'tachibana':
                     self.nperseg = 256
                     self.noverlap = 192
-                    self.window = np.hanning(self.nperseg) #Hann window
-                    self.freqCutoffs = None
+                    self.window = np.hanning(self.nperseg)  # Hann window
+                    self.freqCutoffs = [0, 15000]  # basically no bandpass, as in Tachibana
                     self.filterFunc = 'diff'
                     self.spectFunc = 'mpl'
                     self.logTransformSpect = False  # see tachibana feature docs
+                    self.thresh = None
                     self.ref = ref
                 elif ref == 'koumura':
                     self.nperseg = 512
@@ -181,6 +182,7 @@ class Spectrogram:
                     self.filterFunc = None
                     self.spectFunc = 'scipy'
                     self.logTransformSpect = True
+                    self.thresh = None
                     self.ref = ref
                 else:
                     raise ValueError('{} is not a valid value for \'ref\' argument. '
@@ -224,7 +226,10 @@ class Spectrogram:
                     elif window is None:
                         self.window = None
 
-            if type(freq_cutoffs) != list:
+            if freq_cutoffs is None:
+                # switch to default
+                self.freqCutoffs = [500, 10000]
+            elif type(freq_cutoffs) != list:
                 raise TypeError('type of freq_cutoffs must be list, but is {}'.
                                  format(type(freq_cutoffs)))
             elif len(freq_cutoffs) != 2:
@@ -353,7 +358,7 @@ class Spectrogram:
         if self.thresh is not None:
             spect[spect < self.thresh] = self.thresh
 
-        return spect
+        return spect, freq_bins, time_bins
 
 
 def compute_amp(spect):
@@ -728,6 +733,7 @@ class Song:
         all_syls = []
 
         spect_maker = Spectrogram(**spect_params)
+        # import pdb;pdb.set_trace()
 
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
