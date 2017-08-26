@@ -31,6 +31,9 @@ def butter_bandpass(freq_cutoffs, samp_freq, order=8):
     Returns
     -------
     b, a: ndarray, ndarray
+
+    adopted from the SciPy cookbook:
+    http://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
     """
 
     nyquist = 0.5 * samp_freq
@@ -57,6 +60,9 @@ def butter_bandpass_filter(data, samp_freq, freq_cutoffs, order=8):
     -------
     data: ndarray
         data after filtering
+
+    adopted from the SciPy cookbook:
+    http://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
     """
 
     b, a = butter_bandpass(freq_cutoffs, samp_freq, order=order)
