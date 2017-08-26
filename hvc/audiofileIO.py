@@ -353,6 +353,8 @@ class Spectrogram:
         if self.thresh is not None:
             spect[spect < self.thresh] = self.thresh
 
+        return spect
+
 
 def compute_amp(spect):
     """
