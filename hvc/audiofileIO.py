@@ -83,7 +83,8 @@ class Spectrogram:
                  window=None,
                  filter_func=None,
                  spect_func=None,
-                 log_transform_spect=True):
+                 log_transform_spect=True,
+                 thresh=-4.0):
         """Spectrogram.__init__ function
         
         Parameters
@@ -129,6 +130,11 @@ class Spectrogram:
         log_transform_spect : bool
             if True, applies np.log10 to spectrogram to increase range.
             Default is True.
+        thresh : float
+            threshold for spectrogram.
+            All values below thresh are set to thresh;
+            increases contrast when visualizing spectrogram with a colormap.
+            Default is -4 (assumes log_transform_spect==True)
 
         References
         ----------
@@ -256,6 +262,13 @@ class Spectrogram:
             else:
                 self.logTransformSpect = log_transform_spect
 
+            if type(thresh) is not float:
+                raise ValueError('Value for thresh is {}, but'
+                                 ' it must be float.'
+                                 .format(type(thresh)))
+            else:
+                self.thresh = thresh
+
     def make(self,
              raw_audio,
              samp_freq):
@@ -337,11 +350,8 @@ class Spectrogram:
         if self.logTransformSpect:
             spect = np.log10(spect)  # log transform to increase range
 
-
-        #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
-        spect = np.flipud(spect)
-        freq_bins = np.flipud(freq_bins)
-        return spect, freq_bins, time_bins
+        if self.thresh is not None:
+            spect[spect < self.thresh] = self.thresh
 
 
 def compute_amp(spect):
