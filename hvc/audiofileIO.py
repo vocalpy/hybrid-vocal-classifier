@@ -239,22 +239,22 @@ class Spectrogram:
             else:
                 self.filterFunc = filter_func
 
-                if type(spect_func) != str:
-                    raise TypeError('type of spect_func must be str, but is {}'.
-                                     format(type(spect_func)))
-                elif spect_func not in ['scipy','mpl']:
-                    raise ValueError('string \'{}\' is not valid for filter_func. '
-                                     'Valid values are: \'scipy\' or \'mpl\'.'.
-                                     format(spect_func))
-                else:
-                    self.spectFunc = spect_func
+            if type(spect_func) != str:
+                raise TypeError('type of spect_func must be str, but is {}'.
+                                 format(type(spect_func)))
+            elif spect_func not in ['scipy','mpl']:
+                raise ValueError('string \'{}\' is not valid for filter_func. '
+                                 'Valid values are: \'scipy\' or \'mpl\'.'.
+                                 format(spect_func))
+            else:
+                self.spectFunc = spect_func
 
-                if type(log_transform_spect) is not bool:
-                    raise ValueError('Value for log_transform_spect is {}, but'
-                                     ' it must be bool.'
-                                     .format(type(log_transform_spect)))
-                else:
-                    self.logTransformSpect = log_transform_spect
+            if type(log_transform_spect) is not bool:
+                raise ValueError('Value for log_transform_spect is {}, but'
+                                 ' it must be bool.'
+                                 .format(type(log_transform_spect)))
+            else:
+                self.logTransformSpect = log_transform_spect
 
     def make(self,
              raw_audio,
