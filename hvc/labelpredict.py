@@ -73,11 +73,10 @@ def predict(config_file):
         extract_params['segment_params'] = model_feature_file['segment_params']
         extract_params['spect_params'] = model_feature_file['spect_params']
 
-        hvc.featureextract._extract(extract_params)
+        hvc.featureextract._extract(extract_params, make_summary_file=False)
 
-        os.chdir(todo['output_dir'])
-
-        ftr_files = glob.glob('*feature_files')
+        os.chdir(output_dir_with_path)
+        ftr_files = glob.glob('features_from*')
         clf = model_file['clf']
         scaler = model_file['scaler']
 
@@ -90,8 +89,6 @@ def predict(config_file):
         #         from sklearn.svm import SVC
         # elif clf_type == flatwindow
 
-        import pdb;pdb.set_trace()
-
         for ftr_file in ftr_files:
             ftr_file_dict = joblib.load(ftr_file)
             features = ftr_file_dict['features']
@@ -101,8 +98,10 @@ def predict(config_file):
                 pass
             elif type(clf) == SVC:
                 pass
-            samples_scaled = scaler.transform(samples)
-            pred_labels = clf.predict(samples_scaled)
+            features_scaled = scaler.transform(features)
+            pred_labels = clf.predict(features_scaled)
+            import pdb;
+            pdb.set_trace()
             #chr() to convert back to character from uint32
             pred_labels = [chr(val) for val in pred_labels]
             # convert into one long string, what evsonganalty expects
