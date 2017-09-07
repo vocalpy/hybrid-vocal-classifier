@@ -88,7 +88,7 @@ def write_select_config(summary_ftr_file_dict,
                                                output_dir))
 
 
-def _extract(extract_params):
+def _extract(extract_params, make_summary_file=True):
     """helper function that loops through data dirs,
     extracts features, saves feature files, and then
     makes summary feature file.
@@ -212,130 +212,132 @@ def _extract(extract_params):
     ##########################################################
     # after looping through all data_dirs for this todo_item #
     ##########################################################
-    print('making summary file')
-    os.chdir(extract_params['output_dir'])
-    summary_filename = 'summary_feature_file_created_' + timestamp()
-    summary_filename_with_path = os.path.join(extract_params['output_dir'],
-                                              summary_filename)
-    ftr_output_files = glob.glob('*features_from_*')
-    if len(ftr_output_files) > 1:
-        # make a 'summary' data file
-        list_of_output_dicts = []
-        summary_ftr_file_dict = {}
-        for feature_file in ftr_output_files:
-            feature_file_dict = joblib.load(feature_file)
+    if make_summary_file:
+        print('making summary file')
+        os.chdir(extract_params['output_dir'])
+        summary_filename = 'summary_feature_file_created_' + timestamp()
+        summary_filename_with_path = os.path.join(extract_params['output_dir'],
+                                                  summary_filename)
+        ftr_output_files = glob.glob('*features_from_*')
+        if len(ftr_output_files) > 1:
+            # make a 'summary' data file
+            list_of_output_dicts = []
+            summary_ftr_file_dict = {}
+            for feature_file in ftr_output_files:
+                feature_file_dict = joblib.load(feature_file)
 
-            if 'labels' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['labels'] = feature_file_dict['labels']
-            else:
-                summary_ftr_file_dict['labels'] = summary_ftr_file_dict['labels'] + feature_file_dict['labels']
-
-            if 'spect_params' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
-            else:
-                if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
-                    raise ValueError('mismatch between spect_params in {} '
-                                     'and other feature files'.format(feature_file))
-
-            if 'segment_params' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['segment_params'] = feature_file_dict['segment_params']
-            else:
-                if feature_file_dict['segment_params'] != summary_ftr_file_dict['segment_params']:
-                    raise ValueError('mismatch between segment_params in {} '
-                                     'and other feature files'.format(feature_file))
-
-            if 'labelset' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['labelset'] = feature_file_dict['labelset']
-            else:
-                if feature_file_dict['labelset'] != summary_ftr_file_dict['labelset']:
-                    raise ValueError('mismatch between labelset in {} '
-                                     'and other feature files'.format(feature_file))
-
-            if 'file_format' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['file_format'] = feature_file_dict['file_format']
-            else:
-                if feature_file_dict['file_format'] != summary_ftr_file_dict['file_format']:
-                    raise ValueError('mismatch between file_format in {} '
-                                     'and other feature files'.format(feature_file))
-
-            if 'bird_ID' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['bird_ID'] = feature_file_dict['bird_ID']
-            else:
-                if feature_file_dict['bird_ID'] != summary_ftr_file_dict['bird_ID']:
-                    raise ValueError('mismatch between bird_ID in {} '
-                                     'and other feature files'.format(feature_file))
-
-            if 'song_IDs' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
-            else:
-                curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
-                tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
-                summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
-
-            if 'feature_list' not in summary_ftr_file_dict:
-                summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
-            else:
-                if feature_file_dict['feature_list'] != summary_ftr_file_dict['feature_list']:
-                    raise ValueError('mismatch between feature_list in {} '
-                                     'and other feature files'.format(feature_file))
-
-            # only if not-neuralnet features were used
-            if 'features' in feature_file_dict:
-                if 'features' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['features'] = feature_file_dict['features']
+                if 'labels' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['labels'] = feature_file_dict['labels']
                 else:
-                    summary_ftr_file_dict['features'] = np.concatenate((summary_ftr_file_dict['features'],
-                                                                        feature_file_dict['features']))
+                    summary_ftr_file_dict['labels'] = \
+                        summary_ftr_file_dict['labels'] + feature_file_dict['labels']
 
-                if 'features_arr_column_IDs' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
+                if 'spect_params' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
                 else:
-                    if any(feature_file_dict['features_arr_column_IDs'] !=
-                                   summary_ftr_file_dict['features_arr_column_IDs']):
-                        raise ValueError('mismatch between features_arr_column_IDs in {} '
+                    if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
+                        raise ValueError('mismatch between spect_params in {} '
                                          'and other feature files'.format(feature_file))
 
-                if 'feature_list_group_ID' in extract_params:
-                    if 'feature_list_group_ID' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
-                    else:
-                        if feature_file_dict['feature_list_group_ID'] != \
-                                summary_ftr_file_dict['feature_list_group_ID']:
-                            raise ValueError('mismatch between feature_list_group_ID in {} '
-                                             'and other feature files'.format(feature_file))
-
-                    if 'feature_group_ID_dict' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['feature_group_ID_dict'] = \
-                            feature_file_dict['feature_group_ID_dict']
-                    else:
-                        if feature_file_dict['feature_group_ID_dict'] != \
-                                summary_ftr_file_dict['feature_group_ID_dict']:
-                            raise ValueError('mismatch between feature_group_ID_dict in {} '
-                                             'and other feature files'.format(feature_file))
-
-            # if extracting inputs for neuralnets
-            if 'neuralnet_inputs' in feature_file_dict:
-                if 'neuralnet_inputs' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['neuralnet_inputs'] = \
-                        feature_file_dict['neuralnet_inputs']
+                if 'segment_params' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['segment_params'] = feature_file_dict['segment_params']
                 else:
-                    for key, val in summary_ftr_file_dict['neuralnet_inputs'].items():
-                        newval = np.concatenate((summary_ftr_file_dict['neuralnet_inputs'][key],
-                                                 feature_file_dict['neuralnet_inputs'][key]))
-                        summary_ftr_file_dict['neuralnet_inputs'][key] = newval
+                    if feature_file_dict['segment_params'] != summary_ftr_file_dict['segment_params']:
+                        raise ValueError('mismatch between segment_params in {} '
+                                         'and other feature files'.format(feature_file))
 
-        joblib.dump(summary_ftr_file_dict,
-                    summary_filename)
+                if 'labelset' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['labelset'] = feature_file_dict['labelset']
+                else:
+                    if feature_file_dict['labelset'] != summary_ftr_file_dict['labelset']:
+                        raise ValueError('mismatch between labelset in {} '
+                                         'and other feature files'.format(feature_file))
 
-    else:  # if only one feature_file
-        os.rename(ftr_output_files[0],
-                  summary_filename)
-        summary_ftr_file_dict = joblib.load(summary_filename)
+                if 'file_format' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['file_format'] = feature_file_dict['file_format']
+                else:
+                    if feature_file_dict['file_format'] != summary_ftr_file_dict['file_format']:
+                        raise ValueError('mismatch between file_format in {} '
+                                         'and other feature files'.format(feature_file))
 
-    if 'feature_list_group_ID' in summary_ftr_file_dict:
-        write_select_config(summary_ftr_file_dict,
-                            summary_filename,
-                            extract_params['output_dir'])
+                if 'bird_ID' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['bird_ID'] = feature_file_dict['bird_ID']
+                else:
+                    if feature_file_dict['bird_ID'] != summary_ftr_file_dict['bird_ID']:
+                        raise ValueError('mismatch between bird_ID in {} '
+                                         'and other feature files'.format(feature_file))
+
+                if 'song_IDs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
+                else:
+                    curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
+                    tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
+                    summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
+
+                if 'feature_list' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
+                else:
+                    if feature_file_dict['feature_list'] != summary_ftr_file_dict['feature_list']:
+                        raise ValueError('mismatch between feature_list in {} '
+                                         'and other feature files'.format(feature_file))
+
+                # only if not-neuralnet features were used
+                if 'features' in feature_file_dict:
+                    if 'features' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['features'] = feature_file_dict['features']
+                    else:
+                        summary_ftr_file_dict['features'] = np.concatenate((summary_ftr_file_dict['features'],
+                                                                            feature_file_dict['features']))
+
+                    if 'features_arr_column_IDs' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['features_arr_column_IDs'] = feature_file_dict['features_arr_column_IDs']
+                    else:
+                        if any(feature_file_dict['features_arr_column_IDs'] !=
+                                       summary_ftr_file_dict['features_arr_column_IDs']):
+                            raise ValueError('mismatch between features_arr_column_IDs in {} '
+                                             'and other feature files'.format(feature_file))
+
+                    if 'feature_list_group_ID' in extract_params:
+                        if 'feature_list_group_ID' not in summary_ftr_file_dict:
+                            summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict['feature_list_group_ID']
+                        else:
+                            if feature_file_dict['feature_list_group_ID'] != \
+                                    summary_ftr_file_dict['feature_list_group_ID']:
+                                raise ValueError('mismatch between feature_list_group_ID in {} '
+                                                 'and other feature files'.format(feature_file))
+
+                        if 'feature_group_ID_dict' not in summary_ftr_file_dict:
+                            summary_ftr_file_dict['feature_group_ID_dict'] = \
+                                feature_file_dict['feature_group_ID_dict']
+                        else:
+                            if feature_file_dict['feature_group_ID_dict'] != \
+                                    summary_ftr_file_dict['feature_group_ID_dict']:
+                                raise ValueError('mismatch between feature_group_ID_dict in {} '
+                                                 'and other feature files'.format(feature_file))
+
+                # if extracting inputs for neuralnets
+                if 'neuralnet_inputs' in feature_file_dict:
+                    if 'neuralnet_inputs' not in summary_ftr_file_dict:
+                        summary_ftr_file_dict['neuralnet_inputs'] = \
+                            feature_file_dict['neuralnet_inputs']
+                    else:
+                        for key, val in summary_ftr_file_dict['neuralnet_inputs'].items():
+                            newval = np.concatenate((summary_ftr_file_dict['neuralnet_inputs'][key],
+                                                     feature_file_dict['neuralnet_inputs'][key]))
+                            summary_ftr_file_dict['neuralnet_inputs'][key] = newval
+
+            joblib.dump(summary_ftr_file_dict,
+                        summary_filename)
+
+        else:  # if only one feature_file
+            os.rename(ftr_output_files[0],
+                      summary_filename)
+            summary_ftr_file_dict = joblib.load(summary_filename)
+
+        if 'feature_list_group_ID' in summary_ftr_file_dict:
+            write_select_config(summary_ftr_file_dict,
+                                summary_filename,
+                                extract_params['output_dir'])
 
 
 def extract(config_file):
