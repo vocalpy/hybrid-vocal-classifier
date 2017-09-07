@@ -187,6 +187,7 @@ def _extract(extract_params):
             'labels': all_labels,
             'feature_list': extract_params['feature_list'],
             'spect_params': extract_params['spect_params'],
+            'segment_params': extract_params['segment_params'],
             'labelset': extract_params['labelset'],
             'file_format': extract_params['file_format'],
             'bird_ID': extract_params['bird_ID'],
@@ -232,9 +233,15 @@ def _extract(extract_params):
             if 'spect_params' not in summary_ftr_file_dict:
                 summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']
             else:
-
                 if feature_file_dict['spect_params'] != summary_ftr_file_dict['spect_params']:
                     raise ValueError('mismatch between spect_params in {} '
+                                     'and other feature files'.format(feature_file))
+
+            if 'segment_params' not in summary_ftr_file_dict:
+                summary_ftr_file_dict['segment_params'] = feature_file_dict['segment_params']
+            else:
+                if feature_file_dict['segment_params'] != summary_ftr_file_dict['segment_params']:
+                    raise ValueError('mismatch between segment_params in {} '
                                      'and other feature files'.format(feature_file))
 
             if 'labelset' not in summary_ftr_file_dict:

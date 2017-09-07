@@ -3,15 +3,18 @@ predict labels for birdsong syllables,
 using already-trained models specified in config file
 """
 
+import os
+
 # from dependencies
 import numpy as np
 import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
+# from sklearn import neighbors, SVC
 
 # from hvc
 import hvc.featureextract
 from .parseconfig import parse_config
-from .utils import load_from_mat
+from .utils import timestamp
 
 # used in loop below, see there for explanation
 SHOULD_BE_DOUBLE = ['Fs',
@@ -21,6 +24,12 @@ SHOULD_BE_DOUBLE = ['Fs',
                     'onsets',
                     'sm_win',
                     'threshold']
+
+model_str_rep_map = {
+    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>": 'knn',
+    "svm thingy": 'svm',
+    "keras thingy": 'flatwindow'
+}
 
 
 def predict(config_file):
@@ -40,11 +49,15 @@ def predict(config_file):
     home_dir = os.getcwd()
 
     for todo in predict_config['todo_list']:
+
+        output_dir = 'predict_output_' + timestamp()
+        output_dir_with_path = os.path.join(todo['output_dir'], output_dir)
+        if not os.path.isdir(output_dir_with_path):
+            os.mkdir(output_dir_with_path)
+
         model_file = joblib.load(todo['model_file'])
 
-        #need to get full directory path
-        clf = model_file['model']
-        scaler = model_file['scaler']
+        import pdb;pdb.set_trace()
 
         extract_params = {
             'bird_ID': todo['bird_ID'],
@@ -52,7 +65,7 @@ def predict(config_file):
             'output_dir': output_dir_with_path,
             'home_dir': home_dir,
             'data_dirs': todo['data_dirs'],
-            'labelset': todo['labelset'],
+            'labelset': 'all',
             'file_format': todo['file_format']
         }
 
@@ -70,11 +83,32 @@ def predict(config_file):
 
         hvc.featureextract._extract(extract_params)
 
-        for ftr_file, notmat in zip(ftr_files,notmats):
-            if type(clf) == neighbors.classification.KNeighborsClassifier:
-                samples = load_from_mat(ftr_file,'knn','classify')
+        os.chdir(todo['output_dir'])
+
+        ftr_files = glob.glob('*feature_files')
+        clf = model_file['model']
+        scaler = model_file['scaler']
+
+        clf_type = model_str_rep_map[str(clf)]
+        # if clf_type == 'knn':
+        #     if 'neighbors.KNeighborsClassifier' not in locals():
+        #         import neighbors.KNeighborsClassifier
+        # elif clf_type == 'svm':
+        #     if SVC not in locals():
+        #         from sklearn.svm import SVC
+        # elif clf_type == flatwindow
+
+        import pdb;pdb.set_trace()
+
+        for ftr_file in ftr_files:
+            ftr_file_dict = joblib.load(ftr_file)
+            features = ftr_file_dict['features']
+            # check classifier type without importing every model
+            if str(type(clf)) == \
+                    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>":
+                pass
             elif type(clf) == SVC:
-                samples = load_from_mat(ftr_file,'svm','classify')
+                pass
             samples_scaled = scaler.transform(samples)
             pred_labels = clf.predict(samples_scaled)
             #chr() to convert back to character from uint32
