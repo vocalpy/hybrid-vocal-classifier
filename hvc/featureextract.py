@@ -212,6 +212,7 @@ def _extract(extract_params, make_summary_file=True):
     ##########################################################
     # after looping through all data_dirs for this todo_item #
     ##########################################################
+
     if make_summary_file:
         print('making summary file')
         os.chdir(extract_params['output_dir'])
