@@ -167,7 +167,7 @@ class Spectrogram:
                     self.nperseg = 256
                     self.noverlap = 192
                     self.window = np.hanning(self.nperseg)  # Hann window
-                    self.freqCutoffs = [0, 15000]  # basically no bandpass, as in Tachibana
+                    self.freqCutoffs = [10, 15990]  # basically no bandpass, as in Tachibana
                     self.filterFunc = 'diff'
                     self.spectFunc = 'mpl'
                     self.logTransformSpect = False  # see tachibana feature docs
@@ -733,7 +733,6 @@ class Song:
         all_syls = []
 
         spect_maker = Spectrogram(**spect_params)
-        # import pdb;pdb.set_trace()
 
         for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
             if 'syl_spect_width_Hz' in locals():
