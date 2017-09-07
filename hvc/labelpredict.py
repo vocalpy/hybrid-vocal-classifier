@@ -4,6 +4,7 @@ using already-trained models specified in config file
 """
 
 import os
+import glob
 
 # from dependencies
 import numpy as np
@@ -57,8 +58,6 @@ def predict(config_file):
 
         model_file = joblib.load(todo['model_file'])
 
-        import pdb;pdb.set_trace()
-
         extract_params = {
             'bird_ID': todo['bird_ID'],
             'feature_list': model_file['model_feature_list'],
@@ -69,27 +68,20 @@ def predict(config_file):
             'file_format': todo['file_format']
         }
 
-        # segment_params defined for todo_list item takes precedence over any default
-        # defined for `extract` config
-        if 'segment_params' in todo:
-            extract_params['segment_params'] = todo['segment_params']
-        else:
-            extract_params['segment_params'] = extract_config['segment_params']
-
-        if 'spect_params' in todo:
-            extract_params['spect_params'] = todo['spect_params']
-        else:
-            extract_params['spect_params'] = extract_config['spect_params']
+        model_feature_file = model_file['feature_file']
+        model_feature_file = joblib.load(feature_file)
+        extract_params['segment_params'] = model_feature_file['segment_params']
+        extract_params['spect_params'] = model_feature_file['spect_params']
 
         hvc.featureextract._extract(extract_params)
 
         os.chdir(todo['output_dir'])
 
         ftr_files = glob.glob('*feature_files')
-        clf = model_file['model']
+        clf = model_file['clf']
         scaler = model_file['scaler']
 
-        clf_type = model_str_rep_map[str(clf)]
+        #clf_type = model_str_rep_map[str(clf)]
         # if clf_type == 'knn':
         #     if 'neighbors.KNeighborsClassifier' not in locals():
         #         import neighbors.KNeighborsClassifier
