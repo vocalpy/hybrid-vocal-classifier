@@ -37,7 +37,10 @@ def _validate_todo_list_dict(todo_list_dict,index):
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
     if not set(todo_list_dict.keys()) >= REQUIRED_TODO_LIST_KEYS:
-        raise KeyError('not all required keys in todo_list item #{}'.format(index))
+        missing_keys = REQUIRED_TODO_LIST_KEYS - set(todo_list_dict.keys())
+        raise KeyError('The following required keys '
+                       'were not found in todo_list item #{}: {}'
+                       .format(index, missing_keys))
     else:
         additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS
         for extra_key in additional_keys:
