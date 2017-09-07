@@ -69,7 +69,7 @@ def predict(config_file):
         }
 
         model_feature_file = model_file['feature_file']
-        model_feature_file = joblib.load(feature_file)
+        model_feature_file = joblib.load(model_feature_file)
         extract_params['segment_params'] = model_feature_file['segment_params']
         extract_params['spect_params'] = model_feature_file['spect_params']
 
