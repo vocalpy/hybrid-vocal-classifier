@@ -2,6 +2,7 @@ from keras.models import Sequential
 from keras.layers import AtrousConvolution2D, Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.layers import Activation, Dropout, Flatten, Dense, Permute, Reshape
 
+
 def dilated(input_width, input_height):
     """
     Dilated convolutional network for segmentation [1]_.

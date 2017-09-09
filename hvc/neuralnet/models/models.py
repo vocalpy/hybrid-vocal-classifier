@@ -1,14 +1,8 @@
-import numpy as np
-
-from keras.models import Sequential, Model
-from keras.layers.core import Activation, Dense, Dropout, Flatten, Reshape
+from keras.models import Sequential
+from keras.layers.core import Activation, Reshape
 from keras.layers.convolutional import Conv2D, MaxPooling2D, \
-                                       Convolution3D, ZeroPadding2D
-from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import TimeDistributed
-from keras.optimizers import SGD, Adam
-
-#import theano.tensor as T
+from keras.optimizers import Adam
 
 def conv_out_size(w,f,p,s): return (w-f+2*p) / s + 1
 def pool_out_size(w,f,s): return (w - f) / s + 1
@@ -26,6 +20,7 @@ def pool_out_size(w,f,s): return (w - f) / s + 1
 #         return T.nnet.categorical_crossentropy(y_pred,y_true)
 #
 #     return calc
+
 
 def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
     """
@@ -116,6 +111,7 @@ def DCNN(input_shape,num_syllable_classes,local_window_timebins=96):
     
     return model
 
+
 def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_window_timebins=96):
     """
     Same as DCNN but trying with TimeDistributed wrapper
@@ -194,150 +190,4 @@ def DCNN2(input_shape,num_syllable_classes,layers_dict,silent_gap_label,local_wi
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     
-    return model
-
-
-def flatwindow(input_shape, num_label_classes, local_window_timebins=96):
-    """DCNN model but flatten output of sliding window, pass to fully connected layer.
-    """
-    
-    model = Sequential()
-   
-    model.add(Conv2D(16, (5, 5), activation='relu', name='conv1_1', input_shape=input_shape))
-    model.add(Conv2D(16, (1, 1), activation='relu', name='conv1_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool1'))
-    
-    model.add(Conv2D(16, (5, 5), activation='relu', name='conv2_1'))
-    model.add(Conv2D(16, (1, 1), activation='relu', name='conv2_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool2'))
-    
-    model.add(Conv2D(16, (4, 4), activation='relu', name='conv3_1'))
-    model.add(Conv2D(16, (1, 1), activation='relu', name='conv3_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='pool3'))
-    
-    #calculate shape that local window would have after passing through
-    #convolution + pooling layers.
-    #For y axis of window, the output shape should already be correct.
-    local_window_freqbins = model.layers[-1].output_shape[2] #i.e. rows
-    #But for x axis we need to calculate it
-
-    for layer in model.layers:
-        if type(layer) == Conv2D:  # if this is a convolution layer
-            f = layer.kernel_size[-1]
-            local_window_timebins = conv_out_size(local_window_timebins, f, 0, 1)
-        elif type(layer) == MaxPooling2D:
-            f = layer.pool_size[0]
-            s = layer.strides[0]
-            local_window_timebins = pool_out_size(local_window_timebins, f, s)
-
-    if not local_window_timebins.is_integer():
-        raise ValueError('computing timebins for "local" window layer in '
-                         'flatwindow model did not result in a whole number, '
-                         'instead resulted in {}.\nPlease check kernel sizes'
-                         .format(local_window_timebins))
-    else:
-        local_window_timebins = int(local_window_timebins)
-
-    # note that with keras 2.0 API, specify kernel dimensions as
-    # **width** first then **height**, so below for our "local window"
-    # layer we want timebins first (window width) and then
-    # freqbins (window height)
-    model.add(Conv2D(num_label_classes*5,
-                     (local_window_timebins,
-                      local_window_freqbins),
-                     activation='relu',
-                     name='full'))
-    #pretty sure last softmax layer in model consists of yet another convolution
-    #where the number of filters equals the number of syllable classes. And he
-    #uses identity activation
-
-    model.add(Flatten())
-    output_ns = model.layers[-1].output_shape[-1]
-    model.add(Dense(output_ns))
-    model.add(Activation('relu'))
-    model.add(Dense(num_label_classes))
-    model.add(Activation('softmax'))
-
-    #adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    model.compile(optimizer='sgd',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    
-    return model    
-
-def naive_LSTM(input_shape,num_syllable_classes):
-    """
-    simplest LSTM model we could think of.
-    """
-    
-    model = Sequential()
-    
-    model.add(LSTM(256, input_shape=(input_shape),return_sequences=True))
-    model.add(Dropout(0.2))
-    
-    model.add(TimeDistributed(Dense(num_syllable_classes)))
-    model.add(Activation("softmax"))
-    
-    
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
-    
-    return model
-
-def VGG_16(input_shape,num_syllable_classes,weights_path=None):
-    """VGG_16 convnet
-    based on https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3
-    """
-    model = Sequential()
-    model.add(ZeroPadding2D((1,1),input_shape=input_shape))
-    model.add(Conv2D(64, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(64, 3, 3, activation='relu'))
-    model.add(MaxPooling2D((2,2), strides=(2,2)))
-
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(128, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(128, 3, 3, activation='relu'))
-    model.add(MaxPooling2D((2,2), strides=(2,2)))
-
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(256, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(256, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(256, 3, 3, activation='relu'))
-    model.add(MaxPooling2D((2,2), strides=(2,2)))
-
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(MaxPooling2D((2,2), strides=(2,2)))
-
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Conv2D(512, 3, 3, activation='relu'))
-    model.add(MaxPooling2D((2,2), strides=(2,2)))
-
-    model.add(Flatten())
-    model.add(Dense(4096, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(4096, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(num_syllable_classes, activation='softmax'))
-
-    if weights_path:
-        model.load_weights(weights_path)
-    sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd,
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-
     return model
