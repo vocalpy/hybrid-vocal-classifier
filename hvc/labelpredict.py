@@ -100,8 +100,7 @@ def predict(config_file):
                 pass
             features_scaled = scaler.transform(features)
             pred_labels = clf.predict(features_scaled)
-            import pdb;
-            pdb.set_trace()
+
             #chr() to convert back to character from uint32
             pred_labels = [chr(val) for val in pred_labels]
             # convert into one long string, what evsonganalty expects
