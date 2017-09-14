@@ -68,15 +68,16 @@ def predict(config_file):
             'file_format': todo['file_format']
         }
 
-        model_feature_file = model_file['feature_file']
-        model_feature_file = joblib.load(model_feature_file)
-        extract_params['segment_params'] = model_feature_file['segment_params']
-        extract_params['spect_params'] = model_feature_file['spect_params']
+        feature_file_for_model = model_file['feature_file']
+        feature_file = joblib.load(feature_file_for_model)
+        extract_params['segment_params'] = feature_file['segment_params']
+        extract_params['spect_params'] = feature_file['spect_params']
 
         hvc.featureextract._extract(extract_params, make_summary_file=False)
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')
+        import pdb;pdb.set_trace()
         clf = model_file['clf']
         scaler = model_file['scaler']
 
