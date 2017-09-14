@@ -10,7 +10,6 @@ import glob
 import numpy as np
 import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
-# from sklearn import neighbors, SVC
 
 # from hvc
 import hvc.featureextract
@@ -26,11 +25,40 @@ SHOULD_BE_DOUBLE = ['Fs',
                     'sm_win',
                     'threshold']
 
-model_str_rep_map = {
-    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>": 'knn',
-    "svm thingy": 'svm',
-    "keras thingy": 'flatwindow'
-}
+
+def convert_predicted_lables_to_notmat(notmat, pred_labels, clf_file):
+    """converts predicted labels into a .not.mat file
+    that can be read by evsonganaly.m (MATLAB GUI for labeling song)
+
+    Parameters
+    ----------
+    notmat: str
+        filename
+    pred_labels: ndarray
+        output from model / classifier
+    clf_file: str
+        name of file from which model / classifier was loaded
+
+    Returns
+    -------
+    None.
+    Saves .not.mat file with additional information
+        predicted_labels
+        classifier_file
+    """
+    # chr() to convert back to character from uint32
+    pred_labels = [chr(val) for val in pred_labels]
+    # convert into one long string, what evsonganaly expects
+    pred_labels = ''.join(pred_labels)
+    notmat_dict = scio.loadmat(notmat)
+    notmat_dict['predicted_labels'] = pred_labels
+    notmat_dict['classifier_file'] = clf_file
+    print('saving ' + notmat)
+    # evsonganaly/Matlab expects all vars as double
+    for key, val in notmat_dict.items():
+        if key in SHOULD_BE_DOUBLE:
+            notmat_dict[key] = val.astype('d')
+    scio.savemat(notmat, notmat_dict)
 
 
 def predict(config_file):
@@ -77,42 +105,16 @@ def predict(config_file):
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')
-        import pdb;pdb.set_trace()
         clf = model_file['clf']
         scaler = model_file['scaler']
 
-        #clf_type = model_str_rep_map[str(clf)]
-        # if clf_type == 'knn':
-        #     if 'neighbors.KNeighborsClassifier' not in locals():
-        #         import neighbors.KNeighborsClassifier
-        # elif clf_type == 'svm':
-        #     if SVC not in locals():
-        #         from sklearn.svm import SVC
-        # elif clf_type == flatwindow
-
         for ftr_file in ftr_files:
+            print("predicting labels for features in file: {}"
+                  .format(ftr_file))
             ftr_file_dict = joblib.load(ftr_file)
             features = ftr_file_dict['features']
-            # check classifier type without importing every model
-            if str(type(clf)) == \
-                    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>":
-                pass
-            elif type(clf) == SVC:
-                pass
+
             features_scaled = scaler.transform(features)
             pred_labels = clf.predict(features_scaled)
-
-            #chr() to convert back to character from uint32
-            pred_labels = [chr(val) for val in pred_labels]
-            # convert into one long string, what evsonganalty expects
-            pred_labels = ''.join(pred_labels)
-            notmat_dict = scio.loadmat(notmat)
-            notmat_dict['predicted_labels'] = pred_labels
-            notmat_dict['classifier_type'] = clf_type
-            notmat_dict['classifier_file'] = clf_file
-            print('saving ' + notmat)
-            # evsonganaly/Matlab expects all vars as double
-            for key, val in notmat_dict.items():
-                if key in SHOULD_BE_DOUBLE:
-                    notmat_dict[key] = val.astype('d')
-            scio.savemat(notmat,notmat_dict)
+            ftr_file_dict['pred_labels'] = pred_labels
+            joblib.dump(ftr_file_dict, ftr_file)
