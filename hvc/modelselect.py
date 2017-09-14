@@ -234,7 +234,8 @@ def select(config_file):
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
-                    # if-elif that switches based on model type, end sklearn, start keras models
+                    # this is the middle of the if-elif that switches based on model type
+                    # end sklearn, start keras models
                     elif model_dict['model'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
 
@@ -353,6 +354,7 @@ def select(config_file):
                     'feature_file': todo['feature_file'],
                     'test_IDs': test_IDs,
                     'train_IDs': train_IDs,
+                    'model': model_dict['model']
                 }
 
                 if 'clf' in locals():
@@ -366,6 +368,8 @@ def select(config_file):
                     # is tested in next loop)
                     del scaler
                 elif 'spect_scaler' in locals():
+                    # neural net models uses scaler on spectrogram
+                    # instead of vanilla sklearn scalar
                     model_output_dict['spect_scaler'] = spect_scaler
                     del spect_scaler
 
