@@ -16,7 +16,7 @@ import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import timestamp
 
-# used in loop below, see there for explanation
+# used by convert_predicted_labels_to_notmat
 SHOULD_BE_DOUBLE = ['Fs',
                     'min_dur',
                     'min_int',
@@ -26,7 +26,7 @@ SHOULD_BE_DOUBLE = ['Fs',
                     'threshold']
 
 
-def convert_predicted_lables_to_notmat(notmat, pred_labels, clf_file):
+def convert_predicted_labels_to_notmat(notmat, pred_labels, clf_file):
     """converts predicted labels into a .not.mat file
     that can be read by evsonganaly.m (MATLAB GUI for labeling song)
 
@@ -46,6 +46,7 @@ def convert_predicted_lables_to_notmat(notmat, pred_labels, clf_file):
         predicted_labels
         classifier_file
     """
+
     # chr() to convert back to character from uint32
     pred_labels = [chr(val) for val in pred_labels]
     # convert into one long string, what evsonganaly expects
@@ -105,7 +106,20 @@ def predict(config_file):
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')
-        clf = model_file['clf']
+        model = model_file['model']
+        if model in ['knn', 'svm']:
+            try:
+                clf = model_file['clf']
+            except:
+                raise KeyError('model in {} is {} but '
+                               'no corresponding \'clf\''
+                               '(classifier) found in model file.'
+                               .format(todo['model_file'],
+                                       model))
+        elif model in ['flatwindow']:
+            from hvc.neuralnet.models.flatwindow import flatwindow
+            clf = flatwindow()
+            clf.load_weights()
         scaler = model_file['scaler']
 
         for ftr_file in ftr_files:
