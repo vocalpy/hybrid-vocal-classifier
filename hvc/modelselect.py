@@ -78,7 +78,7 @@ def select(config_file):
 
             elif model_dict['model'] == 'flatwindow':
                 if 'flatwindow' not in locals():
-                    from hvc.neuralnet.models import flatwindow
+                    from hvc.neuralnet.models.flatwindow import flatwindow
                     from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 
         if 'num_test_samples' in todo:
