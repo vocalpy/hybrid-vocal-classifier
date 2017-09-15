@@ -128,20 +128,27 @@ def filter_labels(labels,labelset):
     return labels
 
 
-def grid_search(X,y):
+def grid_search(X, y):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector classifier.
 
-    Arguments:
-        X -- numpy m-by-n array containing m samples each with n features
-        y -- numpy array of length m containing m labels corresponding to the
-             m samples in X
+    Arguments
+    ---------
+    X : ndarray
+        m-by-n array containing m samples each with n features
+    y : ndarray
+        numpy array of length m containing m labels corresponding to the
+        m samples in X
 
-    Returns:
-        best_params -- values for C and gamma that gave the highest accuracy with
-                       cross-validation
-        best_score -- highest accuracy with cross-validation
+    Returns
+    -------
+    best_params :
+        values for C and gamma that gave the highest accuracy with
+        cross-validation
+    best_score :
+        highest accuracy with cross-validation
     """
+
     C_range = np.logspace(-2, 10, 13)
     gamma_range = np.logspace(-9, 3, 13)
     param_grid = dict(gamma=gamma_range, C=C_range)
