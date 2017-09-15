@@ -120,6 +120,7 @@ def predict(config_file):
             if 'keras.models' not in locals():
                 import keras.models
             clf = keras.models.load_model()
+
         scaler = model_file['scaler']
 
         for ftr_file in ftr_files:
