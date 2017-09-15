@@ -9,6 +9,7 @@ import copy
 # from dependencies
 import yaml
 from sklearn.externals import joblib
+import keras.models
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
@@ -80,10 +81,20 @@ def _validate_todo_list_dict(todo_list_dict,index):
                                  ' should be a string'.format(val, type(val)))
             if not os.path.isfile(val):
                 raise OSError('{} is not found as a file'.format(val))
-            try:
-                joblib.load(val)
-            except:
-                raise IOError('Unable to open {}'.format(val))
+
+            # check that model file can be opened
+            # tricky because there's more than one model file type,
+            # need a less fragile way to do that
+            if val.endswith('.hdf5'):  # then it must be a keras model
+                try:
+                   keras.models.load_model(val)
+                except:
+                    raise IOError('Unable to open {}'.format(val))
+            else: # it must be joblib file with a sklearn model
+                try:
+                    joblib.load(val)
+                except:
+                    raise IOError('Unable to open {}'.format(val))
 
         elif key == 'output_dir':
             if type(val) != str:
