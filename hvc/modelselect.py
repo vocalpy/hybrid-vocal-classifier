@@ -44,7 +44,7 @@ def select(config_file):
         filename of YAML file that configures feature extraction    
     """
 
-    select_config = parse_config(config_file,'select')
+    select_config = parse_config(config_file, 'select')
     print('Parsed select config.')
 
     todo_list = select_config['todo_list']
@@ -148,9 +148,9 @@ def select(config_file):
                         os.makedirs(model_output_dir)
 
                     model_fname_str = \
-                        '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
-                                                                  num_train_samples,
-                                                                  replicate)
+                        '{0}_{1}samples_replicate{2}.model'.format(model_dict['model'],
+                                                                   num_train_samples,
+                                                                   replicate)
                     model_filename = os.path.join(model_output_dir, model_fname_str)
 
                     # if model_dict specifies using a certain feature group
@@ -348,6 +348,7 @@ def select(config_file):
                 model_meta_filename = os.path.join(model_output_dir,
                                                    model_meta_fname_str)
                 model_meta_output_dict = {
+                    'model_filename': model_filename,
                     'config_file': config_file,
                     'feature_file': todo['feature_file'],
                     'test_IDs': test_IDs,

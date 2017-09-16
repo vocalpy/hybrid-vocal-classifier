@@ -4,6 +4,7 @@ using already-trained models specified in config file
 """
 
 import os
+import sys
 import glob
 
 # from dependencies
@@ -117,7 +118,7 @@ def predict(config_file):
                                .format(todo['model_file'],
                                        model))
         elif model in ['flatwindow']:
-            if 'keras.models' not in locals():
+            if 'keras.models' not in sys.modules:
                 import keras.models
             clf = keras.models.load_model()
 

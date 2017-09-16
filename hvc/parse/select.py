@@ -16,9 +16,19 @@ dir_path = os.path.dirname(path)  # but then just take the dir
 
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
-VALID_MODELS = set(validate_dict['valid_models'])
+
 VALID_MODEL_KEYS = validate_dict['valid_model_keys']
 VALID_HYPERPARAMS = validate_dict['hyperparameters']
+
+# valid_models is a dict, iterate to concatenate all model names
+# keys are model subtypes, i.e. sklearn and keras
+# values are lists of valid model names
+VALID_MODELS = []
+for model_subtype in validate_dict['valid_models'].values():
+    # iterate over list to append
+    for model_name in model_subtype:
+        VALID_MODELS.append(model_name)
+VALID_MODELS = set(VALID_MODELS)
 
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
