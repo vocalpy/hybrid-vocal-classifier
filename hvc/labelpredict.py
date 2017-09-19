@@ -4,19 +4,20 @@ using already-trained models specified in config file
 """
 
 import os
+import sys
+import glob
 
 # from dependencies
 import numpy as np
 import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
-# from sklearn import neighbors, SVC
 
 # from hvc
 import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import timestamp
 
-# used in loop below, see there for explanation
+# used by convert_predicted_labels_to_notmat
 SHOULD_BE_DOUBLE = ['Fs',
                     'min_dur',
                     'min_int',
@@ -25,11 +26,41 @@ SHOULD_BE_DOUBLE = ['Fs',
                     'sm_win',
                     'threshold']
 
-model_str_rep_map = {
-    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>": 'knn',
-    "svm thingy": 'svm',
-    "keras thingy": 'flatwindow'
-}
+
+def convert_predicted_labels_to_notmat(notmat, pred_labels, clf_file):
+    """converts predicted labels into a .not.mat file
+    that can be read by evsonganaly.m (MATLAB GUI for labeling song)
+
+    Parameters
+    ----------
+    notmat: str
+        filename
+    pred_labels: ndarray
+        output from model / classifier
+    clf_file: str
+        name of file from which model / classifier was loaded
+
+    Returns
+    -------
+    None.
+    Saves .not.mat file with additional information
+        predicted_labels
+        classifier_file
+    """
+
+    # chr() to convert back to character from uint32
+    pred_labels = [chr(val) for val in pred_labels]
+    # convert into one long string, what evsonganaly expects
+    pred_labels = ''.join(pred_labels)
+    notmat_dict = scio.loadmat(notmat)
+    notmat_dict['predicted_labels'] = pred_labels
+    notmat_dict['classifier_file'] = clf_file
+    print('saving ' + notmat)
+    # evsonganaly/Matlab expects all vars as double
+    for key, val in notmat_dict.items():
+        if key in SHOULD_BE_DOUBLE:
+            notmat_dict[key] = val.astype('d')
+    scio.savemat(notmat, notmat_dict)
 
 
 def predict(config_file):
@@ -57,8 +88,6 @@ def predict(config_file):
 
         model_file = joblib.load(todo['model_file'])
 
-        import pdb;pdb.set_trace()
-
         extract_params = {
             'bird_ID': todo['bird_ID'],
             'feature_list': model_file['model_feature_list'],
@@ -69,59 +98,39 @@ def predict(config_file):
             'file_format': todo['file_format']
         }
 
-        # segment_params defined for todo_list item takes precedence over any default
-        # defined for `extract` config
-        if 'segment_params' in todo:
-            extract_params['segment_params'] = todo['segment_params']
-        else:
-            extract_params['segment_params'] = extract_config['segment_params']
+        feature_file_for_model = model_file['feature_file']
+        feature_file = joblib.load(feature_file_for_model)
+        extract_params['segment_params'] = feature_file['segment_params']
+        extract_params['spect_params'] = feature_file['spect_params']
 
-        if 'spect_params' in todo:
-            extract_params['spect_params'] = todo['spect_params']
-        else:
-            extract_params['spect_params'] = extract_config['spect_params']
+        hvc.featureextract._extract(extract_params, make_summary_file=False)
 
-        hvc.featureextract._extract(extract_params)
+        os.chdir(output_dir_with_path)
+        ftr_files = glob.glob('features_from*')
+        model = model_file['model']
+        if model in ['knn', 'svm']:
+            try:
+                clf = model_file['clf']
+            except:
+                raise KeyError('model in {} is {} but '
+                               'no corresponding \'clf\''
+                               '(classifier) found in model file.'
+                               .format(todo['model_file'],
+                                       model))
+        elif model in ['flatwindow']:
+            if 'keras.models' not in sys.modules:
+                import keras.models
+            clf = keras.models.load_model()
 
-        os.chdir(todo['output_dir'])
-
-        ftr_files = glob.glob('*feature_files')
-        clf = model_file['model']
         scaler = model_file['scaler']
 
-        clf_type = model_str_rep_map[str(clf)]
-        # if clf_type == 'knn':
-        #     if 'neighbors.KNeighborsClassifier' not in locals():
-        #         import neighbors.KNeighborsClassifier
-        # elif clf_type == 'svm':
-        #     if SVC not in locals():
-        #         from sklearn.svm import SVC
-        # elif clf_type == flatwindow
-
-        import pdb;pdb.set_trace()
-
         for ftr_file in ftr_files:
+            print("predicting labels for features in file: {}"
+                  .format(ftr_file))
             ftr_file_dict = joblib.load(ftr_file)
             features = ftr_file_dict['features']
-            # check classifier type without importing every model
-            if str(type(clf)) == \
-                    "<class 'sklearn.neighbors.classification.KNeighborsClassifier'>":
-                pass
-            elif type(clf) == SVC:
-                pass
-            samples_scaled = scaler.transform(samples)
-            pred_labels = clf.predict(samples_scaled)
-            #chr() to convert back to character from uint32
-            pred_labels = [chr(val) for val in pred_labels]
-            # convert into one long string, what evsonganalty expects
-            pred_labels = ''.join(pred_labels)
-            notmat_dict = scio.loadmat(notmat)
-            notmat_dict['predicted_labels'] = pred_labels
-            notmat_dict['classifier_type'] = clf_type
-            notmat_dict['classifier_file'] = clf_file
-            print('saving ' + notmat)
-            # evsonganaly/Matlab expects all vars as double
-            for key, val in notmat_dict.items():
-                if key in SHOULD_BE_DOUBLE:
-                    notmat_dict[key] = val.astype('d')
-            scio.savemat(notmat,notmat_dict)
+
+            features_scaled = scaler.transform(features)
+            pred_labels = clf.predict(features_scaled)
+            ftr_file_dict['pred_labels'] = pred_labels
+            joblib.dump(ftr_file_dict, ftr_file)

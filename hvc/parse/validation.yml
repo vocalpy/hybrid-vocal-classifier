@@ -16,9 +16,11 @@ optional_extract_todo_list_keys:
   - feature_list
 
 valid_models:
-  - knn
-  - svm
-  - flatwindow
+  sklearn:
+    - knn
+    - svm
+  keras:
+    - flatwindow
 
 valid_model_keys:
   knn:
@@ -51,7 +53,7 @@ required_predict_todo_list_keys:
   - file_format
   - data_dirs
   - output_dir
-  - model_file
+  - model_meta_file
 
 optional_predict_todo_list_keys:
   - bird_ID

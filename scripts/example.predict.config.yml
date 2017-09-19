@@ -1,9 +1,10 @@
 predict:
   todo_list:
     - #1
-      bird_ID: gr41rd51
-      model_file : C:\Data\gy6gy6\extract_output_170519_1246select_output_170519_1323\svm\svm_400samples_replicate3
+      bird_ID: gy6or6
+      model_file : C:\Users\Seymour Snyder\AppData\Local\Temp\pytest-of-Seymour Snyder\pytest-80\tmp_output_dir0\select_output_170914_095043\knn_k4\knn_100samples_replicate0
       file_format: evtaf
       data_dirs:
-        - C:\Data\gy6gy6\010417
-        - C:\Data\gy6gy6\010517
+        - C:\Users\Seymour Snyder\Documents\pyWorkspace\hvc_venv\hybrid-vocal-classifier\tests\test_data\cbins\gy6or6\032312
+        - C:\Users\Seymour Snyder\Documents\pyWorkspace\hvc_venv\hybrid-vocal-classifier\tests\test_data\cbins\gy6or6\032412
+      output_dir: C:\Data\gy6gy6\

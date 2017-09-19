@@ -44,14 +44,14 @@ def select(config_file):
         filename of YAML file that configures feature extraction    
     """
 
-    select_config = parse_config(config_file,'select')
+    select_config = parse_config(config_file, 'select')
     print('Parsed select config.')
 
     todo_list = select_config['todo_list']
 
     for ind, todo in enumerate(todo_list):
 
-        print('Completing item {} of {} in to-do list'.format(ind+1,len(todo_list)))
+        print('Completing item {} of {} in to-do list'.format(ind+1, len(todo_list)))
 
         a_timestamp = timestamp()
         output_dir = os.path.join(todo['output_dir'],
@@ -137,6 +137,21 @@ def select(config_file):
                 train_IDs_arr[num_samples_ind, replicate] = train_IDs
                 labels_train = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
+
+                    # save info associated with model such as indices of training samples.
+                    # Note this is done outside the if/elif list for switching between
+                    # models.
+                    model_output_dir = os.path.join(output_dir,
+                                                    determine_model_output_folder_name(
+                                                        model_dict))
+                    if not os.path.isdir(model_output_dir):
+                        os.makedirs(model_output_dir)
+
+                    model_fname_str = \
+                        '{0}_{1}samples_replicate{2}.model'.format(model_dict['model'],
+                                                                   num_train_samples,
+                                                                   replicate)
+                    model_filename = os.path.join(model_output_dir, model_fname_str)
 
                     # if model_dict specifies using a certain feature group
                     if 'feature_group' in model_dict:
@@ -233,8 +248,10 @@ def select(config_file):
                                                                  feature_file['labelset'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
+                        joblib.dump(clf, model_filename)
 
-                    # if-elif that switches based on model type, end sklearn, start keras models
+                    # this is the middle of the if-elif that switches based on model type
+                    # end sklearn, start keras models
                     elif model_dict['model'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
 
@@ -278,21 +295,13 @@ def select(config_file):
                         train_spects_scaled = train_spects_scaled[:, :, :, np.newaxis]
                         test_spects_scaled = test_spects_scaled[:, :, :, np.newaxis]
 
-                        num_samples, num_freqbins, num_timebins, num_channels = train_spects_scaled.shape
+                        num_samples, num_freqbins, num_timebins, num_channels = \
+                            train_spects_scaled.shape
                         num_label_classes = len(feature_file['labelset'])
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
                                              num_label_classes=num_label_classes)
 
-                        model_output_dir = os.path.join(output_dir,
-                                                        determine_model_output_folder_name(
-                                                            model_dict))
-                        if not os.path.isdir(model_output_dir):
-                            os.makedirs(model_output_dir)
-                        model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
-                                                                               num_train_samples,
-                                                                               replicate)
-                        model_filename = os.path.join(model_output_dir, model_fname_str)
                         csv_str = ''.join(['flatwindow_training_',
                                            '{}_samples_'.format(num_train_samples),
                                            'replicate_{}'.format(replicate),
@@ -301,16 +310,12 @@ def select(config_file):
                         csv_logger = CSVLogger(csv_filename,
                                                separator=',',
                                                append=True)
-                        weights_str = ''.join(['weights_',
-                                               '{}_samples_'.format(num_train_samples),
-                                               'replicate_{}'.format(replicate),
-                                               '.best.hdf5'])
-                        weights_filename = os.path.join(model_output_dir, weights_str)
-                        checkpoint = ModelCheckpoint(weights_filename,
+
+                        checkpoint = ModelCheckpoint(model_filename,
                                                      monitor='val_acc',
                                                      verbose=1,
                                                      save_best_only=True,
-                                                     save_weights_only=True,
+                                                     save_weights_only=False,
                                                      mode='max')
                         earlystop = EarlyStopping(monitor='val_acc',
                                                   min_delta=0,
@@ -336,37 +341,32 @@ def select(config_file):
                                                                  pred_labels,
                                                                  classes_zero_to_n)
 
-                # save info associated with model such as indices of training samples.
-                # Note this is done outside the if/elif list for switching between
-                # models.
-                model_output_dir = os.path.join(output_dir,
-                                                determine_model_output_folder_name(
-                                                    model_dict))
-                if not os.path.isdir(model_output_dir):
-                    os.makedirs(model_output_dir)
-                model_fname_str = '{0}_{1}samples_replicate{2}'.format(model_dict['model'],
-                                                                       num_train_samples,
-                                                                       replicate)
-                model_filename = os.path.join(model_output_dir, model_fname_str)
-                model_output_dict = {
+                model_meta_fname_str = \
+                    '{0}_{1}samples_replicate{2}.meta'.format(model_dict['model'],
+                                                              num_train_samples,
+                                                              replicate)
+                model_meta_filename = os.path.join(model_output_dir,
+                                                   model_meta_fname_str)
+                model_meta_output_dict = {
+                    'model_filename': model_filename,
                     'config_file': config_file,
                     'feature_file': todo['feature_file'],
                     'test_IDs': test_IDs,
                     'train_IDs': train_IDs,
+                    'model': model_dict['model']
                 }
 
-                if 'clf' in locals():
-                    model_output_dict['clf'] = clf
-
                 if 'scaler' in locals():
-                    model_output_dict['scaler'] = scaler
+                    model_meta_output_dict['scaler'] = scaler
                     # have to delete scaler
                     # so it's not still in memory next loop
                     # (e.g. because a different model that doesn't use scaler
                     # is tested in next loop)
                     del scaler
                 elif 'spect_scaler' in locals():
-                    model_output_dict['spect_scaler'] = spect_scaler
+                    # neural net models uses scaler on spectrogram
+                    # instead of vanilla sklearn scalar
+                    model_meta_output_dict['spect_scaler'] = spect_scaler
                     del spect_scaler
 
                 if model_dict['model'] in ['svm', 'knn']:
@@ -377,12 +377,12 @@ def select(config_file):
                     else:
                         model_feature_list = [feature_file['feature_list'][ind]
                                               for ind in model_dict['feature_list_indices']]
-                    model_output_dict['model_feature_list'] = model_feature_list
-                joblib.dump(model_output_dict,
-                            model_filename)
+                    model_meta_output_dict['model_feature_list'] = model_feature_list
+                joblib.dump(model_meta_output_dict,
+                            model_meta_filename)
 
         # after looping through all samples + replicates
-        output_dict = {
+        select_summary_dict = {
             'config_file': config_file,
             'feature_file': todo['feature_file'],
             'num_train_samples_list': num_train_samples_list,
@@ -394,4 +394,4 @@ def select(config_file):
             'avg_acc_arr': avg_acc_arr,
             'pred_labels_arr': pred_labels_arr,
         }
-        joblib.dump(output_dict, output_filename)
+        joblib.dump(select_summary_dict, output_filename)

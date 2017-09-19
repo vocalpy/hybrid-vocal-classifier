@@ -4,6 +4,7 @@ YAML parser for predict config files
 
 #from standard library
 import os
+import sys
 import copy
 
 # from dependencies
@@ -18,7 +19,7 @@ with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
 
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
-
+VALID_MODELS = validate_dict['valid_models']
 
 def _validate_todo_list_dict(todo_list_dict,index):
     """
@@ -37,7 +38,10 @@ def _validate_todo_list_dict(todo_list_dict,index):
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
     if not set(todo_list_dict.keys()) >= REQUIRED_TODO_LIST_KEYS:
-        raise KeyError('not all required keys in todo_list item #{}'.format(index))
+        missing_keys = REQUIRED_TODO_LIST_KEYS - set(todo_list_dict.keys())
+        raise KeyError('The following required keys '
+                       'were not found in todo_list item #{}: {}'
+                       .format(index, missing_keys))
     else:
         additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS
         for extra_key in additional_keys:
@@ -71,16 +75,28 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key == 'model_file':
+        elif key == 'model_meta_file':
             if type(val) != str:
                 raise ValueError('Value {} for key \'feature_file\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
             if not os.path.isfile(val):
                 raise OSError('{} is not found as a file'.format(val))
-            try:
-                joblib.load(val)
-            except:
-                raise IOError('Unable to open {}'.format(val))
+
+            # check that model file can be opened
+            model_meta_file = joblib.load(val)
+            model_filename = model_meta_file['model_file']
+            model_name = model_meta_file['model']
+            if model_name in VALID_MODELS['sklearn']:
+                try:
+                    joblib.load(model_filename)
+                except:
+                    raise IOError('Unable to open model file: {}'.format(model_filename))
+            elif model_name in VALID_MODELS['keras']:
+                try:
+                    import keras.models
+                    keras.models.load_model(val)
+                except:
+                    raise IOError('Unable to open model file: {}'.format(model_filename))
 
         elif key == 'output_dir':
             if type(val) != str:
