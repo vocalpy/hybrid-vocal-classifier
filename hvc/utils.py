@@ -128,8 +128,8 @@ def filter_labels(labels,labelset):
     return labels
 
 
-def grid_search_svm_rbf(X,y, C_range=np.logspace(-2, 10, 13),
-                        gamma_range=np.logspace(-9, 3, 13)):
+def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
+                        gamma_range=np.logspace(-6, -1, 6)):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector machine.
 
@@ -142,10 +142,10 @@ def grid_search_svm_rbf(X,y, C_range=np.logspace(-2, 10, 13),
         m samples in X
     C_range : ndarray
         range of values over which to search for best C.
-        default is np.logspace(-2, 10, 13)
+        default is np.logspace(-1, 4, 6)
     gamma_range : ndarray
         range of values over which to search for best gamma.
-        default is np.logspace(-9, 3, 13)
+        default is np.logspace(-6, -1, 6)
 
     Returns
     -------
