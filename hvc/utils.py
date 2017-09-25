@@ -167,21 +167,6 @@ def grid_search_svm_rbf(X,y, C_range=np.logspace(-2, 10, 13),
     return grid.best_params_, grid.best_score_
 
 
-def uniqify_filename_list(filename_list, idfun=None):
-   # based on code by Peter Bengtsson
-   # https://www.peterbe.com/plog/uniqifiers-benchmark
-   if idfun is None:
-       def idfun(x): return x
-   seen = {}
-   result = []
-   for filename in filename_list:
-       marker = idfun(filename)
-       if marker in seen: continue
-       seen[marker] = 1
-       result.append(item)
-   return result
-
-
 def find_best_k(train_samples,train_labels,test_samples,test_labels):
     """find_best_k(train_samples,train_labels,holdout_samples,holdout_labels)
     Estimates accuracy of k-neearest neighbors algorithm using different values
