@@ -149,3 +149,13 @@ These are some of the `extract.config.yml` files used for testing, found in
 .. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_svm.config.yml
 
 .. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_flatwindow.config.yml
+
+references
+----------
+.. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
+automatic classification of birdsong elements using a linear support vector
+ machine." PloS one 9.3 (2014): e92584.
+
+.. [2] Koumura, Takuya, and Kazuo Okanoya. "Automatic recognition of element
+classes and boundaries in the birdsong with variable sequences."
+PloS one 11.7 (2016): e0159188.

@@ -47,7 +47,7 @@ Documentation
    :maxdepth: 2
 
    tutorial
-   api_ref/modules
+   reference
    development
 
 Installation
