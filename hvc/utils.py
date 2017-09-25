@@ -128,9 +128,10 @@ def filter_labels(labels,labelset):
     return labels
 
 
-def grid_search(X, y):
+def grid_search_svm_rbf(X,y, C_range=np.logspace(-2, 10, 13),
+                        gamma_range=np.logspace(-9, 3, 13)):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
-    use with a support vector classifier.
+    use with a support vector machine.
 
     Arguments
     ---------
@@ -139,6 +140,12 @@ def grid_search(X, y):
     y : ndarray
         numpy array of length m containing m labels corresponding to the
         m samples in X
+    C_range : ndarray
+        range of values over which to search for best C.
+        default is np.logspace(-2, 10, 13)
+    gamma_range : ndarray
+        range of values over which to search for best gamma.
+        default is np.logspace(-9, 3, 13)
 
     Returns
     -------
@@ -149,16 +156,14 @@ def grid_search(X, y):
         highest accuracy with cross-validation
     """
 
-    C_range = np.logspace(-2, 10, 13)
-    gamma_range = np.logspace(-9, 3, 13)
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
     # note call to GridSearchCV with n_jobs = -1, which means
     # "run parallel if possible"
     grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv, n_jobs=-1)
     grid.fit(X, y)
-    print("The best parameters are %s with a score of %0.2f"
-        % (grid.best_params_, grid.best_score_))
+    print("The best parameters are {} with a score of {0.2f}"
+          .format(grid.best_params_, grid.best_score_))
     return grid.best_params_, grid.best_score_
 
 
