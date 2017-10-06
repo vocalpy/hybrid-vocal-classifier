@@ -6,5 +6,5 @@ reference
    :maxdepth: 2
    :caption: reference
 
-   Application reference <app_ref>
-   API reference <api_ref>
+   General reference <general_ref>
+   API reference (mostly auto-generated) <api_ref>
