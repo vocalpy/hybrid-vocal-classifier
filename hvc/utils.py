@@ -7,8 +7,10 @@ from datetime import datetime
 #from dependencies
 import numpy as np
 from scipy.io import loadmat
+import sklearn.preprocessing 
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 from sklearn import neighbors
 
@@ -180,44 +182,76 @@ def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
     return grid.best_params_, grid.best_score_
 
 
-def find_best_k(train_samples,train_labels,test_samples,test_labels):
-    """find_best_k(train_samples,train_labels,holdout_samples,holdout_labels)
-    Estimates accuracy of k-nearest neighbors algorithm using different values
-    of k on the samples in data_fname. As currently written, this function loops
-    from k=1 to k=10. For each value of k, it generates 10 replicates by using
-    a random two-thirds of the data as a training set and then using the other
-    third as the validation set.
+def find_best_k(samples,
+                labels,
+                k_range=range(1, 11),
+                cv=10,
+                standardize=True):
+    """find best k to use with k-Nearest Neighbors algorithm
+    using 10-fold cross validation.
 
-    Note that the algorithm uses the distances weighted by 
-    their inverse to determine the nearest neighbor, since I found empirically
-    that the weighted distances always give slightly better accuracy.
+    Uses the distances weighted by their inverse to determine the nearest neighbor
+    Empirically, with the 'knn' features, weighting by inverse always give slightly better accuracy.
 
     Parameters
     ----------
-    train_samples -- m-by-n numpy array with m rows of samples, each having n features
-    train_labels -- numpy vector of length m, where each element is a label corresponding
-              to a row in 'samples'
-    holdout_samples, holdout_labels -- same as train_samples and train_labels except this
-                                       is the set kept separate and used to find best hyper-
-                                       -parameters
+    samples : ndarray
+        `m`-by-`n` numpy array with `m` rows of samples, each having `n` features
+    labels : ndarray
+        numpy vector of length `m`, where each element is a label corresponding
+        to a row in 'samples'
+    k_range : range
+        of ints, values of k for which to determine accuracy
+    cv : int
+        number of folds for cross validation. Default is 10.
+    standardize : bool
+        If True, scale values in columns of `samples` by subtracting mean and
+        dividing by standard deviation (with `sklearn.preprocessing.scale`).
+        Default is True.
 
     Returns
     -------
-    mn_scores -- vector of mean scores for each value of k
-    best_k -- value of k corresponding to max value in 'scores'
-
+    cv_scores : ndarray
+        vector of mean scores for each value of k
+    best_k: scalar
+        value of k corresponding to max value in 'scores'
     """
 
-    # test loop
-    num_nabes_list = range(1,11,1)
-    scores = np.empty((10,))
-    for ind, num_nabes in enumerate(num_nabes_list):
-        clf = neighbors.KNeighborsClassifier(num_nabes,'distance')
-        clf.fit(train_samples,train_labels)
-        scores[ind] = clf.score(test_samples,test_labels)
-    k = num_nabes_list[scores.argmax()] #argmax returns index of max val
-    print("best k was {} with accuracy of {}".format(k, np.max(scores)))
-    return scores, k
+    if type(samples) != np.ndarray:
+        raise TypeError('samples should be ndarray')
+
+    if type(labels) == list:
+        labels = np.asarray(labels)
+
+    if type(labels) != np.ndarray:
+        raise TypeError('labels should be ndarray')
+
+    if samples.ndim != 2:
+        raise ValueError('samples.ndim does not equal 2.'
+                         'should be m-ny-n array'
+                         ' of m samples with n features')
+
+    if labels.ndim != 1:
+        raise ValueError('labels.ndim does not equal 1.'
+                         'should be array of length m'
+                         'where m is number of rows in samples matrix.')
+
+    if standardize:
+        samples = sklearn.preprocessing.scale(samples)
+
+    cv_scores = np.empty((len(k_range),))
+    for ind, k in enumerate(k_range):
+        clf = neighbors.KNeighborsClassifier(n_neighbors=k,
+                                             weights='distance')
+        scores = cross_val_score(clf,
+                                 samples,
+                                 labels,
+                                 cv=cv,
+                                 scoring='accuracy')
+        cv_scores[ind] = scores.mean()
+    best_k = k_range[cv_scores.argmax()] #argmax returns index of max val
+    print("best k was {} with accuracy of {}".format(best_k, np.max(cv_scores)))
+    return cv_scores, best_k
 
 
 def grab_n_samples_by_song(song_IDs,
