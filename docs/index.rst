@@ -53,9 +53,7 @@ Documentation
 Installation
 ------------
 
-Install $project by running:
-
-    install project
+see :ref:`install`
 
 Contribute
 ----------
@@ -66,8 +64,8 @@ Contribute
 Support
 -------
 
-If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
+| If you are having issues, please let us know.
+| We have a mailing list located at: `hvc-users@google-groups.com`
 
 License
 -------
