@@ -9,6 +9,7 @@ setup(
     author_email='nicholdav at gmail dot com',
     url='https://github.com/NickleDave/hybrid-vocal-classifier',
     packages=find_packages(),
+    include_package_data=True,
     license='BSD',
     classifiers=[
         'Development Status :: 4 - Beta',
