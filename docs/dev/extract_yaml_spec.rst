@@ -11,6 +11,8 @@ introduction to writing the files, please see
 structure
 ---------
 Every `extract.config.yml` file should be written in YAML as a dictionary with (key, value) pairs
+In other words, any YAML file that contains a configuration for feature extraction
+should define a dictionary named 'extract` with keys as outlined below.
 
 required key: todo_list
 -----------------------
@@ -70,10 +72,17 @@ Every dict in a `todo_list` has the following **required** keys:
         named features. See the list of named features here:
         :doc:`named_features`
 
-If `feature_group` is a list then it
    * feature_group : str or list
         named group of features, list if more than one group
         {'knn','svm'}
+
+   * Note that a `todo_list` can define *both* a `feature_list`
+and a `feature_group`. In this case features from the `feature_group`
+are added to the `feature_list`.
+
+Additional variables are added to the feature files that are output by
+`featureextract.extract` to keep track of which features belong to which
+feature group.
 
 specification for spect_params and segment_params dictionaries
 --------------------------------------------------------------
@@ -130,44 +139,19 @@ specification for spect_params and segment_params dictionaries
             minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
 
 
-example `extract_config.yml`
-----------------------------
+example `extract.config.yml` files
+----------------------------------
+These are some of the `extract.config.yml` files used for testing, found in
+`hybrid-vocal-classifier//tests//test_data//config.yaml//`:
 
-```YAML
-    spect_params:
-      nperseg: 512
-      noverlap: 480
-      freq_cutoffs: [1000,8000]
-    segment_params:
-      threshold: 5000 # arbitrary units of amplitude
-      min_syl_dur: 0.02 # ms
-      min_silent_dur: 0.002 # ms
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_knn.config.yml
 
-    todo_list:
-      -
-        bird_ID : gy6or6
-        file_format: evtaf
-        feature_group:
-          - svm
-          - knn
-        data_dirs:
-          - ./test_data/cbins
-          - C:\Data\gy6gy6\010317
-        output_dir: C:\Data\gy6gy6\
-        labelset: iabcdef
-      - #2
-        bird_ID : bl26lb16
-        file_format: evtaf
-        feature_group:
-          - svm
-          - knn
-        data_dirs:
-          - C:\DATA\bl26lb16\041912
-          - C:\DATA\bl26lb16\042012
-        output_dir: C:\DATA\bl26lb16\
-        labelset: iabcdef
-```
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_svm.config.yml
 
+.. literalinclude:: ..//..//tests//test_data//config.yaml//test_extract_flatwindow.config.yml
+
+references
+----------
 .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
 automatic classification of birdsong elements using a linear support vector
  machine." PloS one 9.3 (2014): e92584.

@@ -302,6 +302,7 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
         numtaps = 256
     else:
         numtaps = 512
+
     cutoffs = np.asarray([freq_cutoffs[0] / Nyquist_rate,
                           freq_cutoffs[1] / Nyquist_rate])
     # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)

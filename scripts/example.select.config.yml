@@ -10,17 +10,17 @@ select:
     models:
       -
         model: knn
-        feature_indices: [1,2,3]
+        feature_list_indices: [0,1,2,3,4,5,6,7,8]
         hyperparameters:
           k : 4
-      -
-        model: svm
-        feature_indices: [1,2,3]
-        hyperparameters:
-          C : 1
-          gamma : 0.01
+#      -
+#        model: svm
+#        feature_indices: [1,2,3]
+#        hyperparameters:
+#          C : 1
+#          gamma : 0.01
 
   todo_list:
     - #1
-      feature_file : C:\Data\gy6gy6\extract_output_170516_1935\summary_feature_file_created_170516_1935
+      feature_file : C:\Data\gy6or6\extract_output_170711_0104\summary_feature_file_created_170711_0104
       output_dir: C:\Data\gy6gy6\

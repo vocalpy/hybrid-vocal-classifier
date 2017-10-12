@@ -7,13 +7,8 @@ import glob
 
 # from dependencies
 import yaml
-import numpy as np
-from sklearn.externals import joblib
 import pytest
-
 import hvc.audiofileIO
-from hvc.features.extract import single_syl_features_switch_case_dict
-from hvc.features.extract import multiple_syl_features_switch_case_dict
 from hvc.features import knn
 
 with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
@@ -42,7 +37,7 @@ class TestKNN:
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
                           }
-        songfiles_list = glob.glob('./test_data/cbins/032412/*.cbin')
+        songfiles_list = glob.glob('./test_data/cbins/gy6or6/032412/*.cbin')
         song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
         song.set_syls_to_use('iabcdefghjk')
         song.make_syl_spects(spect_params={'ref': 'tachibana'})

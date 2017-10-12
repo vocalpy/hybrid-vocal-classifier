@@ -3,7 +3,6 @@ import warnings
 import numpy as np
 from scipy.io import wavfile
 import scipy.signal
-from scipy.signal import slepian  # AKA DPSS, window used for FFT
 from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
@@ -15,6 +14,60 @@ class WindowError(Exception):
 
 class SegmentParametersMismatchError(Exception):
     pass
+
+
+def butter_bandpass(freq_cutoffs, samp_freq, order=8):
+    """returns filter coefficients for Butterworth bandpass filter
+
+    Parameters
+    ----------
+    freq_cutoffs: list
+        low and high frequencies of pass band, e.g. [500, 10000]
+    samp_freq: int
+        sampling frequency
+    order: int
+        of filter, default is 8
+
+    Returns
+    -------
+    b, a: ndarray, ndarray
+
+    adopted from the SciPy cookbook:
+    http://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
+    """
+
+    nyquist = 0.5 * samp_freq
+    freq_cutoffs = np.asarray(freq_cutoffs) / nyquist
+    b, a = scipy.signal.butter(order, freq_cutoffs, btype='bandpass')
+    return b, a
+
+
+def butter_bandpass_filter(data, samp_freq, freq_cutoffs, order=8):
+    """applies Butterworth bandpass filter to data
+
+    Parameters
+    ----------
+    data: ndarray
+        1-d array of raw audio data
+    samp_freq: int
+        sampling frequency
+    freq_cutoffs: list
+        low and high frequencies of pass band, e.g. [500, 10000]
+    order: int
+        of filter, default is 8
+
+    Returns
+    -------
+    data: ndarray
+        data after filtering
+
+    adopted from the SciPy cookbook:
+    http://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
+    """
+
+    b, a = butter_bandpass(freq_cutoffs, samp_freq, order=order)
+    return scipy.signal.lfilter(b, a, data)
+
 
 class Spectrogram:
     """class for making spectrograms.
@@ -30,7 +83,8 @@ class Spectrogram:
                  window=None,
                  filter_func=None,
                  spect_func=None,
-                 log_transform_spect=True):
+                 log_transform_spect=True,
+                 thresh=-4.0):
         """Spectrogram.__init__ function
         
         Parameters
@@ -53,7 +107,7 @@ class Spectrogram:
             limits of frequency band to keep, e.g. [1000,8000]
             Spectrogram.make keeps the band:
                 freq_cutoffs[0] >= spectrogram > freq_cutoffs[1]
-            Default is None.
+            Default is [500, 10000].
         window : str
             window to apply to segments
             valid strings are 'Hann', 'dpss', None
@@ -66,6 +120,7 @@ class Spectrogram:
             filter to apply to raw audio. valid strings are 'diff' or None
             'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
             Default is None.
+            Note this is different from filters applied to isolate frequency band.
         spect_func : str
             which function to use for spectrogram.
             valid strings are 'scipy' or 'mpl'.
@@ -75,6 +130,11 @@ class Spectrogram:
         log_transform_spect : bool
             if True, applies np.log10 to spectrogram to increase range.
             Default is True.
+        thresh : float
+            threshold for spectrogram.
+            All values below thresh are set to thresh;
+            increases contrast when visualizing spectrogram with a colormap.
+            Default is -4 (assumes log_transform_spect==True)
 
         References
         ----------
@@ -106,20 +166,23 @@ class Spectrogram:
                 if ref == 'tachibana':
                     self.nperseg = 256
                     self.noverlap = 192
-                    self.window = np.hanning(self.nperseg) #Hann window
-                    self.freqCutoffs = None
+                    self.window = np.hanning(self.nperseg)  # Hann window
+                    self.freqCutoffs = [10, 15990]  # basically no bandpass, as in Tachibana
                     self.filterFunc = 'diff'
                     self.spectFunc = 'mpl'
                     self.logTransformSpect = False  # see tachibana feature docs
+                    self.thresh = None
                     self.ref = ref
                 elif ref == 'koumura':
                     self.nperseg = 512
                     self.noverlap = 480
-                    self.window = slepian(self.nperseg, 4 / self.nperseg) #dpss
+                    self.window = scipy.signal.slepian(self.nperseg,
+                                                       4 / self.nperseg)  #dpss
                     self.freqCutoffs = [1000, 8000]
                     self.filterFunc = None
                     self.spectFunc = 'scipy'
                     self.logTransformSpect = True
+                    self.thresh = None
                     self.ref = ref
                 else:
                     raise ValueError('{} is not a valid value for \'ref\' argument. '
@@ -163,7 +226,10 @@ class Spectrogram:
                     elif window is None:
                         self.window = None
 
-            if type(freq_cutoffs) != list:
+            if freq_cutoffs is None:
+                # switch to default
+                self.freqCutoffs = [500, 10000]
+            elif type(freq_cutoffs) != list:
                 raise TypeError('type of freq_cutoffs must be list, but is {}'.
                                  format(type(freq_cutoffs)))
             elif len(freq_cutoffs) != 2:
@@ -184,22 +250,29 @@ class Spectrogram:
             else:
                 self.filterFunc = filter_func
 
-                if type(spect_func) != str:
-                    raise TypeError('type of spect_func must be str, but is {}'.
-                                     format(type(spect_func)))
-                elif spect_func not in ['scipy','mpl']:
-                    raise ValueError('string \'{}\' is not valid for filter_func. '
-                                     'Valid values are: \'scipy\' or \'mpl\'.'.
-                                     format(spect_func))
-                else:
-                    self.spectFunc = spect_func
+            if type(spect_func) != str:
+                raise TypeError('type of spect_func must be str, but is {}'.
+                                 format(type(spect_func)))
+            elif spect_func not in ['scipy','mpl']:
+                raise ValueError('string \'{}\' is not valid for filter_func. '
+                                 'Valid values are: \'scipy\' or \'mpl\'.'.
+                                 format(spect_func))
+            else:
+                self.spectFunc = spect_func
 
-                if type(log_transform_spect) is not bool:
-                    raise ValueError('Value for log_transform_spect is {}, but'
-                                     ' it must be bool.'
-                                     .format(type(log_transform_spect)))
-                else:
-                    self.logTransformSpect = log_transform_spect
+            if type(log_transform_spect) is not bool:
+                raise ValueError('Value for log_transform_spect is {}, but'
+                                 ' it must be bool.'
+                                 .format(type(log_transform_spect)))
+            else:
+                self.logTransformSpect = log_transform_spect
+
+            if type(thresh) is not float:
+                raise ValueError('Value for thresh is {}, but'
+                                 ' it must be float.'
+                                 .format(type(thresh)))
+            else:
+                self.thresh = thresh
 
     def make(self,
              raw_audio,
@@ -219,6 +292,13 @@ class Spectrogram:
         freq_bins : 1-d numpy array
         time_bins : 1-d numpy array
         """
+
+        #below, I set freq_bins to >= freq_cutoffs
+        #so that Koumura default of [1000,8000] returns 112 freq. bins
+        if self.freqCutoffs is not None:
+            raw_audio = butter_bandpass_filter(raw_audio,
+                                               samp_freq,
+                                               self.freqCutoffs)
 
         if self.filterFunc == 'diff':
             raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
@@ -275,17 +355,9 @@ class Spectrogram:
         if self.logTransformSpect:
             spect = np.log10(spect)  # log transform to increase range
 
-        #below, I set freq_bins to >= freq_cutoffs
-        #so that Koumura default of [1000,8000] returns 112 freq. bins
-        if self.freqCutoffs is not None:
-            f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
-                                (freq_bins < self.freqCutoffs[1]))[0] #returns tuple
-            freq_bins = freq_bins[f_inds]
-            spect = spect[f_inds, :]
+        if self.thresh is not None:
+            spect[spect < self.thresh] = self.thresh
 
-        #flip spect and freq_bins so lowest frequency is at 0 on y axis when plotted
-        spect = np.flipud(spect)
-        freq_bins = np.flipud(freq_bins)
         return spect, freq_bins, time_bins
 
 

@@ -7,8 +7,10 @@ from datetime import datetime
 #from dependencies
 import numpy as np
 from scipy.io import loadmat
+import sklearn.preprocessing 
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 from sklearn import neighbors
 
@@ -18,6 +20,7 @@ from .randomdotorg import RandomDotOrg
 
 def timestamp():
     """timestampe for dir + file names
+
     Use to make sure each dir/file has unique identifier
     (so we don't load the wrong data with joblib because
     both data files have the same name)
@@ -29,8 +32,8 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
     """
     Loads feature files created in matlab
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     fname : string
         filename of .mat file
     ftr_file_type : {'knn','svm'}
@@ -81,31 +84,42 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
         return samples, labels, song_IDs_vec
 
 
-def filter_samples(samples,labels,labels_to_filter,song_ID_vec=None,remove=False):
+def filter_samples(samples, labels, labels_to_filter, song_ID_vec=None, remove=False):
+    """filter samples by their labels.  
+    Either removes or keeps the samples with the specified labels.
+    
+    Parameters
+    ----------
+    samples : ndarray
+        m-by-n numpy array with m rows of samples, each having n
+        columns of features
+    labels : ndarray
+        1d numpy array of m elements where each is a label that
+        corresponds to a row in samples. Expects an integer value
+    song_ID_vec : ndarray
+        vector of length m, where each element denotes which song
+        that sample m(sub i) belongs to in the samples array.
+        "None" by default. If provided, is filtered just like labels
+        and samples.
+    labels_to_filter : ndarray
+        like labels, 1d numpy array of integers like
+        labels, but filter_samples finds all indices of
+        a label that occurs in 'labels *and* in 'labels_to_filter',
+        and keeps only those, filtering out every other label
+        and filtering out the corresponding rows from samples
+        and the corresponding elements from song_ID_vec.
+        ***unless*** 'remove'=True, in which case it *removes*
+        _only_ the labels in labels_to_filter, and leaves
+        everything else. 
+   remove : bool
+        set remove=True when you want to remove only the labels in
+        labels to filter instead of keeping only those labels
+
+    Returns
+    -------
+    filtered_samples,filtered_labels,filtered_song_IDs
     """
-    filter_samples(samples,labels,labels_to_keep,song_ID_vec=None,remove=False)
-        input parameters:
-            samples -- m-by-n numpy array with m rows of samples, each having n
-                       columns of features
-            labels -- 1d numpy array of m elements where each is a label that
-                      corresponds to a row in samples. Expects an integer value
-            song_ID_vec -- vector of length m, where each element denotes which song
-                       that sample m(sub i) belongs to in the samples array.
-                       "None" by default. If provided, is filtered just like labels
-                       and samples.
-            labels_to_filter -- like labels, 1d numpy array of integers like
-                                lables, but filter_samples finds all indices of
-                                a label that occurs in 'labels *and* in 'labels_to_filter',
-                                and keeps only those, filtering out every other label
-                              and filtering out the corresponding rows from samples
-                              and the corresponding elements from song_ID_vec.
-                              ***unless*** 'remove'=True, in which case it *removes*
-                              _only_ the labels in labels_to_filter, and leaves
-                              everything else. 
-           remove -- set remove=True when you want to remove only the labels in
-                     labels to filter instead of keeping only those labels
-        returns: filtered_samples,filtered_labels,filtered_song_IDs
-    """
+
     if remove is True:
         indices = np.in1d(labels,labels_to_filter,invert=True)
     elif remove is False:
@@ -118,92 +132,126 @@ def filter_samples(samples,labels,labels_to_filter,song_ID_vec=None,remove=False
         filtered_song_IDs = song_ID_vec[indices]
         return filtered_samples, filtered_labels,filtered_song_IDs
 
+
 def filter_labels(labels,labelset):
     """
     filter_labels(labels,labelset)
     returns labels with any elements removed that are not in labelset
     """
-    labels_to_keep = np.in1d(labels,labelset) #returns boolean vector, True where label is in labelset
+    labels_to_keep = np.in1d(labels, labelset) #returns boolean vector, True where label is in labelset
     labels = labels[labels_to_keep]
     return labels
 
 
-def grid_search(X,y):
+def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
+                        gamma_range=np.logspace(-6, -1, 6)):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
-    use with a support vector classifier.
+    use with a support vector machine.
 
-    Arguments:
-        X -- numpy m-by-n array containing m samples each with n features
-        y -- numpy array of length m containing m labels corresponding to the
-             m samples in X
+    Parameters
+    ----------
+    X : ndarray
+        m-by-n array containing m samples each with n features
+    y : ndarray
+        numpy array of length m containing m labels corresponding to the
+        m samples in X
+    C_range : ndarray
+        range of values over which to search for best C.
+        default is np.logspace(-1, 4, 6)
+    gamma_range : ndarray
+        range of values over which to search for best gamma.
+        default is np.logspace(-6, -1, 6)
 
-    Returns:
-        best_params -- values for C and gamma that gave the highest accuracy with
-                       cross-validation
-        best_score -- highest accuracy with cross-validation
+    Returns
+    -------
+    best_params :
+        values for C and gamma that gave the highest accuracy with
+        cross-validation
+    best_score :
+        highest accuracy with cross-validation
     """
-    C_range = np.logspace(-2, 10, 13)
-    gamma_range = np.logspace(-9, 3, 13)
+
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
-    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
+    # note call to GridSearchCV with n_jobs = -1, which means
+    # "run parallel if possible"
+    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv, n_jobs=-1)
     grid.fit(X, y)
-    print("The best parameters are %s with a score of %0.2f"
-        % (grid.best_params_, grid.best_score_))
+    print("The best parameters are {} with a score of {0.2f}"
+          .format(grid.best_params_, grid.best_score_))
     return grid.best_params_, grid.best_score_
 
 
-def uniqify_filename_list(filename_list, idfun=None):
-   # based on code by Peter Bengtsson
-   # https://www.peterbe.com/plog/uniqifiers-benchmark
-   if idfun is None:
-       def idfun(x): return x
-   seen = {}
-   result = []
-   for filename in filename_list:
-       marker = idfun(filename)
-       if marker in seen: continue
-       seen[marker] = 1
-       result.append(item)
-   return result
+def find_best_k(samples,
+                labels,
+                k_range=range(1, 11),
+                cv=10,
+                standardize=True):
+    """find best k to use with k-Nearest Neighbors algorithm
+    using 10-fold cross validation.
 
+    Uses the distances weighted by their inverse to determine the nearest neighbor
+    Empirically, with the 'knn' features, weighting by inverse always give slightly better accuracy.
 
-def find_best_k(train_samples,train_labels,test_samples,test_labels):
-    """find_best_k(train_samples,train_labels,holdout_samples,holdout_labels)
-    Estimates accuracy of k-neearest neighbors algorithm using different values
-    of k on the samples in data_fname. As currently written, this function loops
-    from k=1 to k=10. For each value of k, it generates 10 replicates by using
-    a random two-thirds of the data as a training set and then using the other
-    third as the validation set.
+    Parameters
+    ----------
+    samples : ndarray
+        `m`-by-`n` numpy array with `m` rows of samples, each having `n` features
+    labels : ndarray
+        numpy vector of length `m`, where each element is a label corresponding
+        to a row in 'samples'
+    k_range : range
+        of ints, values of k for which to determine accuracy
+    cv : int
+        number of folds for cross validation. Default is 10.
+    standardize : bool
+        If True, scale values in columns of `samples` by subtracting mean and
+        dividing by standard deviation (with `sklearn.preprocessing.scale`).
+        Default is True.
 
-    Note that the algorithm uses the distances weighted by 
-    their inverse to determine the nearest neighbor, since I found empirically
-    that the weighted distances always give slightly better accuracy.
-    
-    Arguments:
-        train_samples -- m-by-n numpy array with m rows of samples, each having n features
-        train_labels -- numpy vector of length m, where each element is a label corresponding
-                  to a row in 'samples'
-        holdout_samples, holdout_labels -- same as train_samples and train_labels except this
-                                           is the set kept separate and used to find best hyper-
-                                           -parameters
-        
-    Returns:
-        mn_scores -- vector of mean scores for each value of k
-        best_k -- value of k corresponding to max value in 'scores'
-
+    Returns
+    -------
+    cv_scores : ndarray
+        vector of mean scores for each value of k
+    best_k: scalar
+        value of k corresponding to max value in 'scores'
     """
 
-    # test loop
-    num_nabes_list = range(1,11,1)
-    scores = np.empty((10,))
-    for ind, num_nabes in enumerate(num_nabes_list):
-        clf = neighbors.KNeighborsClassifier(num_nabes,'distance')
-        clf.fit(train_samples,train_labels)
-        scores[ind] = clf.score(test_samples,test_labels)
-    k = num_nabes_list[scores.argmax()] #argmax returns index of max val
-    print("best k was {} with accuracy of {}".format(k, np.max(scores)))
-    return scores, k
+    if type(samples) != np.ndarray:
+        raise TypeError('samples should be ndarray')
+
+    if type(labels) == list:
+        labels = np.asarray(labels)
+
+    if type(labels) != np.ndarray:
+        raise TypeError('labels should be ndarray')
+
+    if samples.ndim != 2:
+        raise ValueError('samples.ndim does not equal 2.'
+                         'should be m-ny-n array'
+                         ' of m samples with n features')
+
+    if labels.ndim != 1:
+        raise ValueError('labels.ndim does not equal 1.'
+                         'should be array of length m'
+                         'where m is number of rows in samples matrix.')
+
+    if standardize:
+        samples = sklearn.preprocessing.scale(samples)
+
+    cv_scores = np.empty((len(k_range),))
+    for ind, k in enumerate(k_range):
+        clf = neighbors.KNeighborsClassifier(n_neighbors=k,
+                                             weights='distance')
+        scores = cross_val_score(clf,
+                                 samples,
+                                 labels,
+                                 cv=cv,
+                                 scoring='accuracy')
+        cv_scores[ind] = scores.mean()
+    best_k = k_range[cv_scores.argmax()] #argmax returns index of max val
+    print("best k was {} with accuracy of {}".format(best_k, np.max(cv_scores)))
+    return cv_scores, best_k
 
 
 def grab_n_samples_by_song(song_IDs,
@@ -319,7 +367,7 @@ def grab_n_samples_by_song(song_IDs,
         return sample_IDs
 
 
-def get_acc_by_label(labels,pred_labels,labelset):
+def get_acc_by_label(labels, pred_labels, labelset):
     """accuracy averaged across classes
 
     Parameters:

@@ -29,14 +29,14 @@ class TestAudiofileIO:
                                            filter_func='diff',
                                            spect_func='scipy')
 
-        #test whether init works with 'ref' parameter
-        #instead of passing spect params
+        # test whether init works with 'ref' parameter
+        # instead of passing spect params
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
 
-        #test that specify 'ref' and specifying other params raises warning
-        #(because other params specified will be ignored)
+        # test that specify 'ref' and specifying other params raises warning
+        # (because other params specified will be ignored)
         with pytest.warns(UserWarning):
             spect_maker = hvc.audiofileIO.Spectrogram(nperseg=512,
                                                       ref='tachibana')
@@ -52,16 +52,16 @@ class TestAudiofileIO:
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='tachibana')
-        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect, freq_bins, time_bins = spect_maker.make(dat, fs)
         assert spect.shape[0] == freq_bins.shape[0]
         assert spect.shape[1] == time_bins.shape[0]
 
         spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
-        spect,freq_bins, time_bins = spect_maker.make(dat, fs)
+        spect, freq_bins, time_bins = spect_maker.make(dat, fs)
         assert spect.shape[0] == freq_bins.shape[0]
         assert spect.shape[1] == time_bins.shape[0]
 
@@ -102,7 +102,7 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
@@ -122,31 +122,49 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        # test that make_syl_spects works
+        # with spect params given individually
+        spect_params = {
+            'nperseg': 512,
+            'noverlap': 480,
+            'freq_cutoffs': [1000, 8000]}
+        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
+        cbin_song.make_syl_spects(spect_params)
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
-
-        # test that make_syl_spects works with spect params given individually
-        spect_params = {
-            'nperseg': 512,
-            'noverlap': 480,
-            'freq_cutoffs': [1000, 8000]}
-        cbin_song.make_syl_spects(spect_params)
         wav_song.make_syl_spects(spect_params)
 
         # test make_syl_spects works with 'ref' set to 'tachibana'
+        cbin_song = hvc.audiofileIO.Song(filename=cbin,
+                                         file_format='evtaf',
+                                         segment_params=segment_params)
+        cbin_song.set_syls_to_use('iabcdefghjk')
         cbin_song.make_syl_spects(spect_params={'ref': 'tachibana'})
+
+        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav_song = hvc.audiofileIO.Song(filename=wav,
+                                        file_format='koumura')
+        wav_song.set_syls_to_use('0123456')
         wav_song.make_syl_spects(spect_params={'ref': 'tachibana'})
 
         # test make_syl_spects works with 'ref' set to 'koumura'
+        cbin_song = hvc.audiofileIO.Song(filename=cbin,
+                                         file_format='evtaf',
+                                         segment_params=segment_params)
+        cbin_song.set_syls_to_use('iabcdefghjk')
         cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
+
+        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav_song = hvc.audiofileIO.Song(filename=wav,
+                                        file_format='koumura')
+        wav_song.set_syls_to_use('0123456')
         wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
 
         # test that make_syl_spects works the same way when

@@ -1,3 +1,3 @@
-from . import models
-from . import conv_models
+from .models import dilated
+from .models import flatwindow
 from . import utils

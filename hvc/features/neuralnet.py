@@ -17,7 +17,7 @@ def flatwindow(song, spect_params, spect_width=0.3):
         of class audiofileIO.Song
     spect_params : dict
         as declared in config file and returned by parser
-    spect_width : int
+    spect_width : float
         width of spectrogram in ms
         default is 0.3, i.e. 300 ms
 

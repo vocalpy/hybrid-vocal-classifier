@@ -8,12 +8,13 @@ import yaml
 from . import parse
 
 parser_dict = {
-    'extract' : parse.extract.validate_yaml,
-    'select' : parse.select.validate_yaml,
-    'predict' : parse.predict.validate_yaml
+    'extract': parse.extract.validate_yaml,
+    'select': parse.select.validate_yaml,
+    'predict': parse.predict.validate_yaml
 }
 
-def _parse_helper(config_type,config_file,config_yaml):
+
+def _parse_helper(config_type, config_file, config_yaml):
     """
     helper function to avoid repeating code
     
@@ -34,26 +35,30 @@ def _parse_helper(config_type,config_file,config_yaml):
     if config_type not in ['extract', 'select', 'predict']:
         raise ValueError('{} in {} is not a valid config_type. '
                          'Valid types are: \'extract\', \'select\', or \'predict\'.'
-                          .format(config_type,config_file))
+                         .format(config_type, config_file))
 
     if config_type not in config_yaml:
-        raise KeyError('\'{}\' not defined in config file {}'.format(config_type,config_file))
+        raise KeyError('\'{}\' not defined in config file {}'.format(config_type, config_file))
     else:
         return parser_dict[config_type](config_yaml[config_type])
 
-def parse_config(config_file,config_type=None):
-    """
+
+def parse_config(config_file, config_type=None):
+    """Parse configurations in YAML file.
+    Each configuration type must be defined as a dictionary with a
     
     Parameters
     ----------
-    config_file : string
+    config_file : str
         filename of YAML file
-    config_type : string
-        valid strings are 'extract','select', and 'predict'
+    config_type : str
+        {'extract','select','predict'}
         if one of those strings is supplied, the matching key is found in the
         config file and only that configuration is parsed and returned.
         The extract, select, and predict modules make use of this functionality. 
-        Default is None, in which case entire config file is parsed and returned
+        Default is None, in which case entire config file is parsed and returned.
+        Raises KeyError if no dictionary is defined with name that is a valid
+        config_type.
 
     Returns
     -------
@@ -65,11 +70,15 @@ def parse_config(config_file,config_type=None):
         config_yaml = yaml.load(yaml_to_parse)
 
     if config_type is not None:
-        return _parse_helper(config_type,config_file,config_yaml)
+        return _parse_helper(config_type, config_file, config_yaml)
 
     elif config_type is None:
         config_dict = {}
         config_types = list(config_yaml.keys())
+        if not set(config_types.keys()).issubset(parser_dict.keys()):
+            invalid_keys = set(config_types.keys()) - set(parser_dict.keys())
+            raise KeyError('Invalid config keys in file \'{0}\': {1}'
+                           .format(config_file, invalid_keys))
         for config_type in config_types:
-            config_dict[config_type] = _parse_helper(config_type,config_file,config_yaml)
+            config_dict[config_type] = _parse_helper(config_type, config_file, config_yaml)
         return config_dict

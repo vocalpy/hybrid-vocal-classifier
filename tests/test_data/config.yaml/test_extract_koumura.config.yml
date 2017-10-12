@@ -12,11 +12,10 @@ extract:
       file_format: evtaf
       feature_group:
         - svm
-        #- knn
       data_dirs:
-        - C:\Data\gy6or6\032212
-#        - C:\Data\gy6or6\032312
+        - .\test_data\cbins\gy6or6\032312
+        - .\test_data\cbins\gy6or6\032412
 
-      output_dir: C:\Data\gy6or6\
+      output_dir: replace with tmp_output_dir
 
       labelset: iabcdefghjk

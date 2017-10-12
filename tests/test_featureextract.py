@@ -10,11 +10,15 @@ from sklearn.externals import joblib
 
 import hvc
 
+
 class TestExtract:
 
     def tests_for_all_extract(self):
         homedir = os.getcwd()
-        search_path = os.path.join('.','test_data','config.yaml','test_extract_*.config.yml')
+        search_path = os.path.join('.',
+                                   'test_data',
+                                   'config.yaml',
+                                   'test_extract_*.config.yml')
         extract_config_files = glob.glob(search_path)
         for extract_config_file in extract_config_files:
             if os.getcwd() != homedir:

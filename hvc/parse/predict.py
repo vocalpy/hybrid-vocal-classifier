@@ -4,6 +4,7 @@ YAML parser for predict config files
 
 #from standard library
 import os
+import sys
 import copy
 
 # from dependencies
@@ -13,11 +14,12 @@ from sklearn.externals import joblib
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 
-with open(os.path.join(dir_path,'validation.yml')) as val_yaml:
+with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
-REQUIRED_TODO_LIST_KEYS = set(['model_file','file_format','data_dirs'])
-OPTIONAL_TODO_LIST_KEYS = set(['bird_ID'])
+REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
+OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
+VALID_MODELS = validate_dict['valid_models']
 
 def _validate_todo_list_dict(todo_list_dict,index):
     """
@@ -36,7 +38,10 @@ def _validate_todo_list_dict(todo_list_dict,index):
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
     if not set(todo_list_dict.keys()) >= REQUIRED_TODO_LIST_KEYS:
-        raise KeyError('not all required keys in todo_list item #{}'.format(index))
+        missing_keys = REQUIRED_TODO_LIST_KEYS - set(todo_list_dict.keys())
+        raise KeyError('The following required keys '
+                       'were not found in todo_list item #{}: {}'
+                       .format(index, missing_keys))
     else:
         additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS
         for extra_key in additional_keys:
@@ -53,7 +58,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
-        elif key=='data_dirs':
+        elif key == 'data_dirs':
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
@@ -62,7 +67,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
                         raise ValueError('directory {} in {} is not a valid directory.'
                                          .format(item,key))
 
-        elif key=='file_format':
+        elif key == 'file_format':
             if type(val) != str:
                 raise ValueError('Value {} for key \'file_format\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -70,37 +75,55 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key == 'model_file':
+        elif key == 'model_meta_file':
             if type(val) != str:
                 raise ValueError('Value {} for key \'feature_file\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
             if not os.path.isfile(val):
                 raise OSError('{} is not found as a file'.format(val))
-            try:
-                joblib.load(val)
-            except:
-                raise IOError('Unable to open {}'.format(val))
 
-        else: # if key is not found in list
-            raise KeyError('key {} in todo_list_dict is an invalid key'.
+            # check that model file can be opened
+            model_meta_file = joblib.load(val)
+            model_filename = model_meta_file['model_file']
+            model_name = model_meta_file['model']
+            if model_name in VALID_MODELS['sklearn']:
+                try:
+                    joblib.load(model_filename)
+                except:
+                    raise IOError('Unable to open model file: {}'.format(model_filename))
+            elif model_name in VALID_MODELS['keras']:
+                try:
+                    import keras.models
+                    keras.models.load_model(val)
+                except:
+                    raise IOError('Unable to open model file: {}'.format(model_filename))
+
+        elif key == 'output_dir':
+            if type(val) != str:
+                raise ValueError('output_dirs should be a string but it parsed as a {}'
+                                 .format(type(val)))
+
+        else:  # if key is not found in list
+            raise KeyError('key {} found in todo_list_dict but not validated'.
                             format(key))
     return validated_todo_list_dict
 
-def validate_yaml(select_config_yaml):
+
+def validate_yaml(predict_config_yaml):
     """
     validates config from YAML file
 
     Parameters
     ----------
-    select_config_yaml : dictionary, config as loaded with YAML module
+    predict_config_yaml : dictionary, config as loaded with YAML module
 
     Returns
     -------
-    select_config_dict : dictionary, after validation of all keys
+    predict_config_dict : dictionary, after validation of all keys
     """
 
-    validated_select_config = copy.deepcopy(select_config_yaml)
-    for key, val in select_config_yaml.items():
+    validated_predict_config = copy.deepcopy(predict_config_yaml)
+    for key, val in predict_config_yaml.items():
 
         if key == 'todo_list':
             if type(val) != list:
@@ -114,10 +137,10 @@ def validate_yaml(select_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item, index)
-            validated_select_config['todo_list'] = val
+            validated_predict_config['todo_list'] = val
 
         else:  # if key is not found in list
-            raise KeyError('key {} in \'select\' is an invalid key'.
+            raise KeyError('key {} in \'predict\' is an invalid key'.
                            format(key))
 
-    return validated_select_config
+    return validated_predict_config

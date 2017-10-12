@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.spatial.distance
+
 
 def lev_np(source, target):
     """
@@ -54,7 +56,8 @@ def lev_np(source, target):
 
     return previous_row[-1]
 
-def average_accuracy(true_labels,pred_labels,labelset):
+
+def average_accuracy(true_labels, pred_labels, labelset):
     """
     computes accuracy averaged across classes
 
@@ -91,48 +94,70 @@ def average_accuracy(true_labels,pred_labels,labelset):
     avg_acc = np.mean(acc_by_label)
     return acc_by_label,avg_acc
 
-def make_frame_vecs(seqs):
-    frame_vecs = []
-    for seq in seqs:
-        frame_vec = np.ones((seq.length,),dtype=int) * -1
-        for syl in seq.syls:
-            label = ord(syl.label)
-            frame_vec[syl.position:syl.position+syl.length] = label    
-        frame_vecs.append(frame_vec)
-    return frame_vecs
 
-def frame_error(true_seqs,pred_seqs):
+def frame_error(y_true, y_pred):
     """
     computes error rate for every frame
-    
+    equivalent to "note and timing error rate" in Koumura Okanoya 2016
+
     Parameters
     ----------
-    true_seqs : list of Sequence objects
+    y_true : 1-dimensional numpy array
         ground truth
-    
-    pred_seqs : list of Sequence objects
-        predicted sequences returned by model
+    y_pred : 1-dimensional numpy array
+        prediction, output of some model
 
     Returns
     -------
     frame_error : scalar
-        correctly classified frames / total number of frames
+        1 - (correctly classified frames / total number of frames)
     """
-    
-    if len(true_seqs) != len(pred_seqs):
-        raise ValueError('Number of true and predicted Sequences'
-                         ' does not match')
 
-    true_seqs_frame_vecs = make_frame_vecs(true_seqs)
-    pred_seqs_frame_vecs = make_frame_vecs(pred_seqs)
-    
-    correct_frames = []
-    total_frames = []
-    
-    for true_vec,pred_vec in zip(true_seqs_frame_vecs,pred_seqs_frame_vecs):
-        correct_frames.append(np.sum(np.equal(true_vec,pred_vec)))
-        total_frames.append(true_vec.shape[0])
+    if y_true.ndim > 1:
+        raise ValueError('frame_error only defined for 1-dimensional inputs'
+                         ' but y_true.ndim is {}'.format(y_true.ndim))
 
-    correct_frames = sum(correct_frames)
-    total_frames = sum(total_frames)
-    return 1 - (float(correct_frames) / float(total_frames))
+    if y_pred.ndim > 1:
+        raise ValueError('frame_error only defined for 1-dimensional inputs'
+                         ' but y_pred.ndim is {}'.format(y_pred.ndim))
+
+    if y_true.shape[-1] != y_pred.shape[-1]:
+        raise ValueError('y_true and y_pred should have the same length.'
+                         'y_true.shape is {} and y_pred.shape is {}'
+                         .format(y_true.shape,y_pred.shape))
+
+    return 1 - sum(y_true == y_pred) / y_true.shape[-1]
+
+
+def hamming_dist(y_true, y_pred):
+    """Hamming distance. Number of substitutions required to convert y_pred to y_true (or vice versa).
+    Just a wrapper around scipy.spatial.distance.hamming.
+
+    Parameters
+    ----------
+    y_true : 1-dimensional numpy array
+        ground truth
+    y_pred : 1-dimensional numpy array
+        prediction, output of some model
+
+    Returns
+    -------
+    hamming : scalar
+    """
+
+    # redundant code copied and pasted from frame error rate
+    # better than overhead of having some error-checking function / making these classes?
+    if y_true.ndim > 1:
+        raise ValueError('hamming_dist only defined for 1-dimensional inputs'
+                         ' but y_true.ndim is {}'.format(y_true.ndim))
+
+    if y_pred.ndim > 1:
+        raise ValueError('hamming_dist only defined for 1-dimensional inputs'
+                         ' but y_pred.ndim is {}'.format(y_pred.ndim))
+
+    if y_true.shape[-1] != y_pred.shape[-1]:
+        raise ValueError('y_true and y_pred should have the same length.'
+                         'y_true.shape is {} and y_pred.shape is {}'
+                         .format(y_true.shape,y_pred.shape))
+
+    return scipy.spatial.distance.hamming(y_true, y_pred)
