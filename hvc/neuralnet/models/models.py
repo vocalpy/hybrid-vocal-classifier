@@ -1,6 +1,6 @@
 from keras.models import Sequential
 from keras.layers.core import Activation, Reshape
-from keras.layers.convolutional import Conv2D, MaxPooling2D, \
+from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.wrappers import TimeDistributed
 from keras.optimizers import Adam
 
