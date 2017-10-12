@@ -8,7 +8,10 @@ setup(
     author='David Nicholson',
     author_email='nicholdav at gmail dot com',
     url='https://github.com/NickleDave/hybrid-vocal-classifier',
-    packages=['hvc'],
+    packages=['hvc',
+              'hvc.features',
+              'hvc.neuralnet',
+              'hvc.parse'],
     license='BSD',
 
     classifiers=[
