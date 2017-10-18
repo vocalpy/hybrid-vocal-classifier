@@ -3,6 +3,7 @@
 # https://github.com/mne-tools/mne-python/blob/master/mne/utils.py#L1884
 # https://github.com/mne-tools/mne-python/blob/master/LICENSE.txt
 
+from math import log
 import sys
 import os
 import time
@@ -10,7 +11,8 @@ import urllib.request
 import urllib.parse
 import ftplib
 import hashlib
-from math import log
+import shutil
+import tarfile
 from collections.abc import Iterable
 
 def md5sum(fname, block_size=1048576):  # 2 ** 20
@@ -382,6 +384,10 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
 
 
 repodict = {
+    'sober.repo1.bl26lb16.041912': {
+        'url': 'https://ndownloader.figshare.com/files/9533977',
+        'file_name': 'sober.repo1.bl26lb16.041912.tar.gz',
+        'md5_hash': '08061e808de16ebc69ca90cedf3dd994'},
     'Sober-gr41rd51': {'url': 'https://ndownloader.figshare.com/files/7907872',
                        'file_name': 'Sober-gr41rd51',
                        'md5_hash': '411a617eb804578008aceae248ff66fe'}
@@ -408,3 +414,8 @@ def fetch(dataset_name, destination_path='.'):
     file_name = repodict[dataset_name]['file_name']
     md5_hash = repodict[dataset_name]['md5_hash']
     _fetch_file(url, file_name, hash_=md5_hash)
+    if file_name[-7:] == '.tar.gz':
+        print('extracting {}'.format(file_name))
+        tar = tarfile.open(file_name)
+        tar.extractall()
+        tar.close()
