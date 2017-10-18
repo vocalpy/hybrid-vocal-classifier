@@ -8,8 +8,6 @@ import sys
 import glob
 
 # from dependencies
-import numpy as np
-import scipy.io as scio # to load matlab files
 from sklearn.externals import joblib
 
 # from hvc
@@ -17,11 +15,12 @@ import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import timestamp
 
+
 def predict(config_file):
     """main function that does prediction
     Does not return anything, just runs through directories specified in config_file
     and classifies syllables using model.
-    
+
     Parameters
     ----------
     config_file : string
