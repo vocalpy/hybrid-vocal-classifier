@@ -47,8 +47,8 @@ def to_notmat(notmat, pred_labels, clf_file):
     scio.savemat(notmat, notmat_dict)
 
 
-def to_sap:
+def to_sap():
     pass
 
-def to_koumura:
+def to_koumura():
     pass
