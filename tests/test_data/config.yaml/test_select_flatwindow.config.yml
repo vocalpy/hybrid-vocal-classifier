@@ -8,7 +8,7 @@ select:
 
   models:
     -
-      model: flatwindow
+      model_name: flatwindow
       hyperparameters:
         batch size: 32
         epochs : 200

@@ -76,7 +76,7 @@ for any dict in a `todo_list`, then that definition will override the top-level 
 specification for models list of dicts
 --------------------------------------
 Every dict in a `models` list has the following **required** keys:
-  * model: str
+  * model_name: str
     name of model, e.g. 'svm'
   * feature_list_indices: list of ints
     corresponding to elements in list of feature names in feature_file

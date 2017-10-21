@@ -59,13 +59,13 @@ def _validate_model_dict(model_dict,
     validated_model_dict : dict
     """
 
-    # no need to validate value of 'model' key
+    # no need to validate value of 'model_name' key
     # because that was done in _validate_models function
     # before calling _validate_model_dict.
     # so now check all the other keys + values
-    model_dict_keys = set(model_dict.keys()) - {'model'}
+    model_dict_keys = set(model_dict.keys()) - {'model_name'}
     # get list of valid keys by using model name as key for VALID_MODEL_KEYS dict
-    valid_keys_for_this_model = set(VALID_MODEL_KEYS[model_dict['model']])
+    valid_keys_for_this_model = set(VALID_MODEL_KEYS[model_dict['model_name']])
     if not model_dict_keys.issubset(valid_keys_for_this_model):
         invalid_keys = model_dict_keys - valid_keys_for_this_model
         raise KeyError('Found invalid keys in item {0} from '
@@ -79,7 +79,7 @@ def _validate_model_dict(model_dict,
     # need to validate feature groups, etc.
     # For neural net models, don't need to do this
     if 'feature_group' and 'feature_list_indices' in \
-            validate_dict['valid_model_keys'][model_dict['model']]:
+            validate_dict['valid_model_keys'][model_dict['model_name']]:
         # throw an error if both feature_list_indices and
         # feature_group are defined as keys for model dict
         if 'feature_list_indices' in model_dict \
@@ -133,7 +133,7 @@ def _validate_model_dict(model_dict,
                 # get appropriate ID # out of ftr_grp_ID_dict for this model
                 # (if called from todo_list so we hve ftr_list_group_ID/dict)
                 if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
-                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['model']]
+                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['model_name']]
                     # now find all the indices of features associated with the
                     # feature group for that model
                     ftr_inds = np.where(
@@ -171,25 +171,25 @@ def _validate_model_dict(model_dict,
                     validated_model_dict['feature_list_indices'] = ftr_inds
 
         hyperparams = model_dict['hyperparameters']
-        required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model']].keys())
+        required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model_name']].keys())
         model_dict_hyperparams = set(hyperparams.keys())
         # if not all keys, i.e. model dict hyperparams is a subset of required
         if model_dict_hyperparams < required_hyperparams:
             missing_keys = required_hyperparams - model_dict_hyperparams
             raise KeyError('missing hyperparameters from model dict for {0}: {1}'
-                           .format(model_dict['model'], missing_keys))
+                           .format(model_dict['model_name'], missing_keys))
         # OTOH if extra keys , i.e. required is actually a subset of model dict hyperparams
         if model_dict_hyperparams > required_hyperparams:
             extra_keys = model_dict_hyperparams - required_hyperparams
             raise ValueError('invalid hyperparameters for model for {0}: {1}'
-                             .format(model_dict['model'], extra_keys))
+                             .format(model_dict['model_name'], extra_keys))
 
         # for validation,
         # replace `required hyperparams` set defined above
         # with `required hyperparams` dict
         # that has param names as keys and valid types as values
         # if more than one valid type, then it's a tuple
-        required_hyperparams = VALID_HYPERPARAMS[model_dict['model']]
+        required_hyperparams = VALID_HYPERPARAMS[model_dict['model_name']]
         for hyperparam_name, hyperparam_val in hyperparams.items():
             valid_type = required_hyperparams[hyperparam_name]
             if type(valid_type) != tuple:
@@ -203,7 +203,7 @@ def _validate_model_dict(model_dict,
                 raise ValueError('Type for hyperparameter {0} for a {1}'
                                  ' model should be {2} but parsed as {3}.'
                                  .format(hyperparam_name,
-                                         model_dict['model'],
+                                         model_dict['model_name'],
                                          valid_type,
                                          type(hyperparam_val)))
 
@@ -221,7 +221,7 @@ def _validate_models(models,
     ----------
     models : list of dictionaries
         each dictionary specifies:
-            'model' : string
+            'model_name' : string
                 a machine-learning model/algorithm
                 currently valid: 'knn', 'svm', 'neuralnet'
             'hyperparameters' : dictionary
@@ -251,16 +251,16 @@ def _validate_models(models,
         raise ValueError('all items in \'models\' should be dictionaries')
 
     # check if model key declared for all dicts in models list
-    doesnt_have_model_key = ['model' not in model_dict for model_dict in models]
+    doesnt_have_model_key = ['model_name' not in model_dict for model_dict in models]
     if any(doesnt_have_model_key):
         no_model_inds = [ind for ind, boolval in enumerate(doesnt_have_model_key)
                          if boolval]
-        raise KeyError('No model declared for following items in'
+        raise KeyError('No model_name declared for following items in '
                        'list of model dictionaries: '
                        .format(no_model_inds))
 
     # check if all declared models are valid
-    model_set = set([model_dict['model'] for model_dict in models])
+    model_set = set([model_dict['model_name'] for model_dict in models])
     if not model_set.issubset(VALID_MODELS):
         invalid_models = list(model_set - VALID_MODELS)
         raise ValueError('{} in \'models\' are not valid model types'.format(invalid_models))

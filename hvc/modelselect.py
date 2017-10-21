@@ -27,7 +27,7 @@ def determine_model_output_folder_name(model_dict):
 
     model_dict_copy = copy.copy(model_dict)
     return model_dict_copy.pop(
-        'model'
+        'model_name'
     ) + ''.join('_{!s}{!r}'.format(key, val)
                 for (key, val) in sorted(
         model_dict['hyperparameters'].items())
@@ -68,15 +68,15 @@ def select(config_file):
 
         for model_dict in model_list:
             # import models objects from sklearn + keras if not imported already
-            if model_dict['model'] == 'svm':
+            if model_dict['model_name'] == 'svm':
                 if 'SVC' not in locals():
                     from sklearn.svm import SVC
 
-            elif model_dict['model'] == 'knn':
+            elif model_dict['model_name'] == 'knn':
                 if 'neighbors' not in locals():
                     from sklearn import neighbors
 
-            elif model_dict['model'] == 'flatwindow':
+            elif model_dict['model_name'] == 'flatwindow':
                 if 'flatwindow' not in locals():
                     from hvc.neuralnet.models.flatwindow import flatwindow
                     from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
@@ -148,7 +148,7 @@ def select(config_file):
                         os.makedirs(model_output_dir)
 
                     model_fname_str = \
-                        '{0}_{1}samples_replicate{2}.model'.format(model_dict['model'],
+                        '{0}_{1}samples_replicate{2}.model'.format(model_dict['model_name'],
                                                                    num_train_samples,
                                                                    replicate)
                     model_filename = os.path.join(model_output_dir, model_fname_str)
@@ -214,14 +214,14 @@ def select(config_file):
 
                     # if-elif that switches based on model type,
                     # start with sklearn models
-                    if model_dict['model'] in ['svm', 'knn']:
-                        if model_dict['model'] == 'svm':
+                    if model_dict['model_name'] in ['svm', 'knn']:
+                        if model_dict['model_name'] == 'svm':
                             print('training svm. ', end='')
                             clf = SVC(C=model_dict['hyperparameters']['C'],
                                       gamma=model_dict['hyperparameters']['gamma'],
                                       decision_function_shape='ovr')
 
-                        elif model_dict['model'] == 'knn':
+                        elif model_dict['model_name'] == 'knn':
                             print('training knn. ', end='')
                             clf = neighbors.KNeighborsClassifier(model_dict['hyperparameters']['k'],
                                                                  'distance')
@@ -252,7 +252,7 @@ def select(config_file):
 
                     # this is the middle of the if-elif that switches based on model type
                     # end sklearn, start keras models
-                    elif model_dict['model'] == 'flatwindow':
+                    elif model_dict['model_name'] == 'flatwindow':
                         spects = feature_file['neuralnet_inputs']['flatwindow']
 
                         if 'convert_labels_categorical' not in locals():
@@ -342,7 +342,7 @@ def select(config_file):
                                                                  classes_zero_to_n)
 
                 model_meta_fname_str = \
-                    '{0}_{1}samples_replicate{2}.meta'.format(model_dict['model'],
+                    '{0}_{1}samples_replicate{2}.meta'.format(model_dict['model_name'],
                                                               num_train_samples,
                                                               replicate)
                 model_meta_filename = os.path.join(model_output_dir,
@@ -353,7 +353,7 @@ def select(config_file):
                     'feature_file': todo['feature_file'],
                     'test_IDs': test_IDs,
                     'train_IDs': train_IDs,
-                    'model': model_dict['model']
+                    'model_name': model_dict['model_name']
                 }
 
                 if 'scaler' in locals():
@@ -369,7 +369,7 @@ def select(config_file):
                     model_meta_output_dict['spect_scaler'] = spect_scaler
                     del spect_scaler
 
-                if model_dict['model'] in ['svm', 'knn']:
+                if model_dict['model_name'] in ['svm', 'knn']:
                     # to be able to extract features for predictions
                     # on unlabeled data set, need list of features
                     if model_dict['feature_list_indices'] == 'all':

@@ -8,7 +8,7 @@ select:
 
   models:
     -
-      model: svm
+      model_name: svm
       feature_list_indices: all
       hyperparameters:
         C : 1

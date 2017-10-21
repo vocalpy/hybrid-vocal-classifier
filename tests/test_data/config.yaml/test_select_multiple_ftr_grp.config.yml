@@ -8,7 +8,7 @@ select:
 
   models:
     -
-      model: knn
+      model_name: knn
       feature_group:
         - knn
         - svm

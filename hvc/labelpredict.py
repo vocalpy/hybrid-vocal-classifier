@@ -39,11 +39,13 @@ def predict(config_file):
         if not os.path.isdir(output_dir_with_path):
             os.mkdir(output_dir_with_path)
 
-        model_file = joblib.load(todo['model_file'])
+        model_meta_file = joblib.load(todo['model_meta_file'])
+        model_filename = model_meta_file['model_filename']
+        model_file = joblib.load(model_filename)
 
         extract_params = {
             'bird_ID': todo['bird_ID'],
-            'feature_list': model_file['model_feature_list'],
+            'feature_list': model_meta_file['model_feature_list'],
             'output_dir': output_dir_with_path,
             'home_dir': home_dir,
             'data_dirs': todo['data_dirs'],
@@ -51,7 +53,7 @@ def predict(config_file):
             'file_format': todo['file_format']
         }
 
-        feature_file_for_model = model_file['feature_file']
+        feature_file_for_model = model_meta_file['feature_file']
         feature_file = joblib.load(feature_file_for_model)
         extract_params['segment_params'] = feature_file['segment_params']
         extract_params['spect_params'] = feature_file['spect_params']
@@ -60,7 +62,8 @@ def predict(config_file):
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')
-        model = model_file['model']
+        model_name = model_meta_file['model_name']
+        import pdb;pdb.set_trace()
         if model in ['knn', 'svm']:
             try:
                 clf = model_file['clf']
