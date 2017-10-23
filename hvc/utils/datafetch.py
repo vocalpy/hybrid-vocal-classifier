@@ -15,6 +15,9 @@ import shutil
 import tarfile
 from collections.abc import Iterable
 
+import yaml
+
+
 def md5sum(fname, block_size=1048576):  # 2 ** 20
     """Calculate the md5sum for a file.
     Parameters
@@ -382,40 +385,51 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
               ' Dataset fetching aborted.' % url)
         raise
 
+path = os.path.abspath(__file__)  # get the path of this file
+dir_path = os.path.dirname(path)  # but then just take the dir
 
-repodict = {
-    'sober.repo1.bl26lb16.041912': {
-        'url': 'https://ndownloader.figshare.com/files/9533977',
-        'file_name': 'sober.repo1.bl26lb16.041912.tar.gz',
-        'md5_hash': '08061e808de16ebc69ca90cedf3dd994'},
-    'Sober-gr41rd51': {'url': 'https://ndownloader.figshare.com/files/7907872',
-                       'file_name': 'Sober-gr41rd51',
-                       'md5_hash': '411a617eb804578008aceae248ff66fe'}
-}
+with open(os.path.join(dir_path,'./repos.yaml')) as repo_yaml:
+    repodict = yaml.load(repo_yaml)['repodict']
 
 
-def fetch(dataset_name, destination_path='.'):
+def fetch(dataset_name, destination_path='.', remove_compressed_file=True):
     """fetches data from repositories
 
     Parameters
     ----------
     dataset_name : str
+        name of dataset
     destination_path : str
+        where to save
+    remove_compressed_file : bool
+        if True, remove tar.gz files after extracting
+        Default is True
 
     Returns
     -------
-
+    None
     """
 
     if dataset_name not in repodict:
         raise KeyError('{} is not recognized as a dataset.')
 
     url = repodict[dataset_name]['url']
+
     file_name = repodict[dataset_name]['file_name']
-    md5_hash = repodict[dataset_name]['md5_hash']
+    file_name = os.path.join(destination_path, file_name)
+
+    if 'md5_hash' in repodict[dataset_name]:
+        md5_hash = repodict[dataset_name]['md5_hash']
+    else:
+        md5_hash = None
+
     _fetch_file(url, file_name, hash_=md5_hash)
+
     if file_name[-7:] == '.tar.gz':
         print('extracting {}'.format(file_name))
         tar = tarfile.open(file_name)
         tar.extractall()
         tar.close()
+
+        if remove_compressed_file:
+            os.remove(file_name)
