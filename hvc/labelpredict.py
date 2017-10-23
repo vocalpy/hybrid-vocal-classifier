@@ -8,12 +8,20 @@ import sys
 import glob
 
 # from dependencies
+import yaml
 from sklearn.externals import joblib
 
 # from hvc
 import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import timestamp
+
+path = os.path.abspath(__file__)  # get the path of this file
+dir_path = os.path.dirname(path)  # but then just take the dir
+
+with open(os.path.join(dir_path, 'parse', 'validation.yml')) as val_yaml:
+    validate_dict = yaml.load(val_yaml)
+valid_models = validate_dict['valid_models']
 
 
 def predict(config_file):
@@ -40,8 +48,6 @@ def predict(config_file):
             os.mkdir(output_dir_with_path)
 
         model_meta_file = joblib.load(todo['model_meta_file'])
-        model_filename = model_meta_file['model_filename']
-        model_file = joblib.load(model_filename)
 
         extract_params = {
             'bird_ID': todo['bird_ID'],
@@ -62,23 +68,15 @@ def predict(config_file):
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')
+        model_filename = model_meta_file['model_filename']
         model_name = model_meta_file['model_name']
-        import pdb;pdb.set_trace()
-        if model in ['knn', 'svm']:
-            try:
-                clf = model_file['clf']
-            except:
-                raise KeyError('model in {} is {} but '
-                               'no corresponding \'clf\''
-                               '(classifier) found in model file.'
-                               .format(todo['model_file'],
-                                       model))
-        elif model in ['flatwindow']:
+        if model_name in valid_models['sklearn']:
+            clf = joblib.load(model_filename)
+            scaler = model_meta_file['scaler']
+        elif model_name in valid_models['keras']:
             if 'keras.models' not in sys.modules:
                 import keras.models
-            clf = keras.models.load_model()
-
-        scaler = model_file['scaler']
+            clf = keras.models.load_model(model_filename)
 
         for ftr_file in ftr_files:
             print("predicting labels for features in file: {}"
@@ -90,3 +88,4 @@ def predict(config_file):
             pred_labels = clf.predict(features_scaled)
             ftr_file_dict['pred_labels'] = pred_labels
             joblib.dump(ftr_file_dict, ftr_file)
+    

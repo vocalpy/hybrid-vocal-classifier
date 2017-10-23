@@ -85,7 +85,7 @@ def _validate_todo_list_dict(todo_list_dict,index):
             # check that model file can be opened
             model_meta_file = joblib.load(val)
             model_filename = model_meta_file['model_filename']
-            model_name = model_meta_file['model']
+            model_name = model_meta_file['model_name']
             if model_name in VALID_MODELS['sklearn']:
                 try:
                     joblib.load(model_filename)
