@@ -1,21 +1,21 @@
 #from standard library
 import copy
 import random
-from urllib.error import HTTPError
 from datetime import datetime
+from urllib.error import HTTPError
 
-#from dependencies
+# from dependencies
 import numpy as np
+import sklearn.preprocessing
 from scipy.io import loadmat
-import sklearn.preprocessing 
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn import neighbors
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
-from sklearn import neighbors
 
-#from hvc
-from .randomdotorg import RandomDotOrg
+# from hvc
+from hvc.utils.randomdotorg import RandomDotOrg
 
 
 def timestamp():
@@ -242,7 +242,7 @@ def find_best_k(samples,
     cv_scores = np.empty((len(k_range),))
     for ind, k in enumerate(k_range):
         clf = neighbors.KNeighborsClassifier(n_neighbors=k,
-                                             weights='distance')
+                                              weights='distance')
         scores = cross_val_score(clf,
                                  samples,
                                  labels,
