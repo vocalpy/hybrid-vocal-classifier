@@ -428,7 +428,7 @@ def fetch(dataset_name, destination_path='.', remove_compressed_file=True):
     if file_name[-7:] == '.tar.gz':
         print('extracting {}'.format(file_name))
         tar = tarfile.open(file_name)
-        tar.extractall()
+        tar.extractall(path=destination_path)
         tar.close()
 
         if remove_compressed_file:
