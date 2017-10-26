@@ -91,4 +91,5 @@ def predict(config_file):
                 pred_probs = clf.predict_proba(features_scaled)
                 ftr_file_dict['pred_probs'] = pred_probs
             joblib.dump(ftr_file_dict, ftr_file)
-    
+
+    os.chdir(home_dir)
