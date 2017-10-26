@@ -1,0 +1,32 @@
+test_validate_model_dict:
+  valid_dict_with_feature_group:
+    model_name: knn
+    feature_group: knn
+    hyperparameters:
+      k : 4
+
+  valid_dict_with_feature_list:
+    model_name: knn
+    feature_list_indices: [0,1,2,3,4,5,6,7,8]
+    hyperparameters:
+      k : 4
+
+  invalid_dict_with_feature_group_and_list:
+    model_name: knn
+    feature_group: knn
+    feature_list_indices: [0,1,2,3,4,5,6,7,8]
+    hyperparameters:
+      k : 4
+
+test_validate_todo_list:
+  valid_with_just_feature_and_output:
+    todo_list:
+      - #1
+        feature_file : C:\Data\gy6or6\extract_output_170712_210240\summary_feature_file_created_170712_211433
+        output_dir: C:\Data\gy6or6\
+
+  valid_with_just_feature_and_output:
+    todo_list:
+      - #1
+        feature_file : C:\Data\gy6or6\extract_output_170712_210240\summary_feature_file_created_170712_211433
+        output_dir: C:\Data\gy6or6\

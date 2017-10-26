@@ -1,0 +1,19 @@
+select:
+  num_replicates: 5
+  num_train_samples:
+    start : 100
+    stop : 400
+    step : 100
+  num_test_samples: 400
+
+  models:
+    -
+      model_name: knn
+      feature_group: knn
+      hyperparameters:
+        k : 4
+
+  todo_list:
+    - #1
+      feature_file : replace with feature_file
+      output_dir: replace with tmp_output_dir
