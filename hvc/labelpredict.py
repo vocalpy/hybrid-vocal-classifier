@@ -87,5 +87,9 @@ def predict(config_file):
             features_scaled = scaler.transform(features)
             pred_labels = clf.predict(features_scaled)
             ftr_file_dict['pred_labels'] = pred_labels
+            if todo['predict_proba'] == True:
+                pred_probs = clf.predict_proba(features_scaled)
+                ftr_file_dict['pred_probs'] = pred_probs
             joblib.dump(ftr_file_dict, ftr_file)
-    
+
+    os.chdir(home_dir)

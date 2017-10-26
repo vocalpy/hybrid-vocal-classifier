@@ -21,6 +21,7 @@ REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
 VALID_MODELS = validate_dict['valid_models']
 
+
 def _validate_todo_list_dict(todo_list_dict,index):
     """
     validates to-do lists
@@ -101,6 +102,11 @@ def _validate_todo_list_dict(todo_list_dict,index):
         elif key == 'output_dir':
             if type(val) != str:
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
+                                 .format(type(val)))
+
+        elif key == 'predict_proba':
+            if type(val) != bool:
+                raise ValueError('predict_proba should be a Boolean but it parsed as {}'
                                  .format(type(val)))
 
         else:  # if key is not found in list

@@ -52,6 +52,9 @@ Every dict in a `todo_list` has the following **required** keys:
     if it doesn't exist, HVC will create it
     for example, `C:\DATA\bl26lb16\`
 
+  * predict_proba : bool
+    If True, calculate probabilities for predicted labels.
+
 example `predict_config.yml`
 ----------------------------
 
