@@ -388,7 +388,7 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
-with open(os.path.join(dir_path,'./repos.yaml')) as repo_yaml:
+with open(os.path.join(dir_path,'./repos.yml')) as repo_yaml:
     repodict = yaml.load(repo_yaml)['repodict']
 
 
