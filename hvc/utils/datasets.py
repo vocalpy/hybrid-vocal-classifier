@@ -13,6 +13,7 @@ import ftplib
 import hashlib
 import shutil
 import tarfile
+from zipfile import ZipFile
 from collections.abc import Iterable
 
 import yaml
@@ -388,17 +389,45 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
-with open(os.path.join(dir_path,'./repos.yml')) as repo_yaml:
+# load yaml file that lists all repositories, for use by list and fetch
+with open(os.path.join(dir_path, './repos.yml')) as repo_yaml:
     repodict = yaml.load(repo_yaml)['repodict']
 
+def list(dataset=''):
+    """Print list of datasets to stdout
 
-def fetch(dataset_name, destination_path='.', remove_compressed_file=True):
+    Parameters
+    ----------
+    dataset : str
+        string that refers to dataset
+        any dataset that contains the string in its name will be listed
+        Default is '', in which case all datasets are listed.
+
+    Returns
+    -------
+    None
+    """
+
+    if type(dataset) != str:
+        raise TypeError('dataset should be a string, not type {}'.format(type(dataset)))
+
+    datasets = [repo_key
+                for repo_key in repodict.keys()
+                if dataset in repo_key]
+    datasets.sort()
+
+    for dataset in datasets:
+        print(dataset)
+
+
+def fetch(dataset_str, destination_path='.', remove_compressed_file=True):
     """fetches data from repositories
 
     Parameters
     ----------
-    dataset_name : str
-        name of dataset
+    dataset_str : str
+        search string for finding datasets by name
+        any dataset that contains the string in its name will be downloaded
     destination_path : str
         where to save
     remove_compressed_file : bool
@@ -410,26 +439,45 @@ def fetch(dataset_name, destination_path='.', remove_compressed_file=True):
     None
     """
 
-    if dataset_name not in repodict:
-        raise KeyError('{} is not recognized as a dataset.')
+    dataset_names = []  # names used to tell user what will be downloaded 
+    dataset_dicts = []  # contain file name + url for zip/archive/file to be downloaded
+    for repo_key, repo_val in repodict.items():
+        if dataset_str in repo_key:
+            dataset_names.append(repo_key)
+            dataset_dicts.append(repo_val)
 
-    url = repodict[dataset_name]['url']
-
-    file_name = repodict[dataset_name]['file_name']
-    file_name = os.path.join(destination_path, file_name)
-
-    if 'md5_hash' in repodict[dataset_name]:
-        md5_hash = repodict[dataset_name]['md5_hash']
+    if not(dataset_names):  # i.e., if list is empty
+        raise ValueError('no datasets found with \'{}\' in the name'
+                         .format(dataset_name))
     else:
-        md5_hash = None
+        print('Will download the following datasets: ')
+        for dataset_name in dataset_names:
+            print(dataset_name)
 
-    _fetch_file(url, file_name, hash_=md5_hash)
+    for dataset_dict in dataset_dicts:
+        url = dataset_dict['url']
 
-    if file_name[-7:] == '.tar.gz':
-        print('extracting {}'.format(file_name))
-        tar = tarfile.open(file_name)
-        tar.extractall(path=destination_path)
-        tar.close()
+        file_name = dataset_dict['file_name']
+        file_name = os.path.join(destination_path, file_name)
 
-        if remove_compressed_file:
-            os.remove(file_name)
+        if 'md5_hash' in dataset_dict:
+            md5_hash = dataset_dict['md5_hash']
+        else:
+            md5_hash = None
+
+        # helpers from MNE-Python that do actual downloading
+        _fetch_file(url, file_name, hash_=md5_hash)
+
+        if file_name.endswith('.tar.gz') or file_name.endswith('.zip'):
+            print('extracting {}'.format(file_name))
+
+            if file_name.endswith('.tar.gz'):
+                with tarfile.open(file_name) as tar:
+                    tar.extractall(path=destination_path)
+
+            elif file_name.endswith('.zip'):
+                with ZipFile(file_name, 'r') as zipfile:
+                    zipfile.extractall(path=destination_path)
+
+            if remove_compressed_file:
+                os.remove(file_name)
