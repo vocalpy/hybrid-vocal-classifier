@@ -140,8 +140,8 @@ def _extract(extract_params, make_summary_file=True):
 
         num_songfiles = len(songfiles_list)
         all_labels = []
-        song_IDs = []
-        song_ID_counter = 0
+        songfile_IDs = []
+        songfile_ID_counter = 0
         for file_num, songfile in enumerate(songfiles_list):
             print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
             # segment_params defined for todo_list item takes precedence over any default
@@ -158,8 +158,8 @@ def _extract(extract_params, make_summary_file=True):
                 continue
 
             all_labels.extend(extract_dict['labels'])
-            song_IDs.extend([song_ID_counter] * len(extract_dict['labels']))
-            song_ID_counter += 1
+            songfile_IDs.extend([songfile_ID_counter] * len(extract_dict['labels']))
+            songfile_ID_counter += 1
 
             if 'features_arr' in extract_dict:
                 if 'features_from_all_files' in locals():
@@ -191,7 +191,8 @@ def _extract(extract_params, make_summary_file=True):
             'labelset': extract_params['labelset'],
             'file_format': extract_params['file_format'],
             'bird_ID': extract_params['bird_ID'],
-            'song_IDs': song_IDs
+            'songfile_IDs': songfile_IDs,
+            'songfiles': songfiles_list
         }
 
         if 'features_from_all_files' in locals():
@@ -268,12 +269,17 @@ def _extract(extract_params, make_summary_file=True):
                         raise ValueError('mismatch between bird_ID in {} '
                                          'and other feature files'.format(feature_file))
 
-                if 'song_IDs' not in summary_ftr_file_dict:
-                    summary_ftr_file_dict['song_IDs'] = feature_file_dict['song_IDs']
+                if 'songfile_IDs' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['songfile_IDs'] = feature_file_dict['songfile_IDs']
                 else:
-                    curr_last_ID = summary_ftr_file_dict['song_IDs'][-1]
-                    tmp_song_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['song_IDs']]
-                    summary_ftr_file_dict['song_IDs'].extend(tmp_song_IDs)
+                    curr_last_ID = summary_ftr_file_dict['songfile_IDs'][-1]
+                    tmp_songfile_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['songfile_IDs']]
+                    summary_ftr_file_dict['songfile_IDs'].extend(tmp_songfile_IDs)
+
+                if 'songfiles' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['songfiles'] = feature_file_dict['songfiles']
+                else:
+                    summary_ftr_file_dict['songfiles'].extend(feature_file_dict['songfiles'])
 
                 if 'feature_list' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['feature_list'] = feature_file_dict['feature_list']
