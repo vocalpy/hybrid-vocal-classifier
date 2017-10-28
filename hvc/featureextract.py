@@ -88,7 +88,7 @@ def write_select_config(summary_ftr_file_dict,
                                                output_dir))
 
 
-def _extract(extract_params, make_summary_file=True):
+def _extract(extract_params, calling_function, make_summary_file=True):
     """helper function that loops through data dirs,
     extracts features, saves feature files, and then
     makes summary feature file.
@@ -112,6 +112,14 @@ def _extract(extract_params, make_summary_file=True):
             labels for syllables as a string, e.g., 'iabcdefg'
         segment_params : dict
             as defined for hvc.audiofileIO.Song and hvc.audiofileIO.segment_song
+    calling_function : str
+        {'extract', 'predict'}
+        Flag passed to features.extract.from_file to tell it which function called it.
+        If calling_function=='extract', then look for annotation files.
+        with onsets, offsets, and labels.
+        If calling_function=='predict', do segmentation to get onsets and offsets.
+    make_summary_file : bool
+        if True, combine feature files from each directory to make a summary file
 
     Returns
     -------
@@ -148,6 +156,7 @@ def _extract(extract_params, make_summary_file=True):
             # defined for `extract` config
             extract_dict = features.extract.from_file(songfile,
                                                       extract_params['file_format'],
+                                                      calling_function,
                                                       extract_params['feature_list'],
                                                       extract_params['spect_params'],
                                                       extract_params['labelset'],
@@ -272,8 +281,8 @@ def _extract(extract_params, make_summary_file=True):
                 if 'songfile_IDs' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['songfile_IDs'] = feature_file_dict['songfile_IDs']
                 else:
-                    curr_last_ID = summary_ftr_file_dict['songfile_IDs'][-1]
-                    tmp_songfile_IDs = [el + curr_last_ID + 1 for el in feature_file_dict['songfile_IDs']]
+                    new_1st_ID = len(summary_ftr_file_dict['songfile_IDs'])  # works because of 0 indexing
+                    tmp_songfile_IDs = [ID + new_1st_ID for ID in feature_file_dict['songfile_IDs']]
                     summary_ftr_file_dict['songfile_IDs'].extend(tmp_songfile_IDs)
 
                 if 'songfiles' not in summary_ftr_file_dict:
@@ -351,7 +360,7 @@ def extract(config_file):
     """main function that runs feature extraction.
     Does not return anything, just runs through directories specified in config_file
     and extracts features.
-    
+
     Parameters
     ----------
     config_file : string
@@ -406,6 +415,6 @@ def extract(config_file):
             extract_params['feature_list_group_ID'] = todo['feature_list_group_ID']
             extract_params['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
-        _extract(extract_params)
+        _extract(extract_params, calling_function='extract')
 
         os.chdir(home_dir)

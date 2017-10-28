@@ -64,7 +64,9 @@ def predict(config_file):
         extract_params['segment_params'] = feature_file['segment_params']
         extract_params['spect_params'] = feature_file['spect_params']
 
-        hvc.featureextract._extract(extract_params, make_summary_file=False)
+        hvc.featureextract._extract(extract_params,
+                                    calling_function='predict',
+                                    make_summary_file=False)
 
         os.chdir(output_dir_with_path)
         ftr_files = glob.glob('features_from*')

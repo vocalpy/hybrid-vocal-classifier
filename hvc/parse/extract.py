@@ -9,7 +9,8 @@ import warnings
 
 # from dependencies
 import yaml
-import numpy as np
+
+from .ref_spect_params import refs
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
