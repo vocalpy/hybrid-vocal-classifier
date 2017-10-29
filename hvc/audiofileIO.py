@@ -162,20 +162,21 @@ class Spectrogram:
         else:
             self.noverlap = noverlap
 
-        if window is not None and type(window) != str:
-            raise TypeError('type of window must be str, but is {}'.
-                             format(type(window)))
+        if window is None:
+            self.window = None
         else:
-            if window not in ['Hann','dpss',None]:
-                raise ValueError('{} is not a valid specification for window'.
-                                 format(window))
+            if type(window) != str:
+                raise TypeError('type of window must be str, but is {}'.
+                                 format(type(window)))
             else:
-                if window == 'Hann':
-                    self.window = np.hanning(self.nperseg)
-                elif window == 'dpss':
-                    self.window = slepian(self.nperseg, 4 / self.nperseg)
-                elif window is None:
-                    self.window = None
+                if window not in ['Hann','dpss']:
+                    raise ValueError('{} is not a valid specification for window'.
+                                     format(window))
+                else:
+                    if window == 'Hann':
+                        self.window = np.hanning(self.nperseg)
+                    elif window == 'dpss':
+                        self.window = slepian(self.nperseg, 4 / self.nperseg)
 
         if freq_cutoffs is None:
             # switch to default
@@ -218,10 +219,14 @@ class Spectrogram:
         else:
             self.logTransformSpect = log_transform_spect
 
-        if type(thresh) is not float:
-            raise ValueError('Value for thresh is {}, but'
-                             ' it must be float.'
-                             .format(type(thresh)))
+        if type(thresh) is not float and thresh is not None:
+            try:
+                thresh = float(thresh)
+                self.tresh = thresh
+            except:
+                raise ValueError('Value for thresh is {}, but'
+                                 ' it must be float.'
+                                 .format(type(thresh)))
         else:
             self.thresh = thresh
 

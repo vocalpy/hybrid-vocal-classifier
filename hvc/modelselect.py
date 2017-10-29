@@ -100,7 +100,7 @@ def select(config_file):
         labels = np.asarray(feature_file['labels'])
         # call grab_n_samples this first time to get indices for test/validation set
         # and a list of song IDs from which we will draw the training set indices below
-        test_IDs, train_song_ID_list = grab_n_samples_by_song(feature_file['song_IDs'],
+        test_IDs, train_song_ID_list = grab_n_samples_by_song(feature_file['songfile_IDs'],
                                                               feature_file['labels'],
                                                               num_test_samples,
                                                               return_popped_songlist=True)
@@ -130,7 +130,7 @@ def select(config_file):
                 # For testing on large datasets this is okay but in situations
                 # where we're data-limited it's less than ideal, the whole point
                 # is to not have to hand-label a large data set
-                train_IDs = grab_n_samples_by_song(feature_file['song_IDs'],
+                train_IDs = grab_n_samples_by_song(feature_file['songfile_IDs'],
                                                    feature_file['labels'],
                                                    num_train_samples,
                                                    song_ID_list=train_song_ID_list)
