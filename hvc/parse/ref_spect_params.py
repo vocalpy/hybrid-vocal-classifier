@@ -27,7 +27,7 @@ refs_dict = {
     'evsonganaly': {
         'nperseg': 512,
         'noverlap': 409,
-        'window': 'hann',
+        'window': 'Hann',
         'freq_cutoffs': [500, 10000],
         'filter_func': None,
         'spect_func': 'mpl',
