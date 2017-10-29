@@ -22,5 +22,16 @@ refs_dict = {
         'spect_func': 'scipy',
         'log_transform_spect': True,
         'thresh': None
+    },
+
+    'evsonganaly': {
+        'nperseg': 512,
+        'noverlap': 409,
+        'window': 'hann',
+        'freq_cutoffs': [500, 10000],
+        'filter_func': None,
+        'spect_func': 'mpl',
+        'log_transform_spect': False,
+        'thresh': None
     }
 }
