@@ -148,6 +148,10 @@ def _extract(extract_params, calling_function, make_summary_file=True):
 
         num_songfiles = len(songfiles_list)
         all_labels = []
+        all_onsets_s = []
+        all_onsets_Hz = []
+        all_offsets_s = []
+        all_offsets_Hz = []
         songfile_IDs = []
         songfile_ID_counter = 0
         for file_num, songfile in enumerate(songfiles_list):
@@ -167,7 +171,12 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                 continue
 
             all_labels.extend(extract_dict['labels'])
-            songfile_IDs.extend([songfile_ID_counter] * len(extract_dict['labels']))
+            all_onsets_s.extend(extract_dict['onsets_s'])
+            all_onsets_Hz.extend(extract_dict['onsets_Hz'])
+            all_offsets_s.extend(extract_dict['offsets_s'])
+            all_offsets_Hz.extend(extract_dict['offsets_Hz'])
+            songfile_IDs.extend(
+                [songfile_ID_counter] * extract_dict['onsets_s'].shape[0])
             songfile_ID_counter += 1
 
             if 'features_arr' in extract_dict:
@@ -194,6 +203,10 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                                     'features_from_' + just_dir_name + '_created_' + timestamp())
         feature_file_dict = {
             'labels': all_labels,
+            'onsets_s': np.asarray(all_onsets_s),
+            'onsets_Hz': np.asarray(all_onsets_Hz),
+            'offsets_s': np.asarray(all_offsets_s),
+            'offsets_Hz': np.asarray(all_offsets_Hz),
             'feature_list': extract_params['feature_list'],
             'spect_params': extract_params['spect_params'],
             'segment_params': extract_params['segment_params'],
@@ -242,6 +255,34 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                 else:
                     summary_ftr_file_dict['labels'] = \
                         summary_ftr_file_dict['labels'] + feature_file_dict['labels']
+
+                if 'onsets_s' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['onsets_s'] = feature_file_dict['onsets_s']
+                else:
+                    summary_ftr_file_dict['onsets_s'] = \
+                        np.concatenate((summary_ftr_file_dict['onsets_s'],
+                                        feature_file_dict['onsets_s']))
+
+                if 'onsets_Hz' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['onsets_Hz'] = feature_file_dict['onsets_Hz']
+                else:
+                    summary_ftr_file_dict['onsets_Hz'] = \
+                        np.concatenate((summary_ftr_file_dict['onsets_Hz'],
+                                        feature_file_dict['onsets_Hz']))
+
+                if 'offsets_s' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['offsets_s'] = feature_file_dict['offsets_s']
+                else:
+                    summary_ftr_file_dict['offsets_s'] = \
+                        np.concatenate((summary_ftr_file_dict['offsets_s'],
+                                        feature_file_dict['offsets_s']))
+
+                if 'offsets_Hz' not in summary_ftr_file_dict:
+                    summary_ftr_file_dict['offsets_Hz'] = feature_file_dict['offsets_Hz']
+                else:
+                    summary_ftr_file_dict['offsets_Hz'] = \
+                        np.concatenate((summary_ftr_file_dict['offsets_Hz'],
+                                        feature_file_dict['offsets_Hz']))
 
                 if 'spect_params' not in summary_ftr_file_dict:
                     summary_ftr_file_dict['spect_params'] = feature_file_dict['spect_params']

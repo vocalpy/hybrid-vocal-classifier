@@ -20,6 +20,7 @@ with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
 VALID_MODELS = validate_dict['valid_models']
+VALID_CONVERT_TYPES = validate_dict['valid_convert_types']
 
 
 def _validate_todo_list_dict(todo_list_dict,index):
@@ -59,9 +60,17 @@ def _validate_todo_list_dict(todo_list_dict,index):
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
 
+        elif key == 'convert':
+            if type(val) != str:
+                raise TypeError('Specifier for `convert` in to-do list should be '
+                                'a string, but parsed as a {}'.format(type(val)))
+            elif val not in VALID_CONVERT_TYPES:
+                raise ValueError('{} is not a valid format that predict output '
+                                 'can be converted to'.format(val))
+
         elif key == 'data_dirs':
             if type(val) != list:
-                raise ValueError('data_dirs should be a list')
+                raise TypeError('data_dirs should be a list')
             else:
                 for item in val:
                     if not os.path.isdir(item):

@@ -241,6 +241,10 @@ def from_file(filename,
     labels = [label for label in song.labels if label in labels_to_use]
     # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
     extract_dict = {'labels': labels}
+    extract_dict['onsets_s'] = song.onsets_s[song.syls_to_use]
+    extract_dict['onsets_Hz'] = song.onsets_Hz[song.syls_to_use]
+    extract_dict['offsets_s'] = song.offsets_s[song.syls_to_use]
+    extract_dict['offsets_Hz'] = song.offsets_Hz[song.syls_to_use]
     if 'features_arr' in locals():
         extract_dict['features_arr'] = features_arr
         extract_dict['feature_inds'] = np.asarray(feature_inds)

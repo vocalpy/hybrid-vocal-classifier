@@ -9,12 +9,14 @@ import glob
 
 # from dependencies
 import yaml
+import numpy as np
 from sklearn.externals import joblib
 
 # from hvc
 import hvc.featureextract
 from .parseconfig import parse_config
 from .utils import timestamp
+import hvc.convert
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
@@ -93,5 +95,25 @@ def predict(config_file):
                 pred_probs = clf.predict_proba(features_scaled)
                 ftr_file_dict['pred_probs'] = pred_probs
             joblib.dump(ftr_file_dict, ftr_file)
+
+            if 'convert' in todo:
+                songfiles = ftr_file_dict['songfiles']
+                songfile_IDs = ftr_file_dict['songfile_IDs']
+                if todo['convert'] == 'notmat':
+                    print('converting to .not.mat files')
+                    for curr_song_id, songfile_name in enumerate(songfiles):
+                        these = np.asarray(songfile_IDs) == curr_song_id
+                        pred_labels = ftr_file_dict['pred_labels'][these]
+                        onsets_s = ftr_file_dict['onsets_s'][these]
+                        offsets_s = ftr_file_dict['offsets_s'][these]
+                        segment_params = ftr_file_dict['segment_params']
+
+                        hvc.convert.to_notmat(songfile_name,
+                                              pred_labels,
+                                              model_name,
+                                              32000,
+                                              segment_params,
+                                              onsets_s,
+                                              offsets_s)
 
     os.chdir(home_dir)
