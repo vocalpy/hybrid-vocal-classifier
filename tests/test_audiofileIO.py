@@ -2,6 +2,8 @@
 test audiofileIO module
 """
 
+from glob import glob
+
 import pytest
 from scipy.io import wavfile
 import numpy as np
@@ -15,6 +17,29 @@ def has_window_error():
     filename = './test_data/cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'
     index = 19
     return filename, index
+
+
+def test_segment_song():
+    cbins = glob('./test_data/cbins/gy6or6/032312/*.cbin')
+    for cbin in cbins:
+        print('loading {}'.format(cbin))
+        data, samp_freq = hvc.evfuncs.load_cbin(cbin)
+        spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
+        amp = hvc.evfuncs.evsmooth(data, samp_freq, spect_params['freq_cutoffs'])
+        notmat = hvc.evfuncs.load_notmat(cbin)
+        segment_params = {'threshold': notmat['threshold'],
+                          'min_syl_dur': notmat['min_dur'] / 1000,
+                          'min_silent_dur': notmat['min_int'] / 1000}
+        onsets, offsets = hvc.audiofileIO.segment_song(amp,
+                                                       segment_params,
+                                                       samp_freq=samp_freq)
+        if onsets.shape == notmat['onsets'].shape:
+            np.testing.assert_allclose(actual=onsets,
+                                       desired=notmat['onsets'] / 1000,
+                                       rtol=1e-3)
+            print('segmentation passed assert_allclose')
+        else:
+            print('different number of segments in original due to user editing')
 
 
 class TestAudiofileIO:
