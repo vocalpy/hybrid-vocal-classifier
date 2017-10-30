@@ -261,11 +261,10 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     return all_syls, all_labels
 
 
-def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
-    """
-    filters raw audio to smooth signal
+def evsmooth(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
+    """filter raw audio and smooth signal
     used to calculate amplitude
-    
+
     Parameters
     ----------
     rawsong : 1-d numpy array
@@ -283,12 +282,12 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     -------
     smooth : 1-d numpy array
         smoothed waveform
-    
+
     Applies a bandpass filter with the frequency cutoffs in spect_params,
     then rectifies the signal by squaring, and lastly smooths by taking
     the average within a window of size sm_win.
-    This is a very literal translation from the Matlab code by Evren Tumer.
-    Uses the R.Thomas and C.Santana algorithm.
+    This is a very literal translation from the Matlab function SmoothData.m
+    by Evren Tumer. Uses the Thomas-Santana algorithm.
     """
 
     Nyquist_rate = samp_freq / 2
@@ -308,7 +307,7 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs, smooth_win=2):
     # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
     # window to design filter, but default for matlab's fir1
     # is actually Hamming
-    # note that first parameter for firwin is filter *length*
+    # note that first parameter for scipy.signal.firwin is filter *length*
     # whereas argument to matlab's fir1 is filter *order*
     # for linear FIR, filter length is filter order + 1
     b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)

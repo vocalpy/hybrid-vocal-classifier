@@ -9,7 +9,8 @@ import warnings
 
 # from dependencies
 import yaml
-import numpy as np
+
+from .ref_spect_params import refs_dict
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
@@ -99,17 +100,20 @@ def validate_spect_params(spect_params):
                        .format(invalid_keys))
 
     if 'ref' in spect_params:
-        if spect_params['ref'] not in {'tachibana', 'koumura'}:
+        if spect_params['ref'] not in refs_dict:
             raise ValueError('Value {} for \'ref\' not recognized.'
-                             'Valid values are: {\'tachibana\',\'koumura\'}.'
-                             .format(spect_params['ref']))
+                             'Valid values are: {}.'
+                             .format(spect_params['ref'],
+                                     list(refs_dict.keys())
+                                     )
+                             )
         if len(spect_params.keys()) > 1:
             warnings.warn('spect_params contains \'ref\' parameter '
                           'but also contains other parameters. Defaults '
                           'for \'ref\' will override other parameters.')
             return {'ref': spect_params['ref']}
         else:
-            return spect_params
+            return refs_dict[spect_params['ref']]
 
     if 'nperseg' not in spect_params.keys() and 'noverlap' not in spect_params.keys():
         raise KeyError('keys nperseg and noverlap are required in'

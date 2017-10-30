@@ -58,3 +58,7 @@ required_predict_todo_list_keys:
 
 optional_predict_todo_list_keys:
   - bird_ID
+  - convert
+
+valid_convert_types:
+  - notmat

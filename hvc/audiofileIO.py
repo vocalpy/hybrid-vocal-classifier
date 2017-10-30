@@ -76,7 +76,6 @@ class Spectrogram:
     """
 
     def __init__(self,
-                 ref=None,
                  nperseg=None,
                  noverlap=None,
                  freq_cutoffs=None,
@@ -86,20 +85,15 @@ class Spectrogram:
                  log_transform_spect=True,
                  thresh=-4.0):
         """Spectrogram.__init__ function
-        
+
         Parameters
         ----------
-        ref : str
-            {'tachibana','koumura'}
-            Use spectrogram parameters from a reference.
-            'tachibana' uses spectrogram parameters from [1]_,
-            'koumura' uses spectrogram parameters from [2]_.
         nperseg : int
             numper of samples per segment for FFT, e.g. 512
         noverlap : int
             number of overlapping samples in each segment
 
-        Either ref or nperseg and noverlap are required for __init__
+        nperseg and noverlap are required for __init__
 
         Other Parameters
         ----------------
@@ -147,75 +141,35 @@ class Spectrogram:
         PloS one 11.7 (2016): e0159188.
         """
 
-        # check for 'reference' parameter first since it takes precedence
-        if ref is not None:
-            if ref not in ('tachibana', 'koumura'):
-                raise ValueError('{} is not a valid value for reference argument'.
-                                 format(ref))
-            # warn if called with 'ref' and with other params
-            if any(param is not None
-                   for param in [nperseg,
-                                 noverlap,
-                                 freq_cutoffs,
-                                 filter_func,
-                                 spect_func]):
-                warnings.warn('Spectrogram class received ref '
-                              'parameter but also received other parameters, '
-                              'will over-write those with defaults for reference.')
-            else:
-                if ref == 'tachibana':
-                    self.nperseg = 256
-                    self.noverlap = 192
-                    self.window = np.hanning(self.nperseg)  # Hann window
-                    self.freqCutoffs = [10, 15990]  # basically no bandpass, as in Tachibana
-                    self.filterFunc = 'diff'
-                    self.spectFunc = 'mpl'
-                    self.logTransformSpect = False  # see tachibana feature docs
-                    self.thresh = None
-                    self.ref = ref
-                elif ref == 'koumura':
-                    self.nperseg = 512
-                    self.noverlap = 480
-                    self.window = scipy.signal.slepian(self.nperseg,
-                                                       4 / self.nperseg)  #dpss
-                    self.freqCutoffs = [1000, 8000]
-                    self.filterFunc = None
-                    self.spectFunc = 'scipy'
-                    self.logTransformSpect = True
-                    self.thresh = None
-                    self.ref = ref
-                else:
-                    raise ValueError('{} is not a valid value for \'ref\' argument. '
-                                     'Valid values: {\'tachibana\',\'koumura\',None}'
-                                     .format(ref))
+        if nperseg is None:
+            raise ValueError('nperseg requires a value for Spectrogram.__init__')
+        if noverlap is None:
+            raise ValueError('noverlap requires a value for Spectrogram.__init__')
+        if spect_func is None:
+            # switch to default
+            # can't have in args list because need to check above for
+            # conflict with default spectrogram functions for each ref
+            spect_func = 'scipy'
+        if type(nperseg) != int:
+            raise TypeError('type of nperseg must be int, but is {}'.
+                             format(type(nperseg)))
+        else:
+            self.nperseg = nperseg
 
-        elif ref is None:
-            if nperseg is None:
-                raise ValueError('nperseg requires a value for Spectrogram.__init__')
-            if noverlap is None:
-                raise ValueError('noverlap requires a value for Spectrogram.__init__')
-            if spect_func is None:
-                # switch to default
-                # can't have in args list because need to check above for
-                # conflict with default spectrogram functions for each ref
-                spect_func = 'scipy'
-            if type(nperseg) != int:
-                raise TypeError('type of nperseg must be int, but is {}'.
-                                 format(type(nperseg)))
-            else:
-                self.nperseg = nperseg
+        if type(noverlap) != int:
+            raise TypeError('type of noverlap must be int, but is {}'.
+                             format(type(noverlap)))
+        else:
+            self.noverlap = noverlap
 
-            if type(noverlap) != int:
-                raise TypeError('type of noverlap must be int, but is {}'.
-                                 format(type(noverlap)))
-            else:
-                self.noverlap = noverlap
-
-            if window is not None and type(window) != str:
+        if window is None:
+            self.window = None
+        else:
+            if type(window) != str:
                 raise TypeError('type of window must be str, but is {}'.
                                  format(type(window)))
             else:
-                if window not in ['Hann','dpss',None]:
+                if window not in ['Hann','dpss']:
                     raise ValueError('{} is not a valid specification for window'.
                                      format(window))
                 else:
@@ -223,62 +177,64 @@ class Spectrogram:
                         self.window = np.hanning(self.nperseg)
                     elif window == 'dpss':
                         self.window = slepian(self.nperseg, 4 / self.nperseg)
-                    elif window is None:
-                        self.window = None
 
-            if freq_cutoffs is None:
-                # switch to default
-                self.freqCutoffs = [500, 10000]
-            elif type(freq_cutoffs) != list:
-                raise TypeError('type of freq_cutoffs must be list, but is {}'.
-                                 format(type(freq_cutoffs)))
-            elif len(freq_cutoffs) != 2:
-                raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
-                                 format(len(freq_cutoffs)))
-            elif not all([type(val) == int for val in freq_cutoffs]):
-                raise ValueError('all values in freq_cutoffs list must be ints')
-            else:
-                self.freqCutoffs = freq_cutoffs
+        if freq_cutoffs is None:
+            # switch to default
+            self.freqCutoffs = [500, 10000]
+        elif type(freq_cutoffs) != list:
+            raise TypeError('type of freq_cutoffs must be list, but is {}'.
+                             format(type(freq_cutoffs)))
+        elif len(freq_cutoffs) != 2:
+            raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
+                             format(len(freq_cutoffs)))
+        elif not all([type(val) == int for val in freq_cutoffs]):
+            raise ValueError('all values in freq_cutoffs list must be ints')
+        else:
+            self.freqCutoffs = freq_cutoffs
 
-            if filter_func is not None and type(filter_func) != str:
-                raise TypeError('type of filter_func must be str, but is {}'.
-                                 format(type(filter_func)))
-            elif filter_func not in ['diff',None]:
-                raise ValueError('string \'{}\' is not valid for filter_func. '
-                                 'Valid values are: \'diff\' or None.'.
-                                 format(filter_func))
-            else:
-                self.filterFunc = filter_func
+        if filter_func is not None and type(filter_func) != str:
+            raise TypeError('type of filter_func must be str, but is {}'.
+                             format(type(filter_func)))
+        elif filter_func not in ['diff',None]:
+            raise ValueError('string \'{}\' is not valid for filter_func. '
+                             'Valid values are: \'diff\' or None.'.
+                             format(filter_func))
+        else:
+            self.filterFunc = filter_func
 
-            if type(spect_func) != str:
-                raise TypeError('type of spect_func must be str, but is {}'.
-                                 format(type(spect_func)))
-            elif spect_func not in ['scipy','mpl']:
-                raise ValueError('string \'{}\' is not valid for filter_func. '
-                                 'Valid values are: \'scipy\' or \'mpl\'.'.
-                                 format(spect_func))
-            else:
-                self.spectFunc = spect_func
+        if type(spect_func) != str:
+            raise TypeError('type of spect_func must be str, but is {}'.
+                             format(type(spect_func)))
+        elif spect_func not in ['scipy', 'mpl']:
+            raise ValueError('string \'{}\' is not valid for filter_func. '
+                             'Valid values are: \'scipy\' or \'mpl\'.'.
+                             format(spect_func))
+        else:
+            self.spectFunc = spect_func
 
-            if type(log_transform_spect) is not bool:
-                raise ValueError('Value for log_transform_spect is {}, but'
-                                 ' it must be bool.'
-                                 .format(type(log_transform_spect)))
-            else:
-                self.logTransformSpect = log_transform_spect
+        if type(log_transform_spect) is not bool:
+            raise ValueError('Value for log_transform_spect is {}, but'
+                             ' it must be bool.'
+                             .format(type(log_transform_spect)))
+        else:
+            self.logTransformSpect = log_transform_spect
 
-            if type(thresh) is not float:
+        if type(thresh) is not float and thresh is not None:
+            try:
+                thresh = float(thresh)
+                self.tresh = thresh
+            except:
                 raise ValueError('Value for thresh is {}, but'
                                  ' it must be float.'
                                  .format(type(thresh)))
-            else:
-                self.thresh = thresh
+        else:
+            self.thresh = thresh
 
     def make(self,
              raw_audio,
              samp_freq):
         """makes spectrogram using assigned properties
-        
+
         Parameters
         ----------
         raw_audio : 1-d numpy array
@@ -372,19 +328,20 @@ def compute_amp(spect):
         amp -- amplitude
     """
 
-    return np.sum(spect,axis=0)
+    return np.sum(spect, axis=0)
+
 
 def segment_song(amp,
-                 time_bins,
-                 segment_params=None):
+                 segment_params={'threshold': 5000, 'min_syl_dur': 0.2, 'min_silent_dur': 0.02},
+                 time_bins=None,
+                 samp_freq=None):
     """Divides songs into segments based on threshold crossings of amplitude.
     Returns onsets and offsets of segments, corresponding (hopefully) to syllables in a song.
     Parameters
     ----------
     amp : 1-d numpy array
-        amplitude of power spectral density. Returned by compute_amp.
-    time_bins : 1-d numpy array
-        time in s, must be same length as log amp. Returned by Spectrogram.make.
+        Either amplitude of power spectral density, returned by compute_amp,
+        or smoothed amplitude of filtered audio, returned by evfuncs.evsmooth
     segment_params : dict
         with the following keys
             threshold : int
@@ -393,42 +350,82 @@ def segment_song(amp,
                 minimum duration of a segment. default is 0.02, i.e. 20 ms.
             min_silent_dur : float
                 minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
+    time_bins : 1-d numpy array
+        time in s, must be same length as log amp. Returned by Spectrogram.make.
+    samp_freq : int
+        sampling frequency
 
     Returns
     -------
     onsets : 1-d numpy array
     offsets : 1-d numpy array
         arrays of onsets and offsets of segments.
-        
+
     So for syllable 1 of a song, its onset is onsets[0] and its offset is offsets[0].
     To get that segment of the spectrogram, you'd take spect[:,onsets[0]:offsets[0]]
     """
 
-    if segment_params is None:
-        segment_params = {'threshold' : 5000,
-                          'min_syl_dur' : 0.2,
-                          'min_silent_dur' : 0.02}
+    if time_bins is None and samp_freq is None:
+        raise ValueError('Values needed for either time_bins or samp_freq parameters '
+                         'needed to segment song.')
+    if time_bins is not None and samp_freq is not None:
+        raise ValueError('Can only use one of time_bins or samp_freq to segment song, '
+                         'but values were passed for both parameters')
+
+    if time_bins is not None:
+        if amp.shape[-1] != time_bins.shape[-1]:
+            raise ValueError('if using time_bins, '
+                             'amp and time_bins must have same length')
+
     above_th = amp > segment_params['threshold']
-    h = [1, -1] 
-    above_th_convoluted = np.convolve(h,above_th) # convolving with h causes:
+    h = [1, -1]
+    # convolving with h causes:
     # +1 whenever above_th changes from 0 to 1
-    onsets = time_bins[np.nonzero(above_th_convoluted > 0)]
     # and -1 whenever above_th changes from 1 to 0
-    offsets = time_bins[np.nonzero(above_th_convoluted < 0)]
-    
-    #get rid of silent intervals that are shorter than min_silent_dur
-    silent_gap_durs = onsets[1:] - offsets[:-1] # duration of silent gaps
+    above_th_convoluted = np.convolve(h, above_th)
+
+    if time_bins is not None:
+        # if amp was taken from time_bins using compute_amp
+        # note that np.where calls np.nonzero which returns a tuple
+        # but numpy "knows" to use this tuple to index into time_bins
+        onsets = time_bins[np.where(above_th_convoluted > 0)]
+        offsets = time_bins[np.where(above_th_convoluted < 0)]
+    elif samp_freq is not None:
+        # if amp was taken from smoothed audio using evsmooth
+        # here, need to get the array out of the tuple returned by np.where
+        # **also note we avoid converting from samples to s
+        # until *after* we find segments** 
+        onsets = np.where(above_th_convoluted > 0)[0]
+        offsets = np.where(above_th_convoluted < 0)[0]
+
+    if onsets.shape[0] < 1 or offsets.shape[0] < 1:
+        return None, None  # because no onsets or offsets in this file
+
+    # get rid of silent intervals that are shorter than min_silent_dur
+    silent_gap_durs = onsets[1:] - offsets[:-1]  # duration of silent gaps
+    if samp_freq is not None:
+        # need to convert to s
+        silent_gap_durs = silent_gap_durs / samp_freq
     keep_these = np.nonzero(silent_gap_durs > segment_params['min_silent_dur'])
-    onsets = onsets[keep_these]
-    offsets = offsets[keep_these]
-    
-    #eliminate syllables with duration shorter than min_syl_dur
+    onsets = np.concatenate(
+        (onsets[0, np.newaxis], onsets[1:][keep_these]))
+    offsets = np.concatenate(
+        (offsets[:-1][keep_these], offsets[-1, np.newaxis]))
+
+    # eliminate syllables with duration shorter than min_syl_dur
     syl_durs = offsets - onsets
+    if samp_freq is not None:
+        syl_durs = syl_durs / samp_freq
     keep_these = np.nonzero(syl_durs > segment_params['min_syl_dur'])
     onsets = onsets[keep_these]
     offsets = offsets[keep_these]
 
+    if samp_freq is not None:
+        onsets = onsets / samp_freq
+        offsets = offsets / samp_freq
+
     return onsets, offsets
+
 
 class syllable:
     """
@@ -515,7 +512,7 @@ class Song:
             'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
             'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
         segment_params : dict
-            required for any data set that includes segmenting parameters.
+            Parameters for segmenting audio file into "syllables".
             If use_annotation is True, checks values in this dict against
             the parameters in the annotation file (if they are present, not all
             data sets include segmentation parameters).
@@ -614,7 +611,7 @@ class Song:
 
             self.labels = song_dict['labels']
 
-        else:  # if use_annotation is False, segment song
+        elif use_annotation is False:
             self.spectParams = spect_params
             self.segmentParams = segment_params
 
@@ -626,10 +623,18 @@ class Song:
             # 'syls_to_use' not being set. Possibly could just assume that
             # 'syls_to_use' == 'all' for unlabeled song
             # Is there any time that would be unwanted behavior?
-            amp = compute_amp(spect)
+
+            # will need to add ability to segment in different ways
+            # e.g. with different amplitudes
+            # amp = compute_amp(spect, amplitude_type)
+            # for now doing it with the way evsonganaly does
+            amp = evfuncs.evsmooth(self.rawAudio,
+                                   self.sampFreq,
+                                   self.spectParams['freq_cutoffs'])
             onsets, offsets = segment_song(amp,
-                                           time_bins,
-                                           segment_params)
+                                           segment_params,
+                                           samp_freq=self.sampFreq)
+
             self.onsets_s = onsets
             self.offsets_s = offsets
             self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
@@ -637,7 +642,7 @@ class Song:
             self.labels = '-' * len(onsets)
 
     def set_syls_to_use(self, labels_to_use='all'):
-        """        
+        """
         Parameters
         ----------
         labels_to_use : list or string
@@ -648,7 +653,7 @@ class Song:
             will be extracted and returned, but a syllable labeled 'x' would be
             ignored. If labels_to_use=='all' then all spectrograms are returned with
             empty strings for the labels. Default is 'all'.
-        
+
         sets syls_to_use to a numpy boolean that can be used to index e.g. labels, onsets
         This method must be called before get_syls
         """
