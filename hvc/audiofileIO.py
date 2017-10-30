@@ -332,16 +332,16 @@ def compute_amp(spect):
 
 
 def segment_song(amp,
-                 time_bins,
-                 segment_params=None):
+                 segment_params={'threshold': 5000, 'min_syl_dur': 0.2, 'min_silent_dur': 0.02},
+                 time_bins=None,
+                 samp_freq=None):
     """Divides songs into segments based on threshold crossings of amplitude.
     Returns onsets and offsets of segments, corresponding (hopefully) to syllables in a song.
     Parameters
     ----------
     amp : 1-d numpy array
-        amplitude of power spectral density. Returned by compute_amp.
-    time_bins : 1-d numpy array
-        time in s, must be same length as log amp. Returned by Spectrogram.make.
+        Either amplitude of power spectral density, returned by compute_amp,
+        or smoothed amplitude of filtered audio, returned by evfuncs.evsmooth
     segment_params : dict
         with the following keys
             threshold : int
@@ -350,6 +350,10 @@ def segment_song(amp,
                 minimum duration of a segment. default is 0.02, i.e. 20 ms.
             min_silent_dur : float
                 minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
+    time_bins : 1-d numpy array
+        time in s, must be same length as log amp. Returned by Spectrogram.make.
+    samp_freq : int
+        sampling frequency
 
     Returns
     -------
@@ -361,29 +365,64 @@ def segment_song(amp,
     To get that segment of the spectrogram, you'd take spect[:,onsets[0]:offsets[0]]
     """
 
-    if segment_params is None:
-        segment_params = {'threshold': 5000,
-                          'min_syl_dur': 0.2,
-                          'min_silent_dur': 0.02}
+    if time_bins is None and samp_freq is None:
+        raise ValueError('Values needed for either time_bins or samp_freq parameters '
+                         'needed to segment song.')
+    if time_bins is not None and samp_freq is not None:
+        raise ValueError('Can only use one of time_bins or samp_freq to segment song, '
+                         'but values were passed for both parameters')
+
+    if time_bins is not None:
+        if amp.shape[-1] != time_bins.shape[-1]:
+            raise ValueError('if using time_bins, '
+                             'amp and time_bins must have same length')
+
     above_th = amp > segment_params['threshold']
     h = [1, -1]
-    above_th_convoluted = np.convolve(h, above_th)  # convolving with h causes:
+    # convolving with h causes:
     # +1 whenever above_th changes from 0 to 1
-    onsets = time_bins[np.nonzero(above_th_convoluted > 0)]
     # and -1 whenever above_th changes from 1 to 0
-    offsets = time_bins[np.nonzero(above_th_convoluted < 0)]
+    above_th_convoluted = np.convolve(h, above_th)
 
-    #get rid of silent intervals that are shorter than min_silent_dur
-    silent_gap_durs = onsets[1:] - offsets[:-1] # duration of silent gaps
+    if time_bins is not None:
+        # if amp was taken from time_bins using compute_amp
+        # note that np.where calls np.nonzero which returns a tuple
+        # but numpy "knows" to use this tuple to index into time_bins
+        onsets = time_bins[np.where(above_th_convoluted > 0)]
+        offsets = time_bins[np.where(above_th_convoluted < 0)]
+    elif samp_freq is not None:
+        # if amp was taken from smoothed audio using evsmooth
+        # here, need to get the array out of the tuple returned by np.where
+        # **also note we avoid converting from samples to s
+        # until *after* we find segments** 
+        onsets = np.where(above_th_convoluted > 0)[0]
+        offsets = np.where(above_th_convoluted < 0)[0]
+
+    if onsets.shape[0] < 1 or offsets.shape[0] < 1:
+        return None, None  # because no onsets or offsets in this file
+
+    # get rid of silent intervals that are shorter than min_silent_dur
+    silent_gap_durs = onsets[1:] - offsets[:-1]  # duration of silent gaps
+    if samp_freq is not None:
+        # need to convert to s
+        silent_gap_durs = silent_gap_durs / samp_freq
     keep_these = np.nonzero(silent_gap_durs > segment_params['min_silent_dur'])
-    onsets = onsets[keep_these]
-    offsets = offsets[keep_these]
+    onsets = np.concatenate(
+        (onsets[0, np.newaxis], onsets[1:][keep_these]))
+    offsets = np.concatenate(
+        (offsets[:-1][keep_these], offsets[-1, np.newaxis]))
 
-    #eliminate syllables with duration shorter than min_syl_dur
+    # eliminate syllables with duration shorter than min_syl_dur
     syl_durs = offsets - onsets
+    if samp_freq is not None:
+        syl_durs = syl_durs / samp_freq
     keep_these = np.nonzero(syl_durs > segment_params['min_syl_dur'])
     onsets = onsets[keep_these]
     offsets = offsets[keep_these]
+
+    if samp_freq is not None:
+        onsets = onsets / samp_freq
+        offsets = offsets / samp_freq
 
     return onsets, offsets
 
@@ -572,7 +611,7 @@ class Song:
 
             self.labels = song_dict['labels']
 
-        else:  # if use_annotation is False, segment song
+        elif use_annotation is False:
             self.spectParams = spect_params
             self.segmentParams = segment_params
 
@@ -593,8 +632,8 @@ class Song:
                                    self.sampFreq,
                                    self.spectParams['freq_cutoffs'])
             onsets, offsets = segment_song(amp,
-                                           time_bins,
-                                           segment_params)
+                                           segment_params,
+                                           samp_freq=self.sampFreq)
 
             self.onsets_s = onsets
             self.offsets_s = offsets

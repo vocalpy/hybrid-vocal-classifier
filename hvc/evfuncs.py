@@ -307,7 +307,7 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
     # window to design filter, but default for matlab's fir1
     # is actually Hamming
-    # note that first parameter for firwin is filter *length*
+    # note that first parameter for scipy.signal.firwin is filter *length*
     # whereas argument to matlab's fir1 is filter *order*
     # for linear FIR, filter length is filter order + 1
     b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)
