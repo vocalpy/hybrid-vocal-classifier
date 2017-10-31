@@ -7,15 +7,57 @@ Installation
 | Step by step instructions are below.
 | If you need help, please join our email list at `hvc-users@google-groups.com` and ask a new question.
 
+**Note that the ``$`` and ``>`` prompts below are just to indicate that you're in the command line,
+you don't have to type them. If the command is the same on Mac/Linux/Windows then only the ``$``
+prompt is shown.**
+
+Easy install for general users
+------------------------------
 using the Anaconda distribution and the `conda` package manager
----------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The following should work on Linux, Mac, and Windows.
 
 | 1. Install the Anaconda distribution for your operating system: https://www.anaconda.com/download/
+|
+| 2. Create a conda environment.
+|
+|  ``$ conda create -n hvc python=3.5``
+|  **Currently the environment must use Python 3.5.**
+|  The environment allows you have to install the libraries necessary for *hybrid-vocal-classifier* to run.
+|  For a more in-depth explanation see https://conda.io/docs/user-guide/concepts.html#conda-environments.
 | 
-| 2. Download the *hybrid-vocal-classifier* files
-| (or ``git clone`` the repository if you are familiar with git)
+| 3. Activate the environment
 | 
+|  Mac/Linux:
+|  ``$ source activate hvc-env``
+|  Windows:
+|  ``> activate hvc-env``
+|
+| 4. Add the conda forge channel which contains some of the libraries necessary for *hybrid-vocal-classifier* to run.
+|
+|  ``$ conda config --add channels conda-forge``
+|  For more about conda forge, see: https://conda-forge.org
+|
+| 5. Install *hybrid-vocal-classifier* into the environment
+|
+|  ``$ conda install -c nickledave hybrid-vocal-classifier``
+|
+| 6. Test whether the install worked.
+|
+| ``$ python``
+| ``>>> import hvc``
+
+If the above line executes without any ``module not found`` error,
+you have successfully installed *hybrid-vocal-classifier*.
+
+For developers
+--------------
+using the Anaconda distribution and the `conda` package manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+| 1. Install the Anaconda distribution for your operating system: https://www.anaconda.com/download/
+| 
+| 2. ``git clone`` the repository
 |  https://github.com/NickleDave/hybrid-vocal-classifier.git
 | 
 | 3. Open bash (Linux/Mac) or command prompt (Windows) and navigate to the *hybrid-vocal-classifier* directory.
@@ -38,5 +80,3 @@ The following should work on Linux, Mac, and Windows.
 |  ``> activate hvc-env``
 
 You should now be able to start IPython or a Jupyter notebook and ``import hvc`` to work with it.
-
-
