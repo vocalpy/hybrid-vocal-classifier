@@ -196,6 +196,13 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                 else:
                     neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
 
+        # save filename with full path
+        # so hvc.convert can use full path
+        # to save annotation files in same directory as original audio files
+        songfiles_list = [os.path.join(os.getcwd(),
+                                       songfile)
+                          for songfile in songfiles_list]
+
         # get dir name without the rest of path so it doesn't have separators in the name
         # because those can't be in filename
         just_dir_name = os.getcwd().split(os.path.sep)[-1]

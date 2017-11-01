@@ -114,6 +114,7 @@ def predict(config_file):
                                               32000,
                                               segment_params,
                                               onsets_s,
-                                              offsets_s)
+                                              offsets_s,
+                                              alternate_path=output_dir_with_path)
 
     os.chdir(home_dir)
