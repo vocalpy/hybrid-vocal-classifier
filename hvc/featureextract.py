@@ -170,6 +170,13 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                 # because no labels from labels_to_use were found in songfile
                 continue
 
+            if 'feature_inds' in extract_dict:
+                if 'feature_inds' not in locals():
+                    feature_inds = extract_dict['feature_inds']
+                else:
+                    ftr_inds_err_msg = "feature indices changed between files"
+                    assert feature_inds == extract_dict['feature_inds'], ftr_inds_err
+
             all_labels.extend(extract_dict['labels'])
             all_onsets_s.extend(extract_dict['onsets_s'])
             all_onsets_Hz.extend(extract_dict['onsets_Hz'])
@@ -226,7 +233,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
 
         if 'features_from_all_files' in locals():
             feature_file_dict['features'] = features_from_all_files
-            feature_file_dict['features_arr_column_IDs'] = extract_dict['feature_inds']
+            feature_file_dict['features_arr_column_IDs'] = feature_inds
 
             if 'feature_list_group_ID' in extract_params:
                 feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']

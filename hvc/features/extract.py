@@ -118,11 +118,16 @@ def from_file(filename,
     if calling_function == 'extract':
         try:
             song = Song(filename, file_format, segment_params)
+        except FileNotFoundError:
+            warn_string = "Could not automatically find an annotation file for {}.".format(filename)
+            warnings.warn(warn_string)
+            return None
         except Song.SegmentParametersMismatchError:
-            warnings.warn('Mismatch between declared segmenting parameters '
-                          'and parameters in annotation file for {}.\n'
-                          'Did not extract features from file.'
-                          .format(filename))
+            warn_string = ('Mismatch between declared segmenting parameters '
+                           'and parameters in annotation file for {}.\n'
+                           'Did not extract features from file.'
+                           .format(filename))
+            warnings.warn(warn_string)
             return None
 
         song.set_syls_to_use(labels_to_use)

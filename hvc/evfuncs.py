@@ -147,7 +147,7 @@ def load_notmat(filename):
         raise ValueError("Filename should have extension .cbin.not.mat or"
                          " .cbin")
 
-    return loadmat(filename,squeeze_me=True)
+    return loadmat(filename, squeeze_me=True)
 
 
 def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):

@@ -569,12 +569,8 @@ class Song:
                 if annote_filename:
                     song_dict = evfuncs.load_notmat(annote_filename)
                 else:
-                    try:
-                        song_dict = evfuncs.load_notmat(filename)
-                    except FileNotFoundError:
-                        print("Could not automatically find an annotation file for {}."
-                              .format(filename))
-                        raise  # (re-raise FileNotFound that we just caught with except)
+                    song_dict = evfuncs.load_notmat(filename)
+
                 # in .not.mat files saved by evsonganaly,
                 # onsets and offsets are in units of ms, have to convert to s
                 if segment_params['threshold'] != song_dict['threshold']:
