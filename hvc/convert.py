@@ -45,14 +45,6 @@ def to_notmat(songfile_name, pred_labels, clf_file, samp_freq, segment_params,
     None
     """
 
-    SHOULD_BE_DOUBLE = ['Fs',
-                        'min_dur',
-                        'min_int',
-                        'offsets',
-                        'onsets',
-                        'sm_win',
-                        'threshold']
-
     # notmat files have onsets/offsets in units of ms
     # need to convert
     onsets = onsets_s * 1e3
@@ -75,13 +67,6 @@ def to_notmat(songfile_name, pred_labels, clf_file, samp_freq, segment_params,
                    }
     notmat_dict['labels'] = pred_labels
     notmat_dict['classifier_file'] = clf_file
-    # evsonganaly/Matlab expects all vars as double
-    for key, val in notmat_dict.items():
-        if key in SHOULD_BE_DOUBLE:
-            try:
-                notmat_dict[key] = val.astype('d')
-            except AttributeError:  # gross hack
-                notmat_dict[key] = np.asarray([val]).astype('d')[0]
 
     notmat_name = songfile_name + '.not.mat'
     if os.path.exists(notmat_name):
