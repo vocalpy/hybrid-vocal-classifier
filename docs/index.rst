@@ -6,10 +6,13 @@
 hybrid-vocal-classifier (HVC)
 =============================
 
-Speech to text for songbirds
-----------------------------
+Voice to text for songbirds
+---------------------------
 
-hybrid-vocal-classifier (or HVC for short) makes it easy to
+.. image:: /images/gr41rd41_song.png
+
+
+hybrid-vocal-classifier (HVC for short) makes it easy to
 segment and classify vocalizations with machine learning algorithms,
 and to compare the performance of different algorithms.
 
