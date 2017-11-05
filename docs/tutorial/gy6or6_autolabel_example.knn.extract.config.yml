@@ -1,0 +1,20 @@
+extract:
+  spect_params:
+    ref: evsonganaly
+  segment_params:
+    threshold: 1500 # arbitrary units of amplitude
+    min_syl_dur: 0.01 # ms
+    min_silent_dur: 0.006 # ms
+
+  todo_list:
+    -
+      bird_ID : gy6or6
+      file_format: evtaf
+      feature_group:
+        - knn
+      data_dirs:
+        - .\gy6or6\032612
+
+      output_dir: .\gy6or6\
+
+      labelset: iabcdefghjk

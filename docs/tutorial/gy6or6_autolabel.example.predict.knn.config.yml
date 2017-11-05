@@ -1,0 +1,12 @@
+predict:
+
+  todo_list:
+    -
+      bird_ID : gy6or6
+      file_format: evtaf
+      data_dirs:
+        - C:\Users\Seymour Snyder\Documents\example_song\032612
+      model_meta_file: .\gy6or6\select_output_171031_215004\knn_k4\knn_200samples_replicate9.meta
+      output_dir: .\gy6or6
+      predict_proba: True
+      convert: notmat

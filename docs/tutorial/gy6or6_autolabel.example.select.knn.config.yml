@@ -1,0 +1,20 @@
+select:
+  
+  num_replicates: 10
+  num_train_samples:
+    start : 50
+    stop : 250
+    step : 50
+  num_test_samples: 500
+
+  models:
+    -
+      model_name: knn
+      feature_list_indices: [0,1,2,3,4,5,6,7,8]
+      hyperparameters:
+        k : 4
+
+  todo_list:
+    - #1
+      feature_file: .\gy6or6\extract_output_171031_214453\summary_feature_file_created_171031_214642
+      output_dir: .\gy6or6\
