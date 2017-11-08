@@ -1,7 +1,7 @@
 .. _related:
 
 =============================
-related articles and software
+Related articles and software
 =============================
 
 automated classification of birdsong elements
@@ -21,7 +21,7 @@ http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0159188
 https://github.com/cycentum/birdsong-recognition
 
 **with k-nearest neighbors**
-Songbrower. Troyer lab.
+Songbrowser. Troyer lab.
 http://www.utsa.edu/troyerlab/software.html
 
 semi-automated clustering methods
