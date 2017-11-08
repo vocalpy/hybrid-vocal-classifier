@@ -22,7 +22,7 @@ The secondary goal of the package is to facilitate comparisons of
 different machine learning algorithms. Several groups have published
 on various algorithms: for a list of some of the algorithms 
 used by this library, see :ref:`citations`, and see related works
-in :ref:`links`. Along with the library, a large dataset containing
+in :ref:`related`. Along with the library, a large dataset containing
 days of hand-labeled song was released. 
 Open repositories were crucial for other advances in machine learning.
 A list with links to that dataset and others can be found on the :ref:`repos` page.

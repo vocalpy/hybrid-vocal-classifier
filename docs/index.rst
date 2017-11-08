@@ -88,7 +88,7 @@ Citations, repositories, and related work
 
 | To cite the algorithms used, please see the listing in :ref:`citations`.
 | A list of repositories of birdsong is here: :ref:`repos` 
-| A list of related works is here: :ref:`links` 
+| A list of related works is here: :ref:`related` 
 | To suggest or contribute algorithms or repositories:
 |  Please feel free to start an issue on the Github repository
 |  https://github.com/NickleDave/hybrid-vocal-classifier/issues

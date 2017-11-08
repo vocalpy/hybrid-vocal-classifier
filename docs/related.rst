@@ -1,13 +1,10 @@
-.. _links:
+.. _related:
 
-================
-      Links
-================
-
+=============================
 related articles and software
 =============================
 
-automated **classification** of birdsong elements
+automated classification of birdsong elements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **with support vector machines**
@@ -54,3 +51,16 @@ Mandelblat-Cerf, Yael, and Michale S. Fee.
 PloS one 9.5 (2014): e96484.
 http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0096484#s6
 code: https://doi.org/10.1371/journal.pone.0096484.s002
+
+Mets, David Gavin, and Michael S. Brainard.
+"An Automated Approach to the Quantitation of Vocalizations
+and Vocal Learning in the Songbird."
+bioRxiv (2017): 166124.
+https://www.biorxiv.org/content/early/2017/07/20/166124
+
+Soderstrom, Ken, and Ali Alalawi.
+"Software for objective comparison of vocal acoustic features
+over weeks of audio recording: KLFromRecordingDays."
+SoftwareX 6 (2017): 271-277.
+http://www.sciencedirect.com/science/article/pii/S2352711017300523
+code: https://github.com/soderstromk/KLFromRecordingDays
