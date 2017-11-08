@@ -1,7 +1,5 @@
 .. hybrid-vocal-classifier documentation master file, created by
    sphinx-quickstart on Sat Jun 24 22:04:45 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 hybrid-vocal-classifier (HVC)
 =============================
@@ -38,7 +36,7 @@ Here's a code sample that gives a high-level view of how you run HVC:
    hvc.predict('predict_config.yml')
 
 Advantages of hybrid-vocal-classifier:
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 + frees up hundreds of hours spent hand labeling data
 + completely open source, free
@@ -50,7 +48,7 @@ Advantages of hybrid-vocal-classifier:
    `keras <https://keras.io/>`_
 
 Documentation
--------------
+~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 2
@@ -60,29 +58,52 @@ Documentation
    development
 
 Installation
-------------
+~~~~~~~~~~~~
 
 see :ref:`install`
 
 Contribute
-----------
+~~~~~~~~~~
 
 - Issue Tracker: https://github.com/NickleDave/hybrid-vocal-classifier/issues
 - Source Code: https://github.com/NickleDave/hybrid-vocal-classifier/
 
 Support
--------
+~~~~~~~
 
 | If you are having issues, please let us know.
 | We have a mailing list located at: `hvc-users@google-groups.com`
 
 License
--------
+~~~~~~~
 
 BSD license.
 
+Citations, repositories, and related work
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+| For use of the library, please cite its DOI:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1009677.svg
+   :target: https://doi.org/10.5281/zenodo.1009677
+
+| To cite the algorithms used, please see the listing in :ref:`citations`.
+| A list of repositories of birdsong is here: :ref:`repos` 
+| A list of related works is here: :ref:`links` 
+| To suggest or contribute algorithms or repositories:
+|  Please feel free to start an issue on the Github repository
+|  https://github.com/NickleDave/hybrid-vocal-classifier/issues
+|  or send a message on the mailing list:
+|  `hvc-users@google-groups.com`
+
+Code of Conduct
+~~~~~~~~~~~~~~~
+We welcome contributions to the codebase and the documentation,
+and are happy to help first-time contributors through the process.
+Project maintainers and contributors are expected to uphold
+the code of conduct described here: :ref:`code-of-conduct`
+
 Indices and tables
-------------------
+~~~~~~~~~~~~~~~~~~
 
 * :ref:`genindex`
 * :ref:`modindex`
