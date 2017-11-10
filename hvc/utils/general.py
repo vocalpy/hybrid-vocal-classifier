@@ -143,8 +143,8 @@ def filter_labels(labels,labelset):
     return labels
 
 
-def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
-                        gamma_range=np.logspace(-6, -1, 6)):
+def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6), gamma_range=np.logspace(-6, -1, 6),
+                        return_cv_results=False):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector machine.
 
@@ -161,14 +161,20 @@ def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
     gamma_range : ndarray
         range of values over which to search for best gamma.
         default is np.logspace(-6, -1, 6)
+    return_cv_results : bool
+        if True, return results from grid search using cross validation.
+        Default is False.
 
     Returns
     -------
-    best_params :
+    best_params : dict
         values for C and gamma that gave the highest accuracy with
         cross-validation
-    best_score :
+    best_score : float
         highest accuracy with cross-validation
+    cv_results : dict
+        of scores, returned by sklearn.model_selection.GridSearchCV.
+        Only returned if return_cv_results is True.
     """
 
     param_grid = dict(gamma=gamma_range, C=C_range)
@@ -177,9 +183,12 @@ def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6),
     # "run parallel if possible"
     grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv, n_jobs=-1)
     grid.fit(X, y)
-    print("The best parameters are {} with a score of {0.2f}"
+    print("The best parameters are {0} with a score of {1:0.2f}"
           .format(grid.best_params_, grid.best_score_))
-    return grid.best_params_, grid.best_score_
+    return_tuple = (grid.best_params_, grid.best_score_)
+    if return_cv_results:
+        return_tuple += (grid.cv_results_,)
+    return return_tuple
 
 
 def find_best_k(samples,
