@@ -43,18 +43,19 @@ def predict(config_file):
     home_dir = os.getcwd()
 
     for todo in predict_config['todo_list']:
-
-        output_dir = 'predict_output_' + timestamp()
-        output_dir_with_path = os.path.join(todo['output_dir'], output_dir)
-        if not os.path.isdir(output_dir_with_path):
-            os.mkdir(output_dir_with_path)
+        # get absolute path before changing directories
+        # in case user specified output as a relative dir
+        output_dir = os.path.abspath(todo['output_dir'])
+        output_dir = os.path.join(output_dir, 'predict_output_' + timestamp())
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
 
         model_meta_file = joblib.load(todo['model_meta_file'])
 
         extract_params = {
             'bird_ID': todo['bird_ID'],
             'feature_list': model_meta_file['model_feature_list'],
-            'output_dir': output_dir_with_path,
+            'output_dir': output_dir,
             'home_dir': home_dir,
             'data_dirs': todo['data_dirs'],
             'labelset': 'all',
@@ -70,7 +71,7 @@ def predict(config_file):
                                     calling_function='predict',
                                     make_summary_file=False)
 
-        os.chdir(output_dir_with_path)
+        os.chdir(output_dir)
         ftr_files = glob.glob('features_from*')
         model_filename = model_meta_file['model_filename']
         model_name = model_meta_file['model_name']
@@ -115,6 +116,6 @@ def predict(config_file):
                                               segment_params,
                                               onsets_s,
                                               offsets_s,
-                                              alternate_path=output_dir_with_path)
+                                              alternate_path=output_dir)
 
     os.chdir(home_dir)

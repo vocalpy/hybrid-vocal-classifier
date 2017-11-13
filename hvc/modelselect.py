@@ -54,7 +54,8 @@ def select(config_file):
         print('Completing item {} of {} in to-do list'.format(ind+1, len(todo_list)))
 
         a_timestamp = timestamp()
-        output_dir = os.path.join(todo['output_dir'],
+        output_dir = os.path.abspath(todo['output_dir'])
+        output_dir = os.path.join(output_dir,
                                   'select_output_' + a_timestamp)
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)

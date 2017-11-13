@@ -128,6 +128,11 @@ def _extract(extract_params, calling_function, make_summary_file=True):
 
     """
 
+    # get absolute path to output
+    # **before** we change directories
+    # so we're putting it where user specified, if user wrote a relative path in config file
+    output_dir = os.path.abspath(extract_params['output_dir'])
+
     for data_dir in extract_params['data_dirs']:
         print('Changing to data directory: {}'.format(data_dir))
         os.chdir(extract_params['home_dir'])
@@ -175,7 +180,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                     feature_inds = extract_dict['feature_inds']
                 else:
                     ftr_inds_err_msg = "feature indices changed between files"
-                    assert feature_inds == extract_dict['feature_inds'], ftr_inds_err
+                    assert np.array_equal(feature_inds, extract_dict['feature_inds']), ftr_inds_err_msg
 
             all_labels.extend(extract_dict['labels'])
             all_onsets_s.extend(extract_dict['onsets_s'])
@@ -203,7 +208,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                 else:
                     neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
 
-        # save filename with full path
+        # save songfile names with full path
         # so hvc.convert can use full path
         # to save annotation files in same directory as original audio files
         songfiles_list = [os.path.join(os.getcwd(),
@@ -213,7 +218,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
         # get dir name without the rest of path so it doesn't have separators in the name
         # because those can't be in filename
         just_dir_name = os.getcwd().split(os.path.sep)[-1]
-        feature_file = os.path.join(extract_params['output_dir'],
+        feature_file = os.path.join(output_dir,
                                     'features_from_' + just_dir_name + '_created_' + timestamp())
         feature_file_dict = {
             'labels': all_labels,
@@ -252,9 +257,9 @@ def _extract(extract_params, calling_function, make_summary_file=True):
 
     if make_summary_file:
         print('making summary file')
-        os.chdir(extract_params['output_dir'])
+        os.chdir(output_dir)
         summary_filename = 'summary_feature_file_created_' + timestamp()
-        summary_filename_with_path = os.path.join(extract_params['output_dir'],
+        summary_filename_with_path = os.path.join(output_dir,
                                                   summary_filename)
         ftr_output_files = glob.glob('*features_from_*')
         if len(ftr_output_files) > 1:
@@ -408,7 +413,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
         if 'feature_list_group_ID' in summary_ftr_file_dict:
             write_select_config(summary_ftr_file_dict,
                                 summary_filename,
-                                extract_params['output_dir'])
+                                output_dir)
 
 
 def extract(config_file):
