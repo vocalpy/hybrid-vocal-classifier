@@ -72,7 +72,10 @@ Support
 ~~~~~~~
 
 | If you are having issues, please let us know.
-| We have a mailing list located at: `hvc-users@google-groups.com`
+| Please post bugs on the Issue Tracker:
+| https://github.com/NickleDave/hybrid-vocal-classifier/issues
+| And please ask questions in the users' group:
+| https://groups.google.com/forum/?hl=en#!forum/hvc-users/join
 
 License
 ~~~~~~~
@@ -92,8 +95,8 @@ Citations, repositories, and related work
 | To suggest or contribute algorithms or repositories:
 |  Please feel free to start an issue on the Github repository
 |  https://github.com/NickleDave/hybrid-vocal-classifier/issues
-|  or send a message on the mailing list:
-|  `hvc-users@google-groups.com`
+|  or comment in the users' group:
+|  `https://groups.google.com/forum/?hl=en#!forum/hvc-users/join`
 
 Code of Conduct
 ~~~~~~~~~~~~~~~
