@@ -96,7 +96,7 @@ Citations, repositories, and related work
 |  Please feel free to start an issue on the Github repository
 |  https://github.com/NickleDave/hybrid-vocal-classifier/issues
 |  or comment in the users' group:
-|  `https://groups.google.com/forum/?hl=en#!forum/hvc-users/join`
+|  https://groups.google.com/forum/?hl=en#!forum/hvc-users/join
 
 Code of Conduct
 ~~~~~~~~~~~~~~~
