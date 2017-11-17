@@ -29,7 +29,7 @@ refs_dict = {
         'noverlap': 409,
         'window': 'Hann',
         'freq_cutoffs': [500, 10000],
-        'filter_func': None,
+        'filter_func': 'bandpass_filtfilt',
         'spect_func': 'mpl',
         'log_transform_spect': False,
         'thresh': None

@@ -68,6 +68,8 @@ def validate_spect_params(spect_params):
             filter_func : str
                 filter to apply to raw audio. valid strings are 'diff' or None
                 'diff' -- differential filter, literally np.diff applied to signal as in [1]_.
+                'filt_song' -- filter used by evsonganaly.m with .cbin files recorded by evTAF
+                    bandpass filter applied by filtfilt function
                 None -- no filter, this is the default
             spect_func : str
                 which function to use for spectrogram.
@@ -134,14 +136,10 @@ def validate_spect_params(spect_params):
                                  'Valid values are: {\'Hann\', \'dspp\', None}'
                                  .format(sp_val))
         elif sp_key == 'filter_func':
-            if sp_val not in {'Hann', 'dspp', None}:
-                raise ValueError('{} is invalid value for window in spect params.'
-                                 'Valid values are: {\'Hann\', \'dspp\', None}'
-                                 .format(sp_val))
-        elif sp_key == 'filter_func':
-            if sp_val not in {'Hann', 'dspp', None}:
-                raise ValueError('{} is invalid value for window in spect params.'
-                                 'Valid values are: {\'Hann\', \'dpss\', None}'
+            if sp_val not in {'diff', 'bandpass_filtfilt', 'butter_bandpass', None}:
+                raise ValueError('{} is invalid value for filter_func in spect params.'
+                                 'Valid values are: {\'diff\', \'bandpass_filtfilt\','
+                                 '\'butter_andpass\', None}'
                                  .format(sp_val))
         elif sp_key == 'log_transform_spect':
             if type(sp_val) != bool:

@@ -192,10 +192,13 @@ class Spectrogram:
         else:
             self.freqCutoffs = freq_cutoffs
 
+        if freq_cutoffs is not None and filter_func is None:
+            self.filterFunc = 'butter_bandpass'  # default
+
         if filter_func is not None and type(filter_func) != str:
             raise TypeError('type of filter_func must be str, but is {}'.
                              format(type(filter_func)))
-        elif filter_func not in ['diff',None]:
+        elif filter_func not in ['diff','bandpass_filtfilt','butter_bandpass',None]:
             raise ValueError('string \'{}\' is not valid for filter_func. '
                              'Valid values are: \'diff\' or None.'.
                              format(filter_func))
@@ -249,15 +252,16 @@ class Spectrogram:
         time_bins : 1-d numpy array
         """
 
-        #below, I set freq_bins to >= freq_cutoffs
-        #so that Koumura default of [1000,8000] returns 112 freq. bins
-        if self.freqCutoffs is not None:
+        if self.filterFunc == 'diff':
+            raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
+        elif self.filterFunc == 'bandpass_filtfilt':
+            raw_audio = evfuncs.bandpass_filtfilt(raw_audio,
+                                                  samp_freq,
+                                                  self.freqCutoffs)
+        elif self.filterFunc == 'butter_bandpass':
             raw_audio = butter_bandpass_filter(raw_audio,
                                                samp_freq,
                                                self.freqCutoffs)
-
-        if self.filterFunc == 'diff':
-            raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
 
         try:  # try to make spectrogram
             if self.spectFunc == 'scipy':
@@ -308,11 +312,23 @@ class Spectrogram:
             else:  # unrecognized error
                 raise
 
+        # we take the absolute magnitude
+        # because we almost always want just that for our purposes
+        spect = np.abs(spect)
+
         if self.logTransformSpect:
             spect = np.log10(spect)  # log transform to increase range
 
         if self.thresh is not None:
             spect[spect < self.thresh] = self.thresh
+
+        # below, I set freq_bins to >= freq_cutoffs
+        # so that Koumura default of [1000,8000] returns 112 freq. bins
+        if self.freqCutoffs is not None:
+            f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
+                                (freq_bins < self.freqCutoffs[1]))[0]  # returns tuple
+            freq_bins = freq_bins[f_inds]
+            spect = spect[f_inds, :]
 
         return spect, freq_bins, time_bins
 
