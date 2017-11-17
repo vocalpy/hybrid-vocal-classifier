@@ -169,14 +169,14 @@ class Spectrogram:
                 raise TypeError('type of window must be str, but is {}'.
                                  format(type(window)))
             else:
-                if window not in ['Hann','dpss']:
+                if window not in ['Hann', 'dpss']:
                     raise ValueError('{} is not a valid specification for window'.
                                      format(window))
                 else:
                     if window == 'Hann':
                         self.window = np.hanning(self.nperseg)
                     elif window == 'dpss':
-                        self.window = slepian(self.nperseg, 4 / self.nperseg)
+                        self.window = scipy.signal.slepian(self.nperseg, 4 / self.nperseg)
 
         if freq_cutoffs is None:
             # switch to default
