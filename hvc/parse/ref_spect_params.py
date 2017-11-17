@@ -1,6 +1,3 @@
-import numpy as np
-import scipy.signal
-
 refs_dict = {
     'tachibana': {
         'nperseg': 256,
