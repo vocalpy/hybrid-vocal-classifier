@@ -261,7 +261,54 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     return all_syls, all_labels
 
 
-def evsmooth(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
+def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=None):
+    """filter song audio with band pass filter, run through filtfilt
+    (zero-phase filter)
+
+    Parameters
+    ----------
+    rawsong : ndarray
+        audio
+    samp_freq : int
+        sampling frequency
+    freq_cutoffs : list
+        2 elements long, cutoff frequencies for bandpass filter
+        if None, set to [500, 10000]. Default is None.
+
+    Returns
+    -------
+    filtsong : ndarray
+    """
+
+    Nyquist_rate = samp_freq / 2
+    if freq_cutoffs is None:
+        freq_cutoffs = [500, 10000]
+    if rawsong.shape[-1] < 387:
+        numtaps = 64
+    elif rawsong.shape[-1] < 771:
+        numtaps = 128
+    elif rawsong.shape[-1] < 1539:
+        numtaps = 256
+    else:
+        numtaps = 512
+
+    cutoffs = np.asarray([freq_cutoffs[0] / Nyquist_rate,
+                          freq_cutoffs[1] / Nyquist_rate])
+    # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
+    # window to design filter, but default for matlab's fir1
+    # is actually Hamming
+    # note that first parameter for scipy.signal.firwin is filter *length*
+    # whereas argument to matlab's fir1 is filter *order*
+    # for linear FIR, filter length is filter order + 1
+    b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)
+    a = np.zeros((numtaps+1,))
+    a[0] = 1  # make an "all-zero filter"
+    padlen = np.max((b.shape[-1] - 1, a.shape[-1] - 1))
+    filtsong = scipy.signal.filtfilt(b, a, rawsong, padlen=padlen)
+    return filtsong
+
+
+def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     """filter raw audio and smooth signal
     used to calculate amplitude
 
@@ -290,31 +337,10 @@ def evsmooth(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     by Evren Tumer. Uses the Thomas-Santana algorithm.
     """
 
-    Nyquist_rate = samp_freq / 2
     if freq_cutoffs is None:
         freq_cutoffs = [500, 10000]
-    if rawsong.shape[-1] < 387:
-        numtaps = 64
-    elif rawsong.shape[-1] < 771:
-        numtaps = 128
-    elif rawsong.shape[-1] < 1539:
-        numtaps = 256
-    else:
-        numtaps = 512
 
-    cutoffs = np.asarray([freq_cutoffs[0] / Nyquist_rate,
-                          freq_cutoffs[1] / Nyquist_rate])
-    # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
-    # window to design filter, but default for matlab's fir1
-    # is actually Hamming
-    # note that first parameter for scipy.signal.firwin is filter *length*
-    # whereas argument to matlab's fir1 is filter *order*
-    # for linear FIR, filter length is filter order + 1
-    b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)
-    a = np.zeros((numtaps+1,))
-    a[0] = 1  # make an "all-zero filter"
-    padlen = np.max((b.shape[-1] - 1, a.shape[-1] - 1))
-    filtsong = scipy.signal.filtfilt(b, a, rawsong, padlen=padlen)
+    filtsong = filter_song(rawsong, samp_freq, freq_cutoffs)
     squared_song = np.power(filtsong, 2)
     len = np.round(samp_freq * smooth_win / 1000).astype(int)
     h = np.ones((len,)) / len

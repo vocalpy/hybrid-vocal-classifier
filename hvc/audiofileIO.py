@@ -341,7 +341,7 @@ def segment_song(amp,
     ----------
     amp : 1-d numpy array
         Either amplitude of power spectral density, returned by compute_amp,
-        or smoothed amplitude of filtered audio, returned by evfuncs.evsmooth
+        or smoothed amplitude of filtered audio, returned by evfuncs.smooth_data
     segment_params : dict
         with the following keys
             threshold : int
@@ -391,7 +391,7 @@ def segment_song(amp,
         onsets = time_bins[np.where(above_th_convoluted > 0)]
         offsets = time_bins[np.where(above_th_convoluted < 0)]
     elif samp_freq is not None:
-        # if amp was taken from smoothed audio using evsmooth
+        # if amp was taken from smoothed audio using smooth_data
         # here, need to get the array out of the tuple returned by np.where
         # **also note we avoid converting from samples to s
         # until *after* we find segments** 
@@ -624,9 +624,9 @@ class Song:
             # e.g. with different amplitudes
             # amp = compute_amp(spect, amplitude_type)
             # for now doing it with the way evsonganaly does
-            amp = evfuncs.evsmooth(self.rawAudio,
-                                   self.sampFreq,
-                                   self.spectParams['freq_cutoffs'])
+            amp = evfuncs.smooth_data(self.rawAudio,
+                                      self.sampFreq,
+                                      self.spectParams['freq_cutoffs'])
             onsets, offsets = segment_song(amp,
                                            segment_params,
                                            samp_freq=self.sampFreq)
