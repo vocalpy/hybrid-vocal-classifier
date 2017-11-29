@@ -147,11 +147,11 @@ def _smooth_rect_amp(syllable):
     smoothed : 1-d numpy array
         raw audio waveform amplitude,
         after bandpass filtering, squaring, and  
-        and smoothing with evfuncs.evsmooth
+        and smoothing with evfuncs.smooth_data
     """
-    return hvc.evfuncs.evsmooth(syllable.sylAudio,
-                                syllable.sampFreq,
-                                syllable.freqCutoffs)
+    return hvc.evfuncs.smooth_data(syllable.sylAudio,
+                                   syllable.sampFreq,
+                                   syllable.freqCutoffs)
 
 
 def mn_amp_smooth_rect(syllable):

@@ -340,7 +340,7 @@ def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     if freq_cutoffs is None:
         freq_cutoffs = [500, 10000]
 
-    filtsong = filter_song(rawsong, samp_freq, freq_cutoffs)
+    filtsong = bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs)
     squared_song = np.power(filtsong, 2)
     len = np.round(samp_freq * smooth_win / 1000).astype(int)
     h = np.ones((len,)) / len
