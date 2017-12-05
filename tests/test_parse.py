@@ -10,10 +10,10 @@ from sklearn.externals import joblib
 import hvc.parse.extract
 import hvc.parse.select
 
-with open('./test_data/config.yaml/test_parse_extract.config.yml', 'r') as yaml_file:
+with open('./test_data/config.yml/test_parse_extract.config.yml', 'r') as yaml_file:
     test_yaml_extract = yaml.load(yaml_file)
 
-with open('./test_data/config.yaml/test_parse_select.config.yml', 'r') as yaml_file:
+with open('./test_data/config.yml/test_parse_select.config.yml', 'r') as yaml_file:
     test_yaml_select = yaml.load(yaml_file)
 
 with open('../hvc/parse/features.yml') as features_yml:
