@@ -45,11 +45,6 @@ def to_notmat(songfile_name, pred_labels, clf_file, samp_freq, segment_params,
     None
     """
 
-    # notmat files have onsets/offsets in units of ms
-    # need to convert
-    onsets = onsets_s * 1e3
-    offsets = offsets_s * 1e3
-
     # chr() to convert back to character from uint32
     if pred_labels.dtype == 'int32':
         pred_labels = [chr(val) for val in pred_labels]
@@ -57,13 +52,18 @@ def to_notmat(songfile_name, pred_labels, clf_file, samp_freq, segment_params,
         pred_labels = pred_labels.tolist()
     # convert into one long string, what evsonganaly expects
     pred_labels = ''.join(pred_labels)
-    notmat_dict = {'Fs': samp_freq,
-                   'min_dur': segment_params['min_syl_dur'],
-                   'min_int': segment_params['min_silent_dur'],
-                   'offsets': offsets,
-                   'onsets' : onsets,
-                   'sm_win': 2,
-                   'threshold': segment_params['threshold']
+    # notmat files have onsets/offsets in units of ms
+    # need to convert back from s
+    # same goes for min_int and min_dur
+    # also wrap everything in float so Matlab loads it as double
+    # because evsonganaly expects doubles
+    notmat_dict = {'Fs': float(samp_freq),
+                   'min_dur': float(segment_params['min_syl_dur'] * 1e3),
+                   'min_int': float(segment_params['min_silent_dur'] * 1e3),
+                   'offsets': float(offsets * 1e3),
+                   'onsets' : float(onsets_s * 1e3),
+                   'sm_win': float(2),
+                   'threshold': float(segment_params['threshold'])
                    }
     notmat_dict['labels'] = pred_labels
     notmat_dict['classifier_file'] = clf_file
