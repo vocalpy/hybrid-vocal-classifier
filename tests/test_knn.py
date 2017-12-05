@@ -9,7 +9,9 @@ import glob
 import yaml
 import pytest
 import hvc.audiofileIO
+
 from hvc.features import knn
+from hvc.parse.ref_spect_params import refs_dict
 
 with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
@@ -18,7 +20,7 @@ with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
 class TestKNN:
     """
     unit tests that specifically test functions
-    in the Tachibana module
+    for getting features for k-Nearest Neighbors
     """
 
     @pytest.fixture()
@@ -40,7 +42,7 @@ class TestKNN:
         songfiles_list = glob.glob('./test_data/cbins/gy6or6/032412/*.cbin')
         song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
         song.set_syls_to_use('iabcdefghjk')
-        song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        song.make_syl_spects(spect_params=refs_dict['evsonganaly'])
         return song
 
     def test_duration(self, song):
