@@ -381,10 +381,15 @@ def _validate_todo_list_dict(todo_list_dict, index):
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
+                validated_data_dirs = []
                 for item in val:
+                    item = os.path.normpath(item)
                     if not os.path.isdir(item):
                         raise ValueError('directory {} in {} is not a valid directory.'
                                          .format(item, key))
+                    else:
+                        validated_data_dirs.append(item)
+                validated_todo_list_dict['data_dirs'] = validated_data_dirs
 
         elif key == 'file_format':
             if type(val) != str:
