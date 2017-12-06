@@ -96,7 +96,8 @@ class TestAudiofileIO:
         offset = notmat_dict['offsets'][index]
         offset = np.round(offset / 1000 * fs).astype(int)
         raw_audio = dat[onset:offset]
-        spect_maker = hvc.audiofileIO.Spectrogram(ref='koumura')
+        spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
         with pytest.raises(hvc.audiofileIO.WindowError):
             spect_maker.make(raw_audio, fs)
 
@@ -154,26 +155,30 @@ class TestAudiofileIO:
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
-        cbin_song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        spect_params = hvc.parse.ref_spect_params.refs_dict['tachibana']
+        cbin_song.make_syl_spects(spect_params=spect_params)
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
-        wav_song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        spect_params = hvc.parse.ref_spect_params.refs_dict['tachibana']
+        wav_song.make_syl_spects(spect_params=spect_params)
 
         # test make_syl_spects works with 'ref' set to 'koumura'
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
-        cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
+        spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
+        cbin_song.make_syl_spects(spect_params=spect_params)
 
         wav = './test_data/koumura/Bird0/Wave/0.wav'
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
-        wav_song.make_syl_spects(spect_params={'ref': 'koumura'})
+        spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
+        wav_song.make_syl_spects(spect_params=spect_params)
 
         # test that make_syl_spects works the same way when
         #
@@ -197,5 +202,6 @@ class TestAudiofileIO:
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
-        cbin_song.make_syl_spects(spect_params={'ref': 'koumura'})
+        spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
+        cbin_song.make_syl_spects(spect_params)
         assert cbin_song.syls[index] is np.nan
