@@ -13,8 +13,8 @@ extract:
       feature_group:
         - svm
       data_dirs:
-        - .\test_data\cbins\gy6or6\032312
-        - .\test_data\cbins\gy6or6\032412
+        - ./test_data/cbins/gy6or6/032312
+        - ./test_data/cbins/gy6or6/032412
 
       output_dir: replace with tmp_output_dir
 

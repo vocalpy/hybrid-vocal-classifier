@@ -18,7 +18,7 @@ test_parse:
           - knn
         data_dirs:
           - ./test_data/cbins
-          - C:\DATA\gy6or6\032312
+          - C:/DATA/gy6or6/032312
         output_dir: C:\Data\gy6gy6\
         labelset: iabcdef
       - #2
