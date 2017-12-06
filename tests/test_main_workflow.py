@@ -14,7 +14,7 @@ from sklearn.externals import joblib
 
 import hvc
 
-configs = './test_data/config.yaml/'
+configs = './test_data/config.yml/'
 
 
 @pytest.fixture(scope='session')
