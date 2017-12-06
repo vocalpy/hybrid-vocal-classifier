@@ -54,15 +54,18 @@ def to_notmat(songfile_name, pred_labels, clf_file, samp_freq, segment_params,
     pred_labels = ''.join(pred_labels)
     # notmat files have onsets/offsets in units of ms
     # need to convert back from s
+    offsets = (offsets_s * 1e3).astype(float)
+    onsets = (onsets_s * 1e3).astype(float)
+    
     # same goes for min_int and min_dur
     # also wrap everything in float so Matlab loads it as double
     # because evsonganaly expects doubles
     notmat_dict = {'Fs': float(samp_freq),
                    'min_dur': float(segment_params['min_syl_dur'] * 1e3),
                    'min_int': float(segment_params['min_silent_dur'] * 1e3),
-                   'offsets': float(offsets * 1e3),
-                   'onsets' : float(onsets_s * 1e3),
-                   'sm_win': float(2),
+                   'offsets': offsets,
+                   'onsets' : onsets,
+                   'sm_win': float(2),  # evsonganaly.m doesn't actually let user change this value
                    'threshold': float(segment_params['threshold'])
                    }
     notmat_dict['labels'] = pred_labels
