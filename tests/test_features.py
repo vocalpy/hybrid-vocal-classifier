@@ -8,6 +8,7 @@ import numpy as np
 
 import hvc.audiofileIO
 import hvc.features
+from hvc.parse.ref_spect_params import refs_dict
 
 @pytest.fixture()
 def has_window_error():
@@ -37,8 +38,9 @@ class TestFromFile:
         with pytest.warns(UserWarning):
              extract_dict = hvc.features.extract.from_file(filename=filename,
                                                            file_format='evtaf',
+                                                           calling_function='extract',
                                                            feature_list=svm_features,
-                                                           spect_params={'ref': 'koumura'},
+                                                           spect_params=refs_dict['koumura'],
                                                            labels_to_use='iabcdefghjk',
                                                            segment_params=segment_params)
         ftr_arr = extract_dict['features_arr']
@@ -61,7 +63,8 @@ class TestFromFile:
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=ftr_grps['knn'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')
@@ -73,7 +76,8 @@ class TestFromFile:
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=ftr_grps['svm'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')
@@ -86,7 +90,8 @@ class TestFromFile:
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=['flatwindow'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')
