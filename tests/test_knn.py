@@ -3,6 +3,7 @@ tests knn module
 """
 
 # from standard library
+import os
 import glob
 
 # from dependencies
@@ -13,8 +14,13 @@ import hvc.audiofileIO
 from hvc.features import knn
 from hvc.parse.ref_spect_params import refs_dict
 
-with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
-    valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+ftr_grp_yaml_file = '../hvc/parse/feature_groups.yml'
+this_file_with_path = __file__
+this_file_just_path = os.path.split(this_file_with_path)[0]
+ftr_grp_yaml_file = os.path.join(this_file_just_path,
+                                 os.path.normpath(ftr_grp_yaml_file))
+with open(ftr_grp_yaml_file) as fileobj:
+    valid_feature_groups_dict = yaml.load(fileobj)
 
 
 class TestKNN:
