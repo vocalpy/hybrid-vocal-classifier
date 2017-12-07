@@ -27,7 +27,9 @@ class TestFromFile:
         so single-syllable features cannot be extracted from it
         """
         filename, index = has_window_error
-        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+        with open(os.path.join(os.path.dirname(__file__),
+                               '../hvc/parse/feature_groups.yml')
+                  ) as ftr_grp_yaml:
             valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
         svm_features = valid_feature_groups_dict['svm']
         segment_params = {
@@ -53,7 +55,9 @@ class TestFromFile:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = os.path.join(os.path_dirname(__file__),
+                            'test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin')
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
