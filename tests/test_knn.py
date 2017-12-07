@@ -45,7 +45,10 @@ class TestKNN:
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
                           }
-        songfiles_list = glob.glob('./test_data/cbins/gy6or6/032412/*.cbin')
+
+        songfiles_dir = os.path.join(this_file_just_path,
+                                 os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
+        songfiles_list = glob.glob(songfiles_dir)
         song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
         song.set_syls_to_use('iabcdefghjk')
         song.make_syl_spects(spect_params=refs_dict['evsonganaly'])
@@ -57,4 +60,3 @@ class TestKNN:
         dur = knn.duration(song.offsets_s,
                            song.onsets_s,
                            song.syls_to_use)
-
