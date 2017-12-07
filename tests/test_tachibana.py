@@ -3,6 +3,7 @@ tests tachibana module
 """
 
 # from standard library
+import os
 import glob
 
 # from dependencies
@@ -13,8 +14,13 @@ import hvc.audiofileIO
 from hvc.features import tachibana
 from hvc.parse.ref_spect_params import refs_dict
 
-with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
-    valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+this_file_with_path = __file__
+this_file_just_path = os.path.split(this_file_with_path)[0]
+feature_grps_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          '../hvc/parse/feature_groups.yml'))
+with open(feature_grps_path) as ftr_grps_yml:
+    valid_feature_groups_dict = yaml.load(ftr_grps_yml)
 
 
 class TestTachibana:
