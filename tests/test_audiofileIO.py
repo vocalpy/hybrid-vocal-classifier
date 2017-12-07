@@ -62,7 +62,9 @@ class TestAudiofileIO:
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = os.path.join(os.path.dirname(__file__),
+                            'test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin')
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
@@ -111,12 +113,15 @@ class TestAudiofileIO:
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = os.path.join(os.path.dirname(__file__),
+                            'test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin')
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
 
-        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav = os.path.join(os.path.dirname(__file__),
+                           'test_data/koumura/Bird0/Wave/0.wav')
         song = hvc.audiofileIO.Song(filename=wav,
                                     file_format='koumura')
 
@@ -137,14 +142,17 @@ class TestAudiofileIO:
             'nperseg': 512,
             'noverlap': 480,
             'freq_cutoffs': [1000, 8000]}
-        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
+        cbin = os.path.join(os.path.dirname(__file__),
+                            'test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin')
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
         cbin_song.make_syl_spects(spect_params)
 
-        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav = os.path.join(os.path.dirname(__file__),
+                           'test_data/koumura/Bird0/Wave/0.wav')
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
@@ -158,7 +166,8 @@ class TestAudiofileIO:
         spect_params = hvc.parse.ref_spect_params.refs_dict['tachibana']
         cbin_song.make_syl_spects(spect_params=spect_params)
 
-        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav = os.path.join(os.path.dirname(__file__),
+                           'test_data/koumura/Bird0/Wave/0.wav')
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
@@ -173,7 +182,8 @@ class TestAudiofileIO:
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
         cbin_song.make_syl_spects(spect_params=spect_params)
 
-        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav = os.path.join(os.path.dirname(__file__),
+                           'test_data/koumura/Bird0/Wave/0.wav')
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
