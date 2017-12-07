@@ -80,7 +80,8 @@ class TestAudiofileIO:
         assert spect.shape[1] == time_bins.shape[0]
 
         # test whether make works with .wav from Koumura dataset
-        wav = './test_data/koumura/Bird0/Wave/0.wav'
+        wav = os.path.join(os.path.dirname(__file__),
+                           'test_data/koumura/Bird0/Wave/0.wav')
         fs, dat = wavfile.read(wav)
 
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
