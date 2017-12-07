@@ -2,6 +2,8 @@
 test parse module
 """
 
+import os
+
 import pytest
 import yaml
 import numpy as np
@@ -10,16 +12,33 @@ from sklearn.externals import joblib
 import hvc.parse.extract
 import hvc.parse.select
 
-with open('./test_data/config.yml/test_parse_extract.config.yml', 'r') as yaml_file:
+this_file_with_path = __file__
+this_file_just_path = os.path.split(this_file_with_path)[0]
+
+test_yaml_extract_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          'test_data/config.yml/'
+                                          'test_parse_extract.config.yml'))
+with open(test_yaml_extract_path, 'r') as yaml_file:
     test_yaml_extract = yaml.load(yaml_file)
 
-with open('./test_data/config.yml/test_parse_select.config.yml', 'r') as yaml_file:
+test_yaml_select_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          'test_data/config.yml/'
+                                          'test_parse_select.config.yml'))
+with open(test_yaml_select_path, 'r') as yaml_file:
     test_yaml_select = yaml.load(yaml_file)
 
-with open('../hvc/parse/features.yml') as features_yml:
+features_yml_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          '../hvc/parse/features.yml'))
+with open(features_yml_path, 'r') as features_yml:
     VALID_FEATURES = yaml.load(features_yml)['features']
 
-with open('../hvc/parse/feature_groups.yml') as ftr_grps_yml:
+feature_grps_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          '../hvc/parse/feature_groups.yml'))
+with open(feature_grps_path) as ftr_grps_yml:
     FTR_GROUPS = yaml.load(ftr_grps_yml)
 
 
