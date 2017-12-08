@@ -16,7 +16,7 @@ import hvc
 
 configs = os.path.join(
     os.path.dirname(__file__),
-    '/test_data/config.yml/')
+    os.path.normpath('test_data/config.yml/'))
 
 
 @pytest.fixture(scope='session')
@@ -143,7 +143,7 @@ def check_select_output(config_path, output_dir):
     """
 
     select_output = glob.glob(os.path.join(str(output_dir),
-                                            'summary_model_select_file*'))
+                                           'summary_model_select_file*'))
     # should only be one summary output file
     assert len(select_output) == 1
 
@@ -234,4 +234,3 @@ def test_main_workflow(tmp_config_dir, tmp_output_dir):
                 assert check_select_output(tmp_config_path, select_output_dir)
             except IndexError:  # because pop from empty list
                 break
-
