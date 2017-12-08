@@ -17,14 +17,15 @@ import hvc.parse.ref_spect_params
 @pytest.fixture()
 def has_window_error():
     filename = os.path.join(os.path.dirname(__file__),
-                            './test_data/cbins/window_error'
-                            '/gy6or6_baseline_220312_0901.106.cbin')
+                            os.path.normpath('./test_data/cbins/window_error'
+                            '/gy6or6_baseline_220312_0901.106.cbin'))
     index = 19
     return filename, index
 
 
 def test_segment_song():
-    cbins = glob('./test_data/cbins/gy6or6/032312/*.cbin')
+    cbins = glob(
+        os.path.normpath('./test_data/cbins/gy6or6/032312/*.cbin'))
     for cbin in cbins:
         print('loading {}'.format(cbin))
         data, samp_freq = hvc.evfuncs.load_cbin(cbin)
@@ -63,8 +64,8 @@ class TestAudiofileIO:
         """
         # test whether make works with .cbin
         cbin = os.path.join(os.path.dirname(__file__),
-                            'test_data/cbins/gy6or6/032412/'
-                            'gy6or6_baseline_240312_0811.1165.cbin')
+                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin'))
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
         spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
@@ -81,7 +82,7 @@ class TestAudiofileIO:
 
         # test whether make works with .wav from Koumura dataset
         wav = os.path.join(os.path.dirname(__file__),
-                           'test_data/koumura/Bird0/Wave/0.wav')
+                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         fs, dat = wavfile.read(wav)
 
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
@@ -115,14 +116,14 @@ class TestAudiofileIO:
         }
 
         cbin = os.path.join(os.path.dirname(__file__),
-                            'test_data/cbins/gy6or6/032412/'
-                            'gy6or6_baseline_240312_0811.1165.cbin')
+                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin'))
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
 
         wav = os.path.join(os.path.dirname(__file__),
-                           'test_data/koumura/Bird0/Wave/0.wav')
+                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         song = hvc.audiofileIO.Song(filename=wav,
                                     file_format='koumura')
 
@@ -144,8 +145,8 @@ class TestAudiofileIO:
             'noverlap': 480,
             'freq_cutoffs': [1000, 8000]}
         cbin = os.path.join(os.path.dirname(__file__),
-                            'test_data/cbins/gy6or6/032412/'
-                            'gy6or6_baseline_240312_0811.1165.cbin')
+                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin'))
         cbin_song = hvc.audiofileIO.Song(filename=cbin,
                                          file_format='evtaf',
                                          segment_params=segment_params)
@@ -153,7 +154,7 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params)
 
         wav = os.path.join(os.path.dirname(__file__),
-                           'test_data/koumura/Bird0/Wave/0.wav')
+                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
@@ -168,7 +169,7 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params=spect_params)
 
         wav = os.path.join(os.path.dirname(__file__),
-                           'test_data/koumura/Bird0/Wave/0.wav')
+                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
@@ -184,7 +185,7 @@ class TestAudiofileIO:
         cbin_song.make_syl_spects(spect_params=spect_params)
 
         wav = os.path.join(os.path.dirname(__file__),
-                           'test_data/koumura/Bird0/Wave/0.wav')
+                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         wav_song = hvc.audiofileIO.Song(filename=wav,
                                         file_format='koumura')
         wav_song.set_syls_to_use('0123456')
@@ -197,7 +198,6 @@ class TestAudiofileIO:
                                          file_format='evtaf',
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
-
 
     def check_window_error_set_to_nan(self, has_window_error):
         """check that, if an audio file raises a window error for Spectrogram.make
