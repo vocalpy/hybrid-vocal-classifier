@@ -1,5 +1,5 @@
 """
-tests extract module
+tests modelselect module
 """
 
 import os
@@ -8,7 +8,7 @@ import hvc
 
 configs = os.path.join(
     os.path.dirname(__file__),
-    'test_data/config.yaml/')
+    os.path.normpath('test_data/config.yml/'))
 
 
 class TestSelect:
