@@ -2,6 +2,8 @@
 test features.extract module
 """
 
+import os
+
 import pytest
 import yaml
 import numpy as np
