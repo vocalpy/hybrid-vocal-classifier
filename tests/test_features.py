@@ -70,7 +70,7 @@ class TestFromFile:
 
         with open(os.path.join(
                 os.path.dirname(__file__),
-                os.path.norm('../hvc/parse/feature_groups.yml'))) as ftr_grp_yaml:
+                os.path.normpath('../hvc/parse/feature_groups.yml'))) as ftr_grp_yaml:
             ftr_grps = yaml.load(ftr_grp_yaml)
 
         extract_dict = hvc.features.extract.from_file(cbin,
