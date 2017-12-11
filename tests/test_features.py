@@ -68,7 +68,9 @@ class TestFromFile:
                                     file_format='evtaf',
                                     segment_params=segment_params)
 
-        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                os.path.norm('../hvc/parse/feature_groups.yml'))) as ftr_grp_yaml:
             ftr_grps = yaml.load(ftr_grp_yaml)
 
         extract_dict = hvc.features.extract.from_file(cbin,
