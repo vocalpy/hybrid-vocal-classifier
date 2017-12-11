@@ -383,7 +383,9 @@ def _validate_todo_list_dict(todo_list_dict, index):
             else:
                 validated_data_dirs = []
                 for item in val:
-                    item = os.path.normpath(item)
+                    item = os.path.join(
+                        os.getcwd(),
+                        os.path.normpath(item))
                     if not os.path.isdir(item):
                         raise ValueError('directory {} in {} is not a valid directory.'
                                          .format(item, key))
