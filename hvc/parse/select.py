@@ -285,7 +285,7 @@ REQUIRED_TODO_KEYS = {'feature_file', 'output_dir'}
 OPTIONAL_TODO_KEYS = {'num_test_samples', 'num_train_samples', 'num_replicates', 'models'}
 
 
-def _validate_todo_list_dict(todo_list_dict, index):
+def _validate_todo_list_dict(todo_list_dict, index, config_path):
     """
     validates to-do lists
 
@@ -318,8 +318,16 @@ def _validate_todo_list_dict(todo_list_dict, index):
         raise ValueError('Value {} for key \'feature_file\' is type {} but it'
                          ' should be a string'.format(feature_file,
                                                       type(feature_file)))
+    feature_file = os.path.normpath(feature_file)
     if not os.path.isfile(feature_file):
-        raise OSError('{} is not found as a file'.format(feature_file))
+        # if val is not absolute path to meta_file
+        # try adding item to absolute path to config_file
+        # i.e. assume path to file is written relative to config file
+        feature_file = os.path.join(
+            os.path.dirname(config_path),
+            feature_file)
+        if not os.path.isfile(feature_file):
+            raise FileNotFoundError('{} is not found as a file'.format(feature_file))
     try:
         ftr_file = joblib.load(feature_file)
         feature_file_keys = ftr_file.keys()
@@ -379,17 +387,23 @@ VALID_SELECT_KEYS = {'todo_list',
                      'models'}
 
 
-def validate_yaml(select_config_yaml):
+def validate_yaml(config_path, select_config_yaml):
     """
     validates config from YAML file
 
     Parameters
     ----------
-    select_config_yaml : dictionary, config as loaded with YAML module
+    config_path : str
+        absolute path to YAML config file. Used to validate directory names
+        in YAML files, which are assumed to be written relative to the
+        location of the file itself.
+    select_config_yaml : dict
+        config as loaded with YAML module
 
     Returns
     -------
-    select_config_dict : dictionary, after validation of all keys
+    select_config_dict : dict
+        after validation of all keys
     """
 
     if type(select_config_yaml) is not dict:
@@ -467,7 +481,7 @@ def validate_yaml(select_config_yaml):
                                         'instead it parsed as a {}. Please check config file'
                                         ' formatting'.format(index, type(item)))
                     else:
-                        val[index] = _validate_todo_list_dict(item, index)
+                        val[index] = _validate_todo_list_dict(item, index, config_path)
             validated_select_config['todo_list'] = val  # re-assign because feature list is added
 
         else:  # if key is not found in list

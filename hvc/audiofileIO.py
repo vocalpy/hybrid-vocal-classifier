@@ -326,7 +326,7 @@ class Spectrogram:
         # so that Koumura default of [1000,8000] returns 112 freq. bins
         if self.freqCutoffs is not None:
             f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
-                                (freq_bins < self.freqCutoffs[1]))[0]  # returns tuple
+                                (freq_bins <= self.freqCutoffs[1]))[0]  # returns tuple
             freq_bins = freq_bins[f_inds]
             spect = spect[f_inds, :]
 

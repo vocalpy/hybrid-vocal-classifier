@@ -51,20 +51,28 @@ class TestParseExtract:
 
     def test_validate_yaml(self):
         test_yaml = test_yaml_extract['test_parse']
+
         # test whether valid yaml parses *without* throwing error
-        hvc.parse.extract.validate_yaml(test_yaml['valid_with_default_spect_and_seg_params'])
-        hvc.parse.extract.validate_yaml(test_yaml['valid_with_default_spect_params'])
-        hvc.parse.extract.validate_yaml(test_yaml['valid_with_default_segment_params'])
-        hvc.parse.extract.validate_yaml(test_yaml['valid_test_spect_params_with_ref'])
+        hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                        test_yaml['valid_with_default_spect_and_seg_params'])
+        hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                        test_yaml['valid_with_default_spect_params'])
+        hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                        test_yaml['valid_with_default_segment_params'])
+        hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                        test_yaml['valid_test_spect_params_with_ref'])
 
         with pytest.raises(KeyError):
-            hvc.parse.extract.validate_yaml(test_yaml['invalid_no_todo'])
+            hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                            test_yaml['invalid_no_todo'])
 
         with pytest.raises(KeyError):
-            hvc.parse.extract.validate_yaml(test_yaml['invalid_missing_spect_params'])
+            hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                            test_yaml['invalid_missing_spect_params'])
 
         with pytest.raises(KeyError):
-            hvc.parse.extract.validate_yaml(test_yaml['invalid_missing_segment_params'])
+            hvc.parse.extract.validate_yaml(test_yaml_extract_path,
+                                            test_yaml['invalid_missing_segment_params'])
 
     def test_validate_feature_group_and_convert_to_list(self):
 
@@ -116,22 +124,26 @@ class TestParseExtract:
 
         str_grp = hvc.parse.extract._validate_todo_list_dict(ftr_test_yml[
                                                        'test_single_group_as_str'],
-                                                   index=0)
+                                                             0,
+                                                             test_yaml_extract_path)
         assert str_grp['feature_list'] == FTR_GROUPS['knn']
 
         single_grp_list = hvc.parse.extract._validate_todo_list_dict(ftr_test_yml[
                                                                'test_single_group_as_str'],
-                                                           index=0)
+                                                                     0,
+                                                                     test_yaml_extract_path)
         assert single_grp_list['feature_list'] == FTR_GROUPS['knn']
 
         two_grp_list = hvc.parse.extract._validate_todo_list_dict(ftr_test_yml[
                                                             'test_two_groups_as_list'],
-                                                        index=0)
+                                                                  0,
+                                                                  test_yaml_extract_path)
         assert two_grp_list['feature_list'] == FTR_GROUPS['knn'] + FTR_GROUPS['svm']
 
         actual_ftr_list = hvc.parse.extract._validate_todo_list_dict(ftr_test_yml[
                                                                'test_feature_list'],
-                                                           index=0)
+                                                                     0,
+                                                                     test_yaml_extract_path)
         assert actual_ftr_list['feature_list'] == FTR_GROUPS['knn']
 
     def test_validate_segment_params(self):
@@ -165,7 +177,7 @@ class TestParseSelect:
                                                            index=0)
         assert model_dict == {'feature_group': 'knn',
                               'hyperparameters': {'k': 4},
-                              'model': 'knn'}
+                              'model_name': 'knn'}
         assert 'feature_list_indices' not in model_dict
 
         # model dict called feature list indices entered as a list
@@ -173,7 +185,7 @@ class TestParseSelect:
                                                            index=0)
         assert model_dict == {'feature_list_indices': [0, 1, 2, 3, 4, 5, 6, 7, 8],
                               'hyperparameters': {'k': 4},
-                              'model': 'knn'}
+                              'model_name': 'knn'}
 
         ftr_file = joblib.load('.//test_data//feature_files//has_ftr_group_dict_and_arr'
                                '//summary_feature_file_created_170722_232106')
@@ -185,7 +197,7 @@ class TestParseSelect:
                                 {'feature_group': 'knn',
                                  'feature_list_indices': np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=int),
                                  'hyperparameters': {'k': 4},
-                                 'model': 'knn'})
+                                 'model_name': 'knn'})
 
         with pytest.raises(KeyError):
             hvc.parse.select._validate_model_dict(test_yaml[

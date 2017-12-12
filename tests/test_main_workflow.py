@@ -2,7 +2,7 @@
 tests running a 'typical' workflow
 all thrown into one file
 because the tests have to run in a certain order
-and this seemed like the easiest, least fragile way to do taht
+and this seemed like the easiest, least fragile way to do that
 """
 
 import os

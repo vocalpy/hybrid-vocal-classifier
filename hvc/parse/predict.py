@@ -23,18 +23,24 @@ VALID_MODELS = validate_dict['valid_models']
 VALID_CONVERT_TYPES = validate_dict['valid_convert_types']
 
 
-def _validate_todo_list_dict(todo_list_dict,index):
+def _validate_todo_list_dict(todo_list_dict, index, config_path):
     """
     validates to-do lists
 
     Parameters
     ----------
-    todo_list_dict : dictionary from "to-do" list
-    index : index of element (i.e., dictionary) in list of dictionaries
+    todo_list_dict : dict
+        from "to-do" list
+    index : int
+        index of element (i.e., dictionary) in list of dictionaries
+    config_path : str
+        absolute path to YAML config file from which dict was taken.
+        Used to validate directory names.
 
     Returns
     -------
-    todo_list_dict : dictionary after validation, may have new keys added if necessary
+    todo_list_dict : dict
+        after validation, may have new keys added if necessary
     """
 
     # if required_todo_list_keys is not a subset of todo_list_dict,
@@ -74,8 +80,15 @@ def _validate_todo_list_dict(todo_list_dict,index):
             else:
                 for item in val:
                     if not os.path.isdir(item):
-                        raise ValueError('directory {} in {} is not a valid directory.'
-                                         .format(item,key))
+                        # if item is not absolute path to dir
+                        # try adding item to absolute path to config_file
+                        # i.e. assume it is written relative to config file
+                        item = os.path.join(
+                            os.path.dirname(config_path),
+                            os.path.normpath(item))
+                        if not os.path.isdir(item):
+                            raise ValueError('directory {} in {} is not a valid directory.'
+                                             .format(item,key))
 
         elif key == 'file_format':
             if type(val) != str:
@@ -89,8 +102,15 @@ def _validate_todo_list_dict(todo_list_dict,index):
             if type(val) != str:
                 raise ValueError('Value {} for key \'feature_file\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
-            if not os.path.isfile(val):
-                raise OSError('{} is not found as a file'.format(val))
+            if not os.path.isfile(os.path.normpath(val)):
+                # if val is not absolute path to meta_file
+                # try adding item to absolute path to config_file
+                # i.e. assume path to file is written relative to config file
+                val = os.path.join(
+                    os.path.dirname(config_path),
+                    os.path.normpath(val))
+                if not os.path.isfile(val):
+                    raise FileNotFoundError('{} is not found as a file'.format(val))
 
             # check that model file can be opened
             model_meta_file = joblib.load(val)
@@ -124,17 +144,23 @@ def _validate_todo_list_dict(todo_list_dict,index):
     return validated_todo_list_dict
 
 
-def validate_yaml(predict_config_yaml):
+def validate_yaml(config_path, predict_config_yaml):
     """
     validates config from YAML file
 
     Parameters
     ----------
-    predict_config_yaml : dictionary, config as loaded with YAML module
+    config_path : str
+        absolute path to YAML config file. Used to validate directory names
+        in YAML files, which are assumed to be written relative to the
+        location of the file itself.    
+    predict_config_yaml : dict
+        dict should be config from YAML file as loaded with pyyaml.
 
     Returns
     -------
-    predict_config_dict : dictionary, after validation of all keys
+    predict_config_dict : dict
+        after validation of all keys
     """
 
     validated_predict_config = copy.deepcopy(predict_config_yaml)
@@ -151,7 +177,7 @@ def validate_yaml(predict_config_yaml):
                                         'instead it parsed as a {}. Please check config file'
                                         ' formatting'.format(index, type(item)))
                     else:
-                        val[index] = _validate_todo_list_dict(item, index)
+                        val[index] = _validate_todo_list_dict(item, index, config_path)
             validated_predict_config['todo_list'] = val
 
         else:  # if key is not found in list
