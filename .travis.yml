@@ -5,7 +5,7 @@ language: python
 matrix:
   include:
     - python: "3.5"
-      env: DEPS="numpy scipy matplotlib scikit-learn keras tensorflow pyyaml"
+      env: DEPS="numpy scipy matplotlib scikit-learn keras tensorflow pyyaml h5py"
 
 before_install:
   - sudo apt-get update
