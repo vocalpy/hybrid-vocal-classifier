@@ -54,16 +54,19 @@ class TestFromFile:
         assert np.alltrue(np.isnan(ftr_arr[19, :]))
 
     def test_cbin(self):
+        """tests alll features on a single .cbin file"""
+
+        cbin = os.path.join(os.path.dirname(__file__),
+                            os.path.normpath(
+                                'test_data/cbins/gy6or6/032412/'
+                                'gy6or6_baseline_240312_0811.1165.cbin'))
+
         segment_params = {
             'threshold': 1500,
             'min_syl_dur': 0.01,
             'min_silent_dur': 0.006
         }
 
-        cbin = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath(
-                                'test_data/cbins/gy6or6/032412/'
-                                'gy6or6_baseline_240312_0811.1165.cbin'))
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
