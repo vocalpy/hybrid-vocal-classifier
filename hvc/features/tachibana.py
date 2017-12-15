@@ -654,6 +654,11 @@ def pitch_goodness(syllable,min_freq=500,max_freq=6000):
     Returns
     -------
     pitch goodness
+
+    Note there is currently no way to change the min_freq and max_freq
+    parameters. So one can reproduce results from Tachibana Okanoya
+    but can't easily test how varying min_freq and max_freq would
+    affect results.
     """
 
     return _cepstrum_for_pitch(syllable.spect,
