@@ -83,7 +83,8 @@ class Spectrogram:
                  filter_func=None,
                  spect_func=None,
                  log_transform_spect=True,
-                 thresh=-4.0):
+                 thresh=-4.0,
+                 remove_dc=True):
         """Spectrogram.__init__ function
 
         Parameters
@@ -129,7 +130,12 @@ class Spectrogram:
             All values below thresh are set to thresh;
             increases contrast when visualizing spectrogram with a colormap.
             Default is -4 (assumes log_transform_spect==True)
-
+        remove_dc : bool
+            if True, remove the zero-frequency component of the spectrogram,
+            i.e. the DC offset, which in a sound recording should be zero.
+            Default is True. Calculation of some features (e.g. cepstrum)
+            requires the DC component however.
+            
         References
         ----------
         .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
@@ -232,6 +238,12 @@ class Spectrogram:
                                  .format(type(thresh)))
         else:
             self.thresh = thresh
+        
+        if type(remove_dc) is not bool:
+            raise TypeError('Value for remove_dc should be boolean, not {}'
+                            .format(type(remove_dc)))
+        else:
+            self.remove_dc = remove_dc
 
     def make(self,
              raw_audio,
@@ -312,6 +324,11 @@ class Spectrogram:
             else:  # unrecognized error
                 raise
 
+        if self.remove_dc:
+            # remove zero-frequency component
+            freq_bins = freq_bins[1:]
+            spect = spect[1:,:]
+        
         # we take the absolute magnitude
         # because we almost always want just that for our purposes
         spect = np.abs(spect)
