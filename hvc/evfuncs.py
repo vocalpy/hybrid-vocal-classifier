@@ -310,7 +310,7 @@ def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=None):
 
 def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     """filter raw audio and smooth signal
-    used to calculate amplitude
+    used to calculate amplitude.
 
     Parameters
     ----------
@@ -321,9 +321,9 @@ def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     freq_cutoffs: list
         two-element list of integers, [low freq., high freq.]
         bandpass filter applied with this list defining pass band.
-        If None is passed, defaults to [500, 10000].
+        Default is None, in which case bandpass filter is not applied.
     smooth_win : integer
-        size of smoothing window in milliseconds
+        size of smoothing window in milliseconds. Default is 2.
 
     Returns
     -------
@@ -338,9 +338,11 @@ def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     """
 
     if freq_cutoffs is None:
-        freq_cutoffs = [500, 10000]
+        # then don't do bandpass_filtfilt
+        filtsong = rawsong
+    else:
+        filtsong = bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs)
 
-    filtsong = bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs)
     squared_song = np.power(filtsong, 2)
     len = np.round(samp_freq * smooth_win / 1000).astype(int)
     h = np.ones((len,)) / len

@@ -17,9 +17,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/gy6or6/032212
-          - ./test_data/gy6or6/032312
-        output_dir: ./test_data/gy6or6/
+          - ../cbins/gy6or6/032412
+          - ../cbins/gy6or6/032312
+        output_dir: ../cbins/gy6or6/
         labelset: iabcdef
       - #2
         bird_ID : bl26lb16
@@ -28,9 +28,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/bl26lb16/041912
-          - ./test_data/bl26lb16/042012
-        output_dir: ./test_data/bl26lb16/042012
+          - ../cbins/bl26lb16/041912
+          - ../cbins/bl26lb16/042012
+        output_dir: ../cbins/bl26lb16/042012
         labelset: iabcdef
 
   valid_with_default_spect_params:
@@ -47,9 +47,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/gy6or6/032212
-          - ./test_data/gy6or6/032312
-        output_dir: ./test_data/gy6or6/
+          - ../cbins/gy6or6/032412
+          - ../cbins/gy6or6/032312
+        output_dir: ../cbins/gy6or6/
         labelset: iabcdefghjk
         segment_params:
           threshold: 5000 # arbitrary units of amplitude
@@ -70,9 +70,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/gy6or6/032212
-          - ./test_data/gy6or6/032312
-        output_dir: ./test_data/gy6or6/
+          - ../cbins/gy6or6/032412
+          - ../cbins/gy6or6/032312
+        output_dir: ../cbins/gy6or6/
         labelset: iabcdefghjk
         spect_params:
           nperseg: 512
@@ -86,9 +86,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/bl26lb16/041912
-          - ./test_data/bl26lb16/042012
-        output_dir: ./test_data/bl26lb16
+          - ../cbins/bl26lb16/041912
+          - ../cbins/bl26lb16/042012
+        output_dir: ../cbins/bl26lb16
         labelset: iabcdef
         spect_params:
           nperseg: 512
@@ -119,9 +119,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/bl26lb16/032212
-          - ./test_data/bl26lb16/032312
-        output_dir: ./test_data/gy6gy6
+          - ../cbins/bl26lb16/032412
+          - ../cbins/bl26lb16/032312
+        output_dir: ../cbins/gy6gy6
         labelset: iabcdefghjk
         segment_params:
           threshold: 5000 # arbitrary units of amplitude
@@ -135,9 +135,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/bl26lb16/041912
-          - ./test_data/bl26lb16/042012
-        output_dir: ./test_data/bl26lb16
+          - ../cbins/bl26lb16/041912
+          - ../cbins/bl26lb16/042012
+        output_dir: ../cbins/bl26lb16
         labelset: iabcdef
         # missing segment params!!!
 
@@ -155,9 +155,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/gy6or6/032212
-          - ./test_data/gy6or6/032312
-        output_dir: ./test_data/gy6or6/
+          - ../cbins/gy6or6/032412
+          - ../cbins/gy6or6/032312
+        output_dir: ../cbins/gy6or6/
         labelset: iabcdefghjk
         spect_params:
           nperseg: 512
@@ -171,9 +171,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/bl26lb16/041912
-          - ./test_data/bl26lb16/042012
-        output_dir: ./test_data/bl26lb16
+          - ../cbins/bl26lb16/041912
+          - ../cbins/bl26lb16/042012
+        output_dir: ../cbins/bl26lb16
         labelset: iabcdef
         # missing spect params!!!
 
@@ -193,9 +193,9 @@ test_parse:
           - svm
           - knn
         data_dirs:
-          - ./test_data/gy6or6/032212
-          - ./test_data/gy6or6/032312
-        output_dir: ./test_data/gy6or6/
+          - ../cbins/gy6or6/032412
+          - ../cbins/gy6or6/032312
+        output_dir: ../cbins/gy6or6/
         labelset: iabcdef
 
 test_segment_params:
@@ -223,9 +223,9 @@ test_validate_todo_list_dict:
     file_format: evtaf
     feature_group: knn
     data_dirs:
-      - ./test_data/gy6or6/032212
-      - ./test_data/gy6or6/032312
-    output_dir: ./test_data/gy6or6/
+      - ../cbins/gy6or6/032412
+      - ../cbins/gy6or6/032312
+    output_dir: ../cbins/gy6or6/
     labelset: iabcdef
 
   test_single_group_as_list:
@@ -234,7 +234,7 @@ test_validate_todo_list_dict:
     feature_group:
       - knn
     data_dirs:
-      - C:\DATA\gy6or6\032212
+      - C:\DATA\gy6or6\032412
       - C:\DATA\gy6or6\032312
     output_dir: C:\Data\gy6gy6\
     labelset: iabcdef
@@ -246,9 +246,9 @@ test_validate_todo_list_dict:
       - knn
       - svm
     data_dirs:
-      - ./test_data/gy6or6/032212
-      - ./test_data/gy6or6/032312
-    output_dir: ./test_data/gy6or6/
+      - ../cbins/gy6or6/032412
+      - ../cbins/gy6or6/032312
+    output_dir: ../cbins/gy6or6/
     labelset: iabcdef
 
   test_feature_list:
@@ -265,9 +265,9 @@ test_validate_todo_list_dict:
       - mean hi lo ratio
       - delta smoothed rectified amplitude
     data_dirs:
-      - ./test_data/gy6or6/032212
-      - ./test_data/gy6or6/032312
-    output_dir: ./test_data/gy6or6/
+      - ../cbins/gy6or6/032412
+      - ../cbins/gy6or6/032312
+    output_dir: ../cbins/gy6or6/
     labelset: iabcdef
 
   test_feature_list_and_feature_group:
@@ -279,7 +279,7 @@ test_validate_todo_list_dict:
     feature_group:
       - knn
     data_dirs:
-      - ./test_data/gy6or6/032212
-      - ./test_data/gy6or6/032312
-    output_dir: ./test_data/gy6or6/
+      - ../cbins/gy6or6/032412
+      - ../cbins/gy6or6/032312
+    output_dir: ../cbins/gy6or6/
     labelset: iabcdef

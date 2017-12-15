@@ -149,6 +149,7 @@ def _smooth_rect_amp(syllable):
         after bandpass filtering, squaring, and  
         and smoothing with evfuncs.smooth_data
     """
+
     return hvc.evfuncs.smooth_data(syllable.sylAudio,
                                    syllable.sampFreq,
                                    syllable.freqCutoffs)

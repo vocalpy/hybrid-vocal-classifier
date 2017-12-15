@@ -78,7 +78,7 @@ class Spectrogram:
     def __init__(self,
                  nperseg=None,
                  noverlap=None,
-                 freq_cutoffs=None,
+                 freq_cutoffs=(500, 10000),
                  window=None,
                  filter_func=None,
                  spect_func=None,
@@ -185,18 +185,24 @@ class Spectrogram:
                         self.window = scipy.signal.slepian(self.nperseg, 4 / self.nperseg)
 
         if freq_cutoffs is None:
-            # switch to default
-            self.freqCutoffs = [500, 10000]
-        elif type(freq_cutoffs) != list:
-            raise TypeError('type of freq_cutoffs must be list, but is {}'.
-                             format(type(freq_cutoffs)))
-        elif len(freq_cutoffs) != 2:
-            raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
-                             format(len(freq_cutoffs)))
-        elif not all([type(val) == int for val in freq_cutoffs]):
-            raise ValueError('all values in freq_cutoffs list must be ints')
+            self.freqCutoffs = None
         else:
-            self.freqCutoffs = freq_cutoffs
+            if freq_cutoffs == (500, 10000):
+                # if default, convert to list
+                # don't want to have a mutable list as the default
+                # because mutable defaults can give rise to nasty bugs
+                freq_cutoffs = list(freq_cutoffs)
+    
+            if type(freq_cutoffs) != list:
+                raise TypeError('type of freq_cutoffs must be list, but is {}'.
+                                 format(type(freq_cutoffs)))
+            elif len(freq_cutoffs) != 2:
+                raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
+                                 format(len(freq_cutoffs)))
+            elif not all([type(val) == int for val in freq_cutoffs]):
+                raise ValueError('all values in freq_cutoffs list must be ints')
+            else:
+                self.freqCutoffs = freq_cutoffs
 
         if freq_cutoffs is not None and filter_func is None:
             self.filterFunc = 'butter_bandpass'  # default
