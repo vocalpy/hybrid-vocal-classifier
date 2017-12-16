@@ -187,8 +187,9 @@ class TestParseSelect:
                               'hyperparameters': {'k': 4},
                               'model_name': 'knn'}
 
-        ftr_file = joblib.load('.//test_data//feature_files//has_ftr_group_dict_and_arr'
-                               '//summary_feature_file_created_170722_232106')
+        ftr_file = joblib.load(os.path.join(this_file_just_path,
+                                            os.path.normpath('test_data/feature_files/has_ftr_group_dict_and_arr/'
+                                                             'summary_feature_file_created_170722_232106')))
         model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
                                                            index=0,
                                                            ftr_list_grp_ID=ftr_file['feature_list_group_ID'],
