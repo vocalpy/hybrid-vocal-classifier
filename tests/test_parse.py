@@ -172,7 +172,7 @@ class TestParseSelect:
     def test_validate_model_dict(self):
         test_yaml = test_yaml_select['test_validate_model_dict']
 
-        # model dict called with ftr gropu but without ftr_grp_ID_dict or ftr_grp_ID_arr
+        # model dict called with ftr group but without ftr_grp_ID_dict or ftr_grp_ID_arr
         model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
                                                            index=0)
         assert model_dict == {'feature_group': 'knn',
@@ -187,13 +187,12 @@ class TestParseSelect:
                               'hyperparameters': {'k': 4},
                               'model_name': 'knn'}
 
-        ftr_file = joblib.load(os.path.join(this_file_just_path,
-                                            os.path.normpath('test_data/feature_files/has_ftr_group_dict_and_arr/'
-                                                             'summary_feature_file_created_170722_232106')))
+        feature_list_group_ID = np.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        feature_group_ID_dict = {'knn': 0}
         model_dict = hvc.parse.select._validate_model_dict(test_yaml['valid_dict_with_feature_group'],
                                                            index=0,
-                                                           ftr_list_grp_ID=ftr_file['feature_list_group_ID'],
-                                                           ftr_grp_ID_dict=ftr_file['feature_group_ID_dict'])
+                                                           ftr_grp_ID_dict=feature_group_ID_dict,
+                                                           ftr_list_group_ID=feature_list_group_ID)
         np.testing.assert_equal(model_dict,
                                 {'feature_group': 'knn',
                                  'feature_list_indices': np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=int),
