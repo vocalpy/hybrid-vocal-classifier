@@ -1,9 +1,9 @@
 select:
-  num_replicates: 5
+  num_replicates: 3
   num_train_samples:
-    start : 100
+    start : 200
     stop : 400
-    step : 100
+    step : 200
   num_test_samples: 400
 
   models:
@@ -11,7 +11,7 @@ select:
       model_name: flatwindow
       hyperparameters:
         batch size: 32
-        epochs : 200
+        epochs : 3
 
   todo_list:
     - #1

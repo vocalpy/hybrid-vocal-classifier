@@ -1,5 +1,5 @@
 """
-tests extract module
+tests featureextract module
 """
 
 import os
@@ -10,15 +10,18 @@ from sklearn.externals import joblib
 
 import hvc
 
+configs = os.path.join(
+    os.path.dirname(__file__),
+    os.path.normpath('test_data/config.yml/'))
+
 
 class TestExtract:
 
     def tests_for_all_extract(self):
-        homedir = os.getcwd()
-        search_path = os.path.join('.',
-                                   'test_data',
-                                   'config.yaml',
-                                   'test_extract_*.config.yml')
+        search_path = os.path.join(configs,
+                                   os.path.normpath(
+                                       'test_data/config.yml/'
+                                       'test_extract_*.config.yml'))
         extract_config_files = glob.glob(search_path)
         for extract_config_file in extract_config_files:
             if os.getcwd() != homedir:

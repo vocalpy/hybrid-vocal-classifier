@@ -78,12 +78,13 @@ class Spectrogram:
     def __init__(self,
                  nperseg=None,
                  noverlap=None,
-                 freq_cutoffs=None,
+                 freq_cutoffs=(500, 10000),
                  window=None,
                  filter_func=None,
                  spect_func=None,
                  log_transform_spect=True,
-                 thresh=-4.0):
+                 thresh=-4.0,
+                 remove_dc=True):
         """Spectrogram.__init__ function
 
         Parameters
@@ -129,7 +130,12 @@ class Spectrogram:
             All values below thresh are set to thresh;
             increases contrast when visualizing spectrogram with a colormap.
             Default is -4 (assumes log_transform_spect==True)
-
+        remove_dc : bool
+            if True, remove the zero-frequency component of the spectrogram,
+            i.e. the DC offset, which in a sound recording should be zero.
+            Default is True. Calculation of some features (e.g. cepstrum)
+            requires the DC component however.
+            
         References
         ----------
         .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
@@ -179,18 +185,24 @@ class Spectrogram:
                         self.window = scipy.signal.slepian(self.nperseg, 4 / self.nperseg)
 
         if freq_cutoffs is None:
-            # switch to default
-            self.freqCutoffs = [500, 10000]
-        elif type(freq_cutoffs) != list:
-            raise TypeError('type of freq_cutoffs must be list, but is {}'.
-                             format(type(freq_cutoffs)))
-        elif len(freq_cutoffs) != 2:
-            raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
-                             format(len(freq_cutoffs)))
-        elif not all([type(val) == int for val in freq_cutoffs]):
-            raise ValueError('all values in freq_cutoffs list must be ints')
+            self.freqCutoffs = None
         else:
-            self.freqCutoffs = freq_cutoffs
+            if freq_cutoffs == (500, 10000):
+                # if default, convert to list
+                # don't want to have a mutable list as the default
+                # because mutable defaults can give rise to nasty bugs
+                freq_cutoffs = list(freq_cutoffs)
+    
+            if type(freq_cutoffs) != list:
+                raise TypeError('type of freq_cutoffs must be list, but is {}'.
+                                 format(type(freq_cutoffs)))
+            elif len(freq_cutoffs) != 2:
+                raise ValueError('freq_cutoffs list should have length 2, but length is {}'.
+                                 format(len(freq_cutoffs)))
+            elif not all([type(val) == int for val in freq_cutoffs]):
+                raise ValueError('all values in freq_cutoffs list must be ints')
+            else:
+                self.freqCutoffs = freq_cutoffs
 
         if freq_cutoffs is not None and filter_func is None:
             self.filterFunc = 'butter_bandpass'  # default
@@ -232,6 +244,12 @@ class Spectrogram:
                                  .format(type(thresh)))
         else:
             self.thresh = thresh
+        
+        if type(remove_dc) is not bool:
+            raise TypeError('Value for remove_dc should be boolean, not {}'
+                            .format(type(remove_dc)))
+        else:
+            self.remove_dc = remove_dc
 
     def make(self,
              raw_audio,
@@ -312,6 +330,11 @@ class Spectrogram:
             else:  # unrecognized error
                 raise
 
+        if self.remove_dc:
+            # remove zero-frequency component
+            freq_bins = freq_bins[1:]
+            spect = spect[1:,:]
+        
         # we take the absolute magnitude
         # because we almost always want just that for our purposes
         spect = np.abs(spect)
@@ -326,7 +349,7 @@ class Spectrogram:
         # so that Koumura default of [1000,8000] returns 112 freq. bins
         if self.freqCutoffs is not None:
             f_inds = np.nonzero((freq_bins >= self.freqCutoffs[0]) &
-                                (freq_bins < self.freqCutoffs[1]))[0]  # returns tuple
+                                (freq_bins <= self.freqCutoffs[1]))[0]  # returns tuple
             freq_bins = freq_bins[f_inds]
             spect = spect[f_inds, :]
 

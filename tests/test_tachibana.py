@@ -3,6 +3,7 @@ tests tachibana module
 """
 
 # from standard library
+import os
 import glob
 
 # from dependencies
@@ -11,9 +12,15 @@ import pytest
 
 import hvc.audiofileIO
 from hvc.features import tachibana
+from hvc.parse.ref_spect_params import refs_dict
 
-with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
-    valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+this_file_with_path = __file__
+this_file_just_path = os.path.split(this_file_with_path)[0]
+feature_grps_path = os.path.join(this_file_just_path,
+                                      os.path.normpath(
+                                          '../hvc/parse/feature_groups.yml'))
+with open(feature_grps_path) as ftr_grps_yml:
+    valid_feature_groups_dict = yaml.load(ftr_grps_yml)
 
 
 class TestTachibana:
@@ -38,10 +45,12 @@ class TestTachibana:
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
                           }
-        songfiles_list = glob.glob('./test_data/cbins/gy6or6/032412/*.cbin')
+        songfiles_dir = os.path.join(this_file_just_path,
+                                 os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
+        songfiles_list = glob.glob(songfiles_dir)
         song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
         song.set_syls_to_use('iabcdefghjk')
-        song.make_syl_spects(spect_params={'ref': 'tachibana'})
+        song.make_syl_spects(spect_params=refs_dict['tachibana'])
         return song
 
     def test_mean_spect(self, song):

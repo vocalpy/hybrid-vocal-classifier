@@ -1,16 +1,14 @@
 """
-tests extract module
+tests modelselect module
 """
 
 import os
-import glob
-
-import numpy as np
-from sklearn.externals import joblib
 
 import hvc
 
-configs = './test_data/config.yaml/'
+configs = os.path.join(
+    os.path.dirname(__file__),
+    os.path.normpath('test_data/config.yml/'))
 
 
 class TestSelect:

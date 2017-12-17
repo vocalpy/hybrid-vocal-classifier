@@ -2,16 +2,22 @@
 test features.extract module
 """
 
+import os
+
 import pytest
 import yaml
 import numpy as np
 
 import hvc.audiofileIO
 import hvc.features
+from hvc.parse.ref_spect_params import refs_dict
 
 @pytest.fixture()
 def has_window_error():
-    filename = './test_data/cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'
+    filename = os.path.join(
+        os.path.dirname(__file__),
+        os.path.normpath('test_data/cbins/window_error/'
+                         'gy6or6_baseline_220312_0901.106.cbin'))
     index = 19
     return filename, index
 
@@ -26,7 +32,9 @@ class TestFromFile:
         so single-syllable features cannot be extracted from it
         """
         filename, index = has_window_error
-        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+        with open(os.path.join(os.path.dirname(__file__),
+                               os.path.normpath('../hvc/parse/feature_groups.yml'))
+                  ) as ftr_grp_yaml:
             valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
         svm_features = valid_feature_groups_dict['svm']
         segment_params = {
@@ -37,31 +45,41 @@ class TestFromFile:
         with pytest.warns(UserWarning):
              extract_dict = hvc.features.extract.from_file(filename=filename,
                                                            file_format='evtaf',
+                                                           calling_function='extract',
                                                            feature_list=svm_features,
-                                                           spect_params={'ref': 'koumura'},
+                                                           spect_params=refs_dict['koumura'],
                                                            labels_to_use='iabcdefghjk',
                                                            segment_params=segment_params)
         ftr_arr = extract_dict['features_arr']
         assert np.alltrue(np.isnan(ftr_arr[19, :]))
 
     def test_cbin(self):
+        """tests alll features on a single .cbin file"""
+
+        cbin = os.path.join(os.path.dirname(__file__),
+                            os.path.normpath(
+                                'test_data/cbins/gy6or6/032412/'
+                                'gy6or6_baseline_240312_0811.1165.cbin'))
+
         segment_params = {
             'threshold': 1500,
             'min_syl_dur': 0.01,
             'min_silent_dur': 0.006
         }
 
-        cbin = './test_data/cbins/gy6or6/032412/gy6or6_baseline_240312_0811.1165.cbin'
         song = hvc.audiofileIO.Song(filename=cbin,
                                     file_format='evtaf',
                                     segment_params=segment_params)
 
-        with open('../hvc/parse/feature_groups.yml') as ftr_grp_yaml:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                os.path.normpath('../hvc/parse/feature_groups.yml'))) as ftr_grp_yaml:
             ftr_grps = yaml.load(ftr_grp_yaml)
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=ftr_grps['knn'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')
@@ -73,7 +91,8 @@ class TestFromFile:
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=ftr_grps['svm'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')
@@ -86,7 +105,8 @@ class TestFromFile:
 
         extract_dict = hvc.features.extract.from_file(cbin,
                                                       file_format='evtaf',
-                                                      spect_params={'ref': 'tachibana'},
+                                                      calling_function='extract',
+                                                      spect_params=refs_dict['tachibana'],
                                                       feature_list=['flatwindow'],
                                                       segment_params=segment_params,
                                                       labels_to_use='iabcdefghjk')

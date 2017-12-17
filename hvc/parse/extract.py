@@ -304,18 +304,24 @@ def _validate_feature_group_and_convert_to_list(feature_group,
                 ftr_grp_ID_dict)
 
 
-def _validate_todo_list_dict(todo_list_dict, index):
+def _validate_todo_list_dict(todo_list_dict, index, config_path):
     """
     validates to-do lists
 
     Parameters
     ----------
-    todo_list_dict : dictionary from "to-do" list
-    index : index of element (i.e., dictionary) in list of dictionaries
+    todo_list_dict : dictionary
+        from "to-do" list
+    index : int
+        index of element (i.e., dictionary) in list of dictionaries
+    config_path : str
+        absolute path to YAML config file from which dict was taken.
+        Used to validate directory names.
 
     Returns
     -------
-    todo_list_dict : dictionary after validation, may have new keys added if necessary
+    validated_todo_list_dict : dictionary
+        after validation, may have new keys added if necessary
     """
 
     required_todo_list_keys = set(validate_dict[
@@ -369,7 +375,6 @@ def _validate_todo_list_dict(todo_list_dict, index):
         validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
 
     # okay now that we took care of that we can loop through everything else
-
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
         if key == 'bird_ID':
@@ -381,10 +386,20 @@ def _validate_todo_list_dict(todo_list_dict, index):
             if type(val) != list:
                 raise ValueError('data_dirs should be a list')
             else:
+                validated_data_dirs = []
                 for item in val:
                     if not os.path.isdir(item):
-                        raise ValueError('directory {} in {} is not a valid directory.'
-                                         .format(item, key))
+                        # if item is not absolute path to dir
+                        # try adding item to absolute path to config_file
+                        # i.e. assume it is written relative to config file
+                        item = os.path.join(
+                            os.path.dirname(config_path),
+                            os.path.normpath(item))
+                        if not os.path.isdir(item):
+                            raise ValueError('directory {} in {} is not a valid directory.'
+                                             .format(item, key))
+                    validated_data_dirs.append(item)
+                validated_todo_list_dict['data_dirs'] = validated_data_dirs
 
         elif key == 'file_format':
             if type(val) != str:
@@ -419,12 +434,16 @@ def _validate_todo_list_dict(todo_list_dict, index):
 ##########################################
 
 
-def validate_yaml(extract_config_yaml):
+def validate_yaml(config_path, extract_config_yaml):
     """
     validates config from extract YAML file
 
     Parameters
     ----------
+    config_path : str
+        absolute path to YAML config file. Used to validate directory names
+        in YAML files, which are assumed to be written relative to the
+        location of the file itself.
     extract_config_yaml : dict
         dict should be config from YAML file as loaded with pyyaml.
 
@@ -474,7 +493,7 @@ def validate_yaml(extract_config_yaml):
                                         'instead it parsed as a {}. Please check config file'
                                         ' formatting'.format(index, type(item)))
                     else:
-                        val[index] = _validate_todo_list_dict(item,index)
+                        val[index] = _validate_todo_list_dict(item, index, config_path)
             validated['todo_list'] = val # re-assign because feature list is added
 
         else: # if key is not found in list

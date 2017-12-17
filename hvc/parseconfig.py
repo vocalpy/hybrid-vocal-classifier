@@ -14,7 +14,7 @@ parser_dict = {
 }
 
 
-def _parse_helper(config_type, config_file, config_yaml):
+def _parse_helper(config_type, config_path, config_yaml):
     """
     helper function to avoid repeating code
     
@@ -22,8 +22,8 @@ def _parse_helper(config_type, config_file, config_yaml):
     ----------
     config_type : string
         as defined in parse_config
-    config_file : string
-        filename of YAML file
+    config_path : string
+        absolute path to config_file
     config_yaml : dictionary
         parsed YAML file
 
@@ -35,12 +35,12 @@ def _parse_helper(config_type, config_file, config_yaml):
     if config_type not in ['extract', 'select', 'predict']:
         raise ValueError('{} in {} is not a valid config_type. '
                          'Valid types are: \'extract\', \'select\', or \'predict\'.'
-                         .format(config_type, config_file))
+                         .format(config_type, config_path))
 
     if config_type not in config_yaml:
-        raise KeyError('\'{}\' not defined in config file {}'.format(config_type, config_file))
+        raise KeyError('\'{}\' not defined in config file {}'.format(config_type, config_path))
     else:
-        return parser_dict[config_type](config_yaml[config_type])
+        return parser_dict[config_type](config_path, config_yaml[config_type])
 
 
 def parse_config(config_file, config_type=None):
@@ -66,11 +66,13 @@ def parse_config(config_file, config_type=None):
             validated dictionary from parsed YAML file
     """
 
-    with open(config_file) as yaml_to_parse:
+    config_path = os.path.abspath(config_file)
+
+    with open(config_path) as yaml_to_parse:
         config_yaml = yaml.load(yaml_to_parse)
 
     if config_type is not None:
-        return _parse_helper(config_type, config_file, config_yaml)
+        return _parse_helper(config_type, config_path, config_yaml)
 
     elif config_type is None:
         config_dict = {}
@@ -78,7 +80,7 @@ def parse_config(config_file, config_type=None):
         if not set(config_types.keys()).issubset(parser_dict.keys()):
             invalid_keys = set(config_types.keys()) - set(parser_dict.keys())
             raise KeyError('Invalid config keys in file \'{0}\': {1}'
-                           .format(config_file, invalid_keys))
+                           .format(config_path, invalid_keys))
         for config_type in config_types:
-            config_dict[config_type] = _parse_helper(config_type, config_file, config_yaml)
+            config_dict[config_type] = _parse_helper(config_type, config_path, config_yaml)
         return config_dict
