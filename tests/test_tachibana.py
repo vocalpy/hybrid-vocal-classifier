@@ -86,9 +86,9 @@ class TestTachibana:
         be computed
         """
 
-        a_cbin = 'test_data/cbins/gy6or6/032612/gy6or6_baseline_260312_0810.3440.cbin'
-        os.path.join(this_file_just_path,
-                     os.path.normpath(a_cbin))
+        a_cbin = os.path.join(this_file_just_path,
+                              os.path.normpath('test_data/cbins/gy6or6/032612/'
+                                               'gy6or6_baseline_260312_0810.3440.cbin'))
         segment_params = {'threshold': 1500,
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
