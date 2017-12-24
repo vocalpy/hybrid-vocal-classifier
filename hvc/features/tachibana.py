@@ -117,15 +117,21 @@ def _five_point_delta(x):
 
     Parameters
     ----------
-    x
+    x : ndarray
+        can be a matrix or a 1-d vector
 
     Returns
     -------
-
+    five_point_delta : ndarray
     """
-    if len(x.shape) > 1:
-        return -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
-    else:  # if 1d vector, e.g. spectral slope
+
+    if x.ndim == 2:  # if a matrix, not a 1-d vector
+        if x.shape[1] < 5:
+            # can't take five-point delta, return zeros instead. See comment below
+            return np.zeros((x.shape[0], 1))
+        else:
+            return -2 * x[:, :-4] - 1 * x[:, 1:-3] + 1 * x[:, 3:-1] + 2 * x[:, 4:]
+    elif x.ndim == 1:  # if 1d vector, e.g. spectral slope
         if x.shape[0] < 5:
             # if length of 1d vector is less than five, can't take five-point
             # delta--would return empty array that then raises warning when
@@ -133,9 +139,13 @@ def _five_point_delta(x):
             # Original MATLAB code solved this by replacing NaNs
             # in feature array with zeros, so this code produces the same
             # behavior / features.
-            return np.zeros((x.shape[0]-1,))
+            return 0
         else:
             return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
+
+    else:
+        raise ValueError('x passed to hvc.featuers.tachibana._five_point_delta has '
+                         'invalid number of dimensions: {}'.format(x.ndim))
 
 
 def mean_delta_spectrum(syllable):
@@ -288,8 +298,8 @@ def mean_delta_spectral_centroid(syllable):
     mean_delta_spectral_centroid : scalar
     """
 
-    prob, freqs_mat = _convert_spect_to_probability(syllable.spect,syllable.freqBins)[:2]
-    spect_centroid = spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat = _convert_spect_to_probability(syllable.spect, syllable.freqBins)[:2]
+    spect_centroid = spectral_centroid(prob, freqs_mat)
     delta_spect_centroid = _five_point_delta(spect_centroid)
     return np.mean(delta_spect_centroid)
 
