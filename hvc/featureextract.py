@@ -445,9 +445,11 @@ def extract(config_file):
                 from . import koumura
 
         output_dir = 'extract_output_' + timestamp()
-        output_dir_with_path = os.path.join(todo['output_dir'], output_dir)
+        output_dir_with_path = os.path.join(
+            os.path.normpath(todo['output_dir']),
+            output_dir)
         if not os.path.isdir(output_dir_with_path):
-            os.mkdir(output_dir_with_path)
+            os.makedirs(output_dir_with_path)
 
         extract_params = {
             'bird_ID': todo['bird_ID'],

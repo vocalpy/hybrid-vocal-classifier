@@ -150,6 +150,12 @@ def from_file(filename,
 
     # loop through features first instead of syls because
     # some features do not require making spectrogram
+    ########################################################################
+    # so how this loop works is, make an array of length syllables, and for#
+    # each syllable calculate the feature and then insert the values in    #
+    # the corresponding index. After looping through all syllables,        #
+    # concatenate w/growing features array.                                #
+    ########################################################################
     for ftr_ind, current_feature in enumerate(feature_list):
         # if this is a feature extracted from a single syllable, i.e.,
         # if this feature requires a spectrogram
@@ -160,11 +166,14 @@ def from_file(filename,
                 del curr_feature_arr
 
             for ind, syl in enumerate(song.syls):
+                # extract current feature from every syllable
                 if syl.spect is np.nan:
                     # can't extract feature so leave as nan
                     continue
-                # extract current feature from every syllable
                 ftr = single_syl_features_switch_case_dict[current_feature](syl)
+                # if np.any(np.isnan(ftr)):
+                #     import pdb;pdb.set_trace()
+
                 if 'curr_feature_arr' in locals():
                     if np.isscalar(ftr):
                         curr_feature_arr[ind] = ftr

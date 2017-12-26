@@ -13,6 +13,7 @@ import pytest
 import hvc.audiofileIO
 from hvc.features import tachibana
 from hvc.parse.ref_spect_params import refs_dict
+from hvc.features.extract import single_syl_features_switch_case_dict
 
 this_file_with_path = __file__
 this_file_just_path = os.path.split(this_file_with_path)[0]
@@ -26,7 +27,7 @@ with open(feature_grps_path) as ftr_grps_yml:
 class TestTachibana:
     """
     unit tests that specifically test functions
-    in the Tachibana module
+    in hvc.features.tachibana
     """
 
     @pytest.fixture()
@@ -41,6 +42,7 @@ class TestTachibana:
         song: song object
             used to text feature extraction functions
         """
+
         segment_params = {'threshold': 1500,
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
@@ -77,6 +79,40 @@ class TestTachibana:
         """test delta cepstrum
         """
         assert tachibana.mean_delta_cepstrum(song.syls[0]).shape[0] == 128
+
+    def test_that_deltas_return_zero_instead_of_nan(self):
+        """tests that 'five-point-delta' features return zero instead of NaN
+        when there are less than five columns and the five-point delta cannot
+        be computed
+        """
+
+        a_cbin = os.path.join(this_file_just_path,
+                              os.path.normpath('test_data/cbins/gy6or6/032612/'
+                                               'gy6or6_baseline_260312_0810.3440.cbin'))
+        segment_params = {'threshold': 1500,
+                          'min_syl_dur': 0.01,
+                          'min_silent_dur': 0.006
+                          }
+        spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
+        song = hvc.audiofileIO.Song(a_cbin, 'evtaf', segment_params,
+                                    use_annotation=False,
+                                    spect_params=spect_params)
+        song.set_syls_to_use('all')
+        song.make_syl_spects(spect_params)
+        syl = song.syls[6]  # spect has shape (153,1) so can't take 5-point delta
+
+        for feature_to_test in [
+            'mean delta spectral centroid',
+            'mean delta spectral spread',
+            'mean delta spectral skewness',
+            'mean delta spectral kurtosis',
+            'mean delta spectral flatness',
+            'mean delta spectral slope',
+            'mean delta pitch',
+            'mean delta pitch goodness',
+            'mean delta amplitude',
+        ]:
+            assert single_syl_features_switch_case_dict[feature_to_test](syl) == 0
 
     # def test_svm_features(self):
     #     """tests features from svm feature group
