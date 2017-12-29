@@ -137,6 +137,7 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if type(val) != bool:
                 raise ValueError('predict_proba should be a Boolean but it parsed as {}'
                                  .format(type(val)))
+            
 
         else:  # if key is not found in list
             raise KeyError('key {} found in todo_list_dict but not validated'.
@@ -178,6 +179,38 @@ def validate_yaml(config_path, predict_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item, index, config_path)
+            
+            # make sure that if predict_proba is True, that the model
+            # was trained with predict_proba set to True.
+            # Need to do this *after* already validating all model_meta_file keys
+            for item in val:  # where each item is a todo_list_dict
+                if 'predict_proba' in item:
+                    if item['predict_proba']:  # if it is True, then
+                        # make sure model was trained with predict_proba set to True
+                        model_meta_file = item['model_meta_file']
+                        if not os.path.isfile(os.path.normpath(model_meta_file)):
+                            # if val is not absolute path to meta_file
+                            # try adding item to absolute path to config_file
+                            # i.e. assume path to file is written relative to config file
+                            model_meta_file = os.path.join(
+                                os.path.dirname(config_path),
+                                os.path.normpath(model_meta_file))
+                        model_meta_file = joblib.load(model_meta_file)
+                        model_name = model_meta_file['model_name']
+                        if model_name in VALID_MODELS['sklearn']:
+                            model_filename = model_meta_file['model_filename']
+                            model = joblib.load(model_filename)
+                            if not model.probability:
+                                raise AttributeError('predict_proba in config file is set to True, '
+                                                     'but model was not trained with predict_proba '
+                                                     'set to True.\n'
+                                                     'config file is: {}\n'
+                                                     'model meta file is: {}\n'
+                                                     'model file is: {}'
+                                                     .format(config_path,
+                                                             item['model_meta_file'],
+                                                             model_filename))
+
             validated_predict_config['todo_list'] = val
 
         else:  # if key is not found in list
