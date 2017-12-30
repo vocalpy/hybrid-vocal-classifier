@@ -88,7 +88,7 @@ def _validate_model_dict(model_dict,
                            'feature_group defined in model_dict, not'
                            'clear which to use.')
 
-        # throw an error if both feature_list_indices and
+        # throw an error if neither feature_list_indices nor
         # feature_group are defined as keys for model dict
         if 'feature_list_indices' not in model_dict \
                 and 'feature_group' not in model_dict:
@@ -207,6 +207,14 @@ def _validate_model_dict(model_dict,
                                          valid_type,
                                          type(hyperparam_val)))
 
+        if 'predict_proba' in model_dict:
+            if type(model_dict['predict_proba']) is not bool:
+                raise TypeError('predict_proba in model_dict must be '
+                                'either True or False')
+        else:  # if 'predict_proba' not in model_dict
+            # set to False
+            validated_model_dict['predict_proba'] = False
+
     return validated_model_dict
 
 
@@ -228,6 +236,9 @@ def _validate_models(models,
                 parameters for "training" the model
             'feature_list_indices' : list of integers
                 features to use from an already generated feature array
+            'predict_proba' : bool
+                if True, trains model so that it predicts probability that
+                classification is correct
     ftr_grp_ID_dict : dict
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument
