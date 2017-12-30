@@ -12,6 +12,7 @@ select:
       feature_group: knn
       hyperparameters:
         k : 4
+      predict_proba: True
 
   todo_list:
     - #1
