@@ -27,11 +27,13 @@ valid_model_keys:
     - feature_list_indices
     - feature_group
     - hyperparameters
+    - predict_proba
 
   svm:
     - feature_list_indices
     - feature_group
     - hyperparameters
+    - predict_proba
 
   flatwindow:
     - hyperparameters
@@ -62,3 +64,6 @@ optional_predict_todo_list_keys:
 
 valid_convert_types:
   - notmat
+
+must_train_with_prob_true:
+  - svm
