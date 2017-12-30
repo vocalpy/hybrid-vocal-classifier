@@ -220,7 +220,8 @@ def select(config_file):
                             print('training svm. ', end='')
                             clf = SVC(C=model_dict['hyperparameters']['C'],
                                       gamma=model_dict['hyperparameters']['gamma'],
-                                      decision_function_shape='ovr')
+                                      decision_function_shape='ovr',
+                                      probability=model_dict['predict_proba'])
 
                         elif model_dict['model_name'] == 'knn':
                             print('training knn. ', end='')
