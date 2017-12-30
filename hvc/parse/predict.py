@@ -4,7 +4,6 @@ YAML parser for predict config files
 
 #from standard library
 import os
-import sys
 import copy
 
 # from dependencies
@@ -21,6 +20,7 @@ REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
 VALID_MODELS = validate_dict['valid_models']
 VALID_CONVERT_TYPES = validate_dict['valid_convert_types']
+MUST_TRAIN_WITH_PROB_TRUE = validate_dict['must_train_with_prob_true']
 
 
 def _validate_todo_list_dict(todo_list_dict, index, config_path):
@@ -78,6 +78,7 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if type(val) != list:
                 raise TypeError('data_dirs should be a list')
             else:
+                validated_data_dirs = []
                 for item in val:
                     if not os.path.isdir(item):
                         # if item is not absolute path to dir
@@ -88,7 +89,9 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
                             os.path.normpath(item))
                         if not os.path.isdir(item):
                             raise ValueError('directory {} in {} is not a valid directory.'
-                                             .format(item,key))
+                                             .format(item, key))
+                    validated_data_dirs.append(item)
+                validated_todo_list_dict['data_dirs'] = validated_data_dirs
 
         elif key == 'file_format':
             if type(val) != str:
@@ -137,7 +140,6 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if type(val) != bool:
                 raise ValueError('predict_proba should be a Boolean but it parsed as {}'
                                  .format(type(val)))
-            
 
         else:  # if key is not found in list
             raise KeyError('key {} found in todo_list_dict but not validated'.
@@ -179,7 +181,7 @@ def validate_yaml(config_path, predict_config_yaml):
                                         ' formatting'.format(index, type(item)))
                     else:
                         val[index] = _validate_todo_list_dict(item, index, config_path)
-            
+
             # make sure that if predict_proba is True, that the model
             # was trained with predict_proba set to True.
             # Need to do this *after* already validating all model_meta_file keys
@@ -197,7 +199,12 @@ def validate_yaml(config_path, predict_config_yaml):
                                 os.path.normpath(model_meta_file))
                         model_meta_file = joblib.load(model_meta_file)
                         model_name = model_meta_file['model_name']
-                        if model_name in VALID_MODELS['sklearn']:
+                        if model_name in MUST_TRAIN_WITH_PROB_TRUE:
+                            # if model not in MUST_TRAIN_WITH_PROB_TRUE
+                            # then we get probabilities for free with the model
+                            # as implemented, e.g. kNeighborsClassifier
+                            # from scikit-learn, and any neural net that
+                            # has a softmax layer as the output
                             model_filename = model_meta_file['model_filename']
                             model = joblib.load(model_filename)
                             if not model.probability:
