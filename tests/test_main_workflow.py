@@ -6,7 +6,7 @@ and this seemed like the easiest, least fragile way to do that
 """
 
 import os
-import glob
+from glob import glob
 
 import pytest
 import numpy as np
@@ -74,7 +74,7 @@ def check_extract_output(output_dir):
     """
     """
 
-    ftr_files = glob.glob(os.path.join(output_dir, 'features_from*'))
+    ftr_files = glob(os.path.join(output_dir, 'features_from*'))
     ftr_dicts = []
     for ftr_file in ftr_files:
         ftr_dicts.append(joblib.load(ftr_file))
@@ -113,7 +113,7 @@ def check_extract_output(output_dir):
                 assert val.shape[0] == len(labels)
 
     # make sure rows in summary dict features == sum of rows of each ftr file features
-    summary_file = glob.glob(os.path.join(output_dir, 'summary_feature_file_*'))
+    summary_file = glob(os.path.join(output_dir, 'summary_feature_file_*'))
     # (should only be one summary file)
     assert len(summary_file) == 1
     summary_dict = joblib.load(summary_file[0])
@@ -139,7 +139,7 @@ def check_select_output(config_path, output_dir):
     """
     """
 
-    select_output = glob.glob(os.path.join(str(output_dir),
+    select_output = glob(os.path.join(str(output_dir),
                                            'summary_model_select_file*'))
     # should only be one summary output file
     assert len(select_output) == 1
@@ -197,7 +197,7 @@ def test_main_workflow(tmp_output_dir):
                                           str(tmp_output_dir))})
         hvc.extract(extract_config_rewritten)
         extract_outputs = list(
-            filter(os.path.isdir, glob.glob(os.path.join(
+            filter(os.path.isdir, glob(os.path.join(
                 str(tmp_output_dir),
                 '*extract*'))
                    )
@@ -206,7 +206,7 @@ def test_main_workflow(tmp_output_dir):
         extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
         assert check_extract_output(extract_output_dir)
 
-        feature_file = glob.glob(os.path.join(extract_output_dir, 'summary*'))
+        feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
         feature_file = feature_file[0]  # because glob returns list
 
         os.remove(extract_config_rewritten)
@@ -228,7 +228,7 @@ def test_main_workflow(tmp_output_dir):
                                                   str(tmp_output_dir))})
                 hvc.select(select_config_rewritten)
                 select_outputs = list(
-                    filter(os.path.isdir, glob.glob(os.path.join(
+                    filter(os.path.isdir, glob(os.path.join(
                         str(tmp_output_dir),
                         '*select*'))
                            )
@@ -238,6 +238,86 @@ def test_main_workflow(tmp_output_dir):
                 assert check_select_output(select_config_rewritten, select_output_dir)
 
                 os.remove(select_config_rewritten)
-                
+
             except IndexError:  # because pop from empty list
                 break
+
+
+class TestPredProba:
+
+    def test_pred_proba_with_knn(self, tmp_output_dir):
+        extract_config_filename = os.path.join(configs,
+                                               'test_extract_knn.config.yml')
+        extract_config_rewritten = extract_config_filename[:-3] + 'rewrite.yml'
+        # have to put tmp_output_dir into yaml file
+        rewrite_config(extract_config_filename,
+                       extract_config_rewritten,
+                       replace_dict={'output_dir':
+                                         ('replace with tmp_output_dir',
+                                          str(tmp_output_dir))})
+        hvc.extract(extract_config_rewritten)
+        extract_outputs = list(
+            filter(os.path.isdir, glob(os.path.join(
+                str(tmp_output_dir),
+                '*extract*'))
+                   )
+        )
+        extract_outputs.sort(key=os.path.getmtime)
+        extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
+        feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
+        feature_file = feature_file[0]  # because glob returns list
+        os.remove(extract_config_rewritten)
+
+        select_config_filename = os.path.join(configs,
+                                              'test_select_knn_ftr_grp.config_pred_proba_True.yml')
+        select_config_rewritten = select_config_filename[:-3] + 'rewrite.yml'
+        rewrite_config(select_config_filename,
+                       select_config_rewritten,
+                       replace_dict={'feature_file':
+                                         ('replace with feature_file',
+                                          feature_file),
+                                     'output_dir':
+                                         ('replace with tmp_output_dir',
+                                          str(tmp_output_dir))})
+        hvc.select(select_config_rewritten)
+        select_outputs = list(
+            filter(os.path.isdir, glob(os.path.join(
+                str(tmp_output_dir),
+                '*select*'))
+                   )
+        )
+        os.remove(select_config_rewritten)
+        select_outputs.sort(key=os.path.getmtime)
+        select_output_dir = (select_outputs[-1])  # [-1] is newest dir, after sort
+        model_meta_files = glob(os.path.join(select_output_dir, '*',
+                                             '*meta*'))
+
+        replace_dict = {'model_meta_file':
+                            ('replace with model_file',
+                             model_meta_files[-1]),
+                        'output_dir':
+                            ('replace with tmp_output_dir',
+                             str(tmp_output_dir)
+                             )}
+        predict_config_filename = os.path.join(configs,
+                                               'test_predict_knn.config.yml')
+        predict_config_rewritten = predict_config_filename[:-3] + 'rewrite.yml'
+        rewrite_config(predict_config_filename,
+                       predict_config_rewritten,
+                       replace_dict)
+        hvc.predict(predict_config_rewritten)
+        predict_outputs = list(
+            filter(os.path.isdir, glob(os.path.join(
+                str(tmp_output_dir),
+                '*predict*'))
+                   )
+        )
+        predict_outputs.sort(key=os.path.getmtime)
+        predict_output_dir = (predict_outputs[-1])  # [-1] is newest dir, after sort
+        feature_files = glob(os.path.join(predict_output_dir,
+                                          'feature*'))
+        for ftr_filename in feature_files:
+            ftr_file = joblib.load(ftr_filename)
+            assert 'pred_labels' in ftr_file
+            assert 'pred_probs' in ftr_file
+            assert ftr_file['pred_labels'].shape[0] == ftr_file['pred_probs'].shape[0]
