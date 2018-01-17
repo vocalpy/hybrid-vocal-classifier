@@ -52,6 +52,8 @@ def _validate_model_dict(model_dict,
     ----------
     model_dict : dict
     index : int
+        index of this dict in list of dicts,
+        used in error messages
     ftr_grp_ID_dict : dict
         from feature file. validate_yaml checks whether it is
         defined in feature_file and if so passes as an argument.
@@ -125,8 +127,8 @@ def _validate_model_dict(model_dict,
             ftr_grp = model_dict['feature_group']
             # feature group should work as a string or as a list of strings
             if type(ftr_grp) != str and type(ftr_grp) != list:
-                raise ValueError('value for feature_group should'
-                                 'be string but parsed as {}'
+                raise ValueError('value for feature_group should be '
+                                 'string or list of strings but parsed as {}'
                                  .format(type(ftr_grp)))
 
             if type(ftr_grp) == str:
@@ -134,7 +136,7 @@ def _validate_model_dict(model_dict,
                     raise ValueError('{} is not a valid feature group.'
                                      .format(ftr_grp))
                 # get appropriate ID # out of ftr_grp_ID_dict for this model
-                # (if called from todo_list so we hve ftr_list_group_ID/dict)
+                # (if called from todo_list so we have ftr_list_group_ID/dict)
                 if ftr_list_group_ID is not None and ftr_grp_ID_dict is not None:
                     ftr_grp_ID = ftr_grp_ID_dict[model_dict['model_name']]
                     # now find all the indices of features associated with the
