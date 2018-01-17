@@ -279,7 +279,7 @@ def test_svm(tmp_output_dir):
             ('test_select_svm_predict_proba_True.config.yml',
              'test_predict_svm_predict_proba_True.config.yml'),
         )
-    },
+    }
     run_main_workflow(tmp_output_dir, svm_script_tuple_dict)
 
 
