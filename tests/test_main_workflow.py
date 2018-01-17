@@ -159,117 +159,44 @@ def check_select_output(config_path, output_dir):
     return True
 
 
-test_config_tuples = [
-    ('test_extract_knn.config.yml',
-     ['test_select_knn_ftr_list_inds.config.yml',
-      'test_select_knn_ftr_grp.config.yml']
-     ),
-    ('test_extract_multiple_feature_groups.config.yml',
-     ['test_select_multiple_ftr_grp.config.yml']
-     ),
-    ('test_extract_svm.config.yml',
-     ['test_select_svm.config.yml']
-     ),
-    ('test_extract_flatwindow.config.yml',
-     ['test_select_flatwindow.config.yml']
-     )
-]
-
-
-#########################
-#     actual tests      #
-#########################
-def test_main_workflow(tmp_output_dir):
-    """
+def run_main_workflow(tmp_output_dir, script_tuple_dict):
+    """tests main workflow for hybrid-vocal-classifier
+    by iterating through test_main_workflow_dict,
+    running the scripts named in each tuple in the dict
     """
 
-    for test_config_tuple in test_config_tuples:
+    extract_config_filename = os.path.join(configs,
+                                           script_tuple_dict['extract'])
+    extract_config_rewritten = os.path.join(configs,
+                                            extract_config_filename[:-3] + 'rewrite.yml')
+    # have to put tmp_output_dir into yaml file
+    rewrite_config(extract_config_filename,
+                   extract_config_rewritten,
+                   replace_dict={'output_dir':
+                                     ('replace with tmp_output_dir',
+                                      str(tmp_output_dir))})
+    hvc.extract(extract_config_rewritten)
+    extract_outputs = list(
+        filter(os.path.isdir, glob(os.path.join(
+            str(tmp_output_dir),
+            '*extract*'))
+               )
+    )
+    extract_outputs.sort(key=os.path.getmtime)
+    extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
+    assert check_extract_output(extract_output_dir)
 
-        extract_config_filename = os.path.join(configs,
-                                               test_config_tuple[0])
-        extract_config_rewritten = os.path.join(configs,
-                                                test_config_tuple[0][:-3] + 'rewrite.yml')
-        # have to put tmp_output_dir into yaml file
-        rewrite_config(extract_config_filename,
-                       extract_config_rewritten,
-                       replace_dict={'output_dir':
-                                         ('replace with tmp_output_dir',
-                                          str(tmp_output_dir))})
-        hvc.extract(extract_config_rewritten)
-        extract_outputs = list(
-            filter(os.path.isdir, glob(os.path.join(
-                str(tmp_output_dir),
-                '*extract*'))
-                   )
-        )
-        extract_outputs.sort(key=os.path.getmtime)
-        extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
-        assert check_extract_output(extract_output_dir)
+    feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
+    feature_file = feature_file[0]  # because glob returns list
 
-        feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
-        feature_file = feature_file[0]  # because glob returns list
+    os.remove(extract_config_rewritten)
 
-        os.remove(extract_config_rewritten)
-
-        select_config_filenames = test_config_tuple[1]
-
-        while True:
-            try:
-                select_config_filename = os.path.join(configs,
-                                                      select_config_filenames.pop())
-                select_config_rewritten = select_config_filename[:-3] + 'rewrite.yml'
-                rewrite_config(select_config_filename,
-                               select_config_rewritten,
-                               replace_dict={'feature_file':
-                                                 ('replace with feature_file',
-                                                  feature_file),
-                                             'output_dir':
-                                                 ('replace with tmp_output_dir',
-                                                  str(tmp_output_dir))})
-                hvc.select(select_config_rewritten)
-                select_outputs = list(
-                    filter(os.path.isdir, glob(os.path.join(
-                        str(tmp_output_dir),
-                        '*select*'))
-                           )
-                )
-                select_outputs.sort(key=os.path.getmtime)
-                select_output_dir = (select_outputs[-1])  # [-1] is newest dir, after sort
-                assert check_select_output(select_config_rewritten, select_output_dir)
-
-                os.remove(select_config_rewritten)
-
-            except IndexError:  # because pop from empty list
-                break
-
-
-class TestPredProba:
-
-    def test_pred_proba_with_knn(self, tmp_output_dir):
-        extract_config_filename = os.path.join(configs,
-                                               'test_extract_knn.config.yml')
-        extract_config_rewritten = extract_config_filename[:-3] + 'rewrite.yml'
-        # have to put tmp_output_dir into yaml file
-        rewrite_config(extract_config_filename,
-                       extract_config_rewritten,
-                       replace_dict={'output_dir':
-                                         ('replace with tmp_output_dir',
-                                          str(tmp_output_dir))})
-        hvc.extract(extract_config_rewritten)
-        extract_outputs = list(
-            filter(os.path.isdir, glob(os.path.join(
-                str(tmp_output_dir),
-                '*extract*'))
-                   )
-        )
-        extract_outputs.sort(key=os.path.getmtime)
-        extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
-        feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
-        feature_file = feature_file[0]  # because glob returns list
-        os.remove(extract_config_rewritten)
-
+    select_and_predict_tuples = script_tuple_dict['select and predict']
+    for select_and_predict_tuple in select_and_predict_tuples:
+        (select_config_filename,
+         predict_config_filename) = select_and_predict_tuple
         select_config_filename = os.path.join(configs,
-                                              'test_select_knn_ftr_grp.config_pred_proba_True.yml')
+                                              select_config_filename)
         select_config_rewritten = select_config_filename[:-3] + 'rewrite.yml'
         rewrite_config(select_config_filename,
                        select_config_rewritten,
@@ -286,12 +213,15 @@ class TestPredProba:
                 '*select*'))
                    )
         )
+        select_outputs.sort(key=os.path.getmtime)
+        select_output_dir = (select_outputs[-1])  # [-1] is newest dir, after sort
+        assert check_select_output(select_config_rewritten, select_output_dir)
         os.remove(select_config_rewritten)
+
         select_outputs.sort(key=os.path.getmtime)
         select_output_dir = (select_outputs[-1])  # [-1] is newest dir, after sort
         model_meta_files = glob(os.path.join(select_output_dir, '*',
                                              '*meta*'))
-
         replace_dict = {'model_meta_file':
                             ('replace with model_file',
                              model_meta_files[-1]),
@@ -300,12 +230,13 @@ class TestPredProba:
                              str(tmp_output_dir)
                              )}
         predict_config_filename = os.path.join(configs,
-                                               'test_predict_knn.config.yml')
+                                               predict_config_filename)
         predict_config_rewritten = predict_config_filename[:-3] + 'rewrite.yml'
         rewrite_config(predict_config_filename,
                        predict_config_rewritten,
                        replace_dict)
         hvc.predict(predict_config_rewritten)
+        os.remove(predict_config_rewritten)
         predict_outputs = list(
             filter(os.path.isdir, glob(os.path.join(
                 str(tmp_output_dir),
@@ -319,5 +250,44 @@ class TestPredProba:
         for ftr_filename in feature_files:
             ftr_file = joblib.load(ftr_filename)
             assert 'pred_labels' in ftr_file
-            assert 'pred_probs' in ftr_file
-            assert ftr_file['pred_labels'].shape[0] == ftr_file['pred_probs'].shape[0]
+            if 'predict_proba_True' in extract_config_filename:
+                assert 'pred_probs' in ftr_file
+                assert ftr_file['pred_labels'].shape[0] == ftr_file['pred_probs'].shape[0]
+
+
+def test_knn(tmp_output_dir):
+    knn_script_tuple_dict = {
+        'extract': 'test_extract_knn.config.yml',
+        'select and predict': (
+            ('test_select_knn_ftr_list_inds.config.yml',
+             'test_predict_knn.config.yml'),
+            ('test_select_knn_ftr_grp.config.yml',
+             'test_predict_knn.config.yml'),
+            ('test_select_knn_ftr_grp_predict_proba_True.config.yml',
+             'test_predict_knn_predict_proba_True.config.yml')
+        )
+    }
+    run_main_workflow(tmp_output_dir, knn_script_tuple_dict)
+
+
+def test_svm(tmp_output_dir):
+    svm_script_tuple_dict = {
+        'extract': 'test_extract_svm.config.yml',
+        'select and predict': (
+            ('test_select_svm.config.yml',
+             'test_predict_svm.config.yml'),
+            ('test_select_svm_predict_proba_True.config.yml',
+             'test_predict_svm_predict_proba_True.config.yml'),
+        )
+    },
+    run_main_workflow(tmp_output_dir, svm_script_tuple_dict)
+
+
+def test_flatwindow(tmp_output_dir):
+    flatwindow_script_tuple_dict = {
+        'extract': 'test_extract_flatwindow.config.yml',
+         'select and predict': (
+             ('test_select_flatwindow.config.yml',
+              'test_predict_flatwindow.config.yml'),)
+    }
+    run_main_workflow(tmp_output_dir, flatwindow_script_tuple_dict)

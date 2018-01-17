@@ -36,6 +36,7 @@ valid_model_keys:
     - predict_proba
 
   flatwindow:
+    - neuralnet_input
     - hyperparameters
 
 hyperparameters:
@@ -49,18 +50,18 @@ hyperparameters:
 
   flatwindow:
     epochs: int
-    batch size: int
+    batch_size: int
 
 required_predict_todo_list_keys:
   - file_format
   - data_dirs
   - output_dir
   - model_meta_file
-  - predict_proba
 
 optional_predict_todo_list_keys:
   - bird_ID
   - convert
+  - predict_proba
 
 valid_convert_types:
   - notmat

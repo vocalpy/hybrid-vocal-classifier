@@ -12,10 +12,21 @@ import copy
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
+import yaml
 
 # from hvc
 from .parseconfig import parse_config
 from .utils import grab_n_samples_by_song, get_acc_by_label, timestamp
+
+path = os.path.abspath(__file__)  # get the path of this file
+dir_path = os.path.dirname(path)  # but then just take the dir
+
+with open(os.path.join(dir_path,
+                       'parse',
+                       'validation.yml')) as val_yaml:
+    validate_dict = yaml.load(val_yaml)
+
+model_types = validate_dict['valid_models']
 
 
 def determine_model_output_folder_name(model_dict):
@@ -37,11 +48,11 @@ def determine_model_output_folder_name(model_dict):
 def select(config_file):
     """main function that runs model selection.
     Saves model files and summary file, doesn't return anything.
-    
+
     Parameters
     ----------
     config_file  : string
-        filename of YAML file that configures feature extraction    
+        filename of YAML file that configures feature extraction
     """
 
     select_config = parse_config(config_file, 'select')
@@ -154,68 +165,69 @@ def select(config_file):
                                                                    replicate)
                     model_filename = os.path.join(model_output_dir, model_fname_str)
 
-                    # if model_dict specifies using a certain feature group
-                    if 'feature_group' in model_dict:
-                        # determine if we already figured out which features belong to that feature group.
-                        # Can only do that if model_dict defined for todo_list, not if model_dict defined
-                        # at top level of select config file
-                        if 'feature_list_indices' in model_dict:
-                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                                   model_dict['feature_list_indices'])
-                        else:  # have to figure out feature list indices
-                            ftr_grp_ID_dict = feature_file['feature_group_ID_dict']
-                            ftr_list_grp_ID = feature_file['feature_list_group_ID']
-                            # figure out what they are by finding ID # corresponding to feature
-                            # group or groups in ID_dict, and then finding all the indices in the
-                            # feature list that have that group ID #, using ftr_list_grp_ID, a list
-                            # the same length as feature list where each element indicates whether
-                            # the element with the same index in the feature list belongs to a
-                            # feature group and if so which one, by ID #
-                            if type(model_dict['feature_group']) == str:
-                                ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
-                                # now find all the indices of features associated with the
-                                # feature group for that model
-                                ftr_list_inds = [ind for ind, val in
-                                                 enumerate(ftr_list_grp_ID)
-                                                 if val == ftr_grp_ID]
-
-                            # if user specified more than one feature group
-                            elif type(model_dict['feature_group']) == list:
-                                ftr_list_inds = []
-                                for ftr_grp in model_dict['feature_group']:
-                                    ftr_grp_ID = ftr_grp_ID_dict[ftr_grp]
-                                    # now find all the indices of features associated with the
-                                    # feature group for that model
-                                    ftr_list_inds.extend([ind for ind, val in
-                                                          enumerate(ftr_list_grp_ID)
-                                                          if val == ftr_grp_ID])
-                            # finally use ftr_list_inds to get the actual columns we need from the
-                            # features array. Need to this because multiple columns might belong to
-                            # the same feature, e.g. if the feature is a spectrum
-                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                                   ftr_list_inds)
-                            # put feature list indices in model dict so we have it later when
-                            # saving summary file
-                            model_dict['feature_list_indices'] = ftr_list_inds
-
-                    elif 'feature_list_indices' in model_dict and\
-                            'feature_group' not in model_dict:
-                        # if no feature group in model dict, use feature list indices
-                        # Note that for neuralnet models, there will be neither
-                        if model_dict['feature_list_indices'] == 'all':
-                            feature_inds = np.ones((
-                                feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
-                        else:
-                            # use 'feature_list_indices' from model_dict to get the actual columns
-                            # we need from the features array. Again, need to this because multiple
-                            # columns might belong to the same feature,
-                            # e.g. if the feature is a spectrum
-                            feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
-                                                   model_dict['feature_list_indices'])
-
                     # if-elif that switches based on model type,
                     # start with sklearn models
-                    if model_dict['model_name'] in ['svm', 'knn']:
+                    if model_dict['model_name'] in model_types['sklearn']:
+
+                        # if model_dict specifies using a certain feature group
+                        if 'feature_group' in model_dict:
+                            # determine if we already figured out which features belong to that feature group.
+                            # Can only do that if model_dict defined for todo_list, not if model_dict defined
+                            # at top level of select config file
+                            if 'feature_list_indices' in model_dict:
+                                feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                       model_dict['feature_list_indices'])
+                            else:  # have to figure out feature list indices
+                                ftr_grp_ID_dict = feature_file['feature_group_ID_dict']
+                                ftr_list_grp_ID = feature_file['feature_list_group_ID']
+                                # figure out what they are by finding ID # corresponding to feature
+                                # group or groups in ID_dict, and then finding all the indices in the
+                                # feature list that have that group ID #, using ftr_list_grp_ID, a list
+                                # the same length as feature list where each element indicates whether
+                                # the element with the same index in the feature list belongs to a
+                                # feature group and if so which one, by ID #
+                                if type(model_dict['feature_group']) == str:
+                                    ftr_grp_ID = ftr_grp_ID_dict[model_dict['feature_group']]
+                                    # now find all the indices of features associated with the
+                                    # feature group for that model
+                                    ftr_list_inds = [ind for ind, val in
+                                                     enumerate(ftr_list_grp_ID)
+                                                     if val == ftr_grp_ID]
+    
+                                # if user specified more than one feature group
+                                elif type(model_dict['feature_group']) == list:
+                                    ftr_list_inds = []
+                                    for ftr_grp in model_dict['feature_group']:
+                                        ftr_grp_ID = ftr_grp_ID_dict[ftr_grp]
+                                        # now find all the indices of features associated with the
+                                        # feature group for that model
+                                        ftr_list_inds.extend([ind for ind, val in
+                                                              enumerate(ftr_list_grp_ID)
+                                                              if val == ftr_grp_ID])
+                                # finally use ftr_list_inds to get the actual columns we need from the
+                                # features array. Need to this because multiple columns might belong to
+                                # the same feature, e.g. if the feature is a spectrum
+                                feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                       ftr_list_inds)
+                                # put feature list indices in model dict so we have it later when
+                                # saving summary file
+                                model_dict['feature_list_indices'] = ftr_list_inds
+    
+                        elif 'feature_list_indices' in model_dict and\
+                                'feature_group' not in model_dict:
+                            # if no feature group in model dict, use feature list indices
+                            # Note that for neuralnet models, there will be neither
+                            if model_dict['feature_list_indices'] == 'all':
+                                feature_inds = np.ones((
+                                    feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                            else:
+                                # use 'feature_list_indices' from model_dict to get the actual columns
+                                # we need from the features array. Again, need to this because multiple
+                                # columns might belong to the same feature,
+                                # e.g. if the feature is a spectrum
+                                feature_inds = np.in1d(feature_file['features_arr_column_IDs'],
+                                                       model_dict['feature_list_indices'])
+
                         if model_dict['model_name'] == 'svm':
                             print('training svm. ', end='')
                             clf = SVC(C=model_dict['hyperparameters']['C'],
@@ -254,8 +266,21 @@ def select(config_file):
 
                     # this is the middle of the if-elif that switches based on model type
                     # end sklearn, start keras models
-                    elif model_dict['model_name'] == 'flatwindow':
-                        spects = feature_file['neuralnet_inputs']['flatwindow']
+                    elif model_dict['model_name'] in model_types['keras']:
+                        if 'neuralnet_input' in model_dict:
+                            neuralnet_input = model_dict['neuralnet_input']
+                            spects = feature_file['neuralnet_inputs'][neuralnet_input]
+                        else:
+                            # if not specified, assume that input should be the one that
+                            # corresponds to the neural net model being trained
+                            neuralnet_input = model_dict['model_name']
+                            try:
+                                spects = feature_file['neuralnet_inputs'][neuralnet_input]
+                            except KeyError:
+                                raise KeyError('no input specified for model {}, and '
+                                               'input type for that model was not found in '
+                                               'feature file'
+                                               .format(model_dict['model_name']))
 
                         if 'convert_labels_categorical' not in locals():
                             from hvc.neuralnet.utils import convert_labels_categorical
@@ -330,7 +355,7 @@ def select(config_file):
                                     labels_train_onehot,
                                     validation_data=(test_spects_scaled,
                                                      labels_test_onehot),
-                                    batch_size=model_dict['hyperparameters']['batch size'],
+                                    batch_size=model_dict['hyperparameters']['batch_size'],
                                     epochs=model_dict['hyperparameters']['epochs'],
                                     callbacks=callbacks_list,
                                     verbose=1)
@@ -371,7 +396,7 @@ def select(config_file):
                     model_meta_output_dict['spect_scaler'] = spect_scaler
                     del spect_scaler
 
-                if model_dict['model_name'] in ['svm', 'knn']:
+                if model_dict['model_name'] in model_types['sklearn']:
                     # to be able to extract features for predictions
                     # on unlabeled data set, need list of features
                     if model_dict['feature_list_indices'] == 'all':
@@ -379,7 +404,9 @@ def select(config_file):
                     else:
                         model_feature_list = [feature_file['feature_list'][ind]
                                               for ind in model_dict['feature_list_indices']]
-                    model_meta_output_dict['model_feature_list'] = model_feature_list
+                    model_meta_output_dict['feature_list'] = model_feature_list
+                elif model_dict['model_name'] in model_types['keras']:
+                    model_meta_output_dict['feature_list'] = [neuralnet_input]
                 joblib.dump(model_meta_output_dict,
                             model_meta_filename)
 

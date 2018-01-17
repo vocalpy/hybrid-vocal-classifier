@@ -122,14 +122,14 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if model_name in VALID_MODELS['sklearn']:
                 try:
                     joblib.load(model_filename)
-                except:
-                    raise IOError('Unable to open model file: {}'.format(model_filename))
+                except OSError:
+                    raise OSError('Unable to open model file: {}'.format(model_filename))
             elif model_name in VALID_MODELS['keras']:
                 try:
                     import keras.models
-                    keras.models.load_model(val)
-                except:
-                    raise IOError('Unable to open model file: {}'.format(model_filename))
+                    keras.models.load_model(model_filename)
+                except OSError:
+                    raise OSError('Unable to open model file: {}'.format(model_filename))
 
         elif key == 'output_dir':
             if type(val) != str:

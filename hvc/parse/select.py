@@ -11,6 +11,9 @@ import yaml
 import numpy as np
 from sklearn.externals import joblib
 
+# from hvc
+from ..features.extract import neural_net_features_switch_case_dict
+
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
@@ -29,6 +32,10 @@ for model_subtype in validate_dict['valid_models'].values():
     for model_name in model_subtype:
         VALID_MODELS.append(model_name)
 VALID_MODELS = set(VALID_MODELS)
+
+# also need valid_models as a dict, to determine whether
+# a given model is in scikit-learn or in keras
+MODEL_TYPES = validate_dict['valid_models']
 
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
@@ -74,12 +81,7 @@ def _validate_model_dict(model_dict,
 
     validated_model_dict = copy.deepcopy(model_dict)
 
-    # if this is a model that uses features extracted from syllables
-    # (i.e. scalar / vector, not spectrograms)
-    # need to validate feature groups, etc.
-    # For neural net models, don't need to do this
-    if 'feature_group' and 'feature_list_indices' in \
-            validate_dict['valid_model_keys'][model_dict['model_name']]:
+    if model_dict['model_name'] in MODEL_TYPES['sklearn']:
         # throw an error if both feature_list_indices and
         # feature_group are defined as keys for model dict
         if 'feature_list_indices' in model_dict \
@@ -99,7 +101,8 @@ def _validate_model_dict(model_dict,
         if 'feature_list_indices' in model_dict:
             ftr_list_inds = model_dict['feature_list_indices']
             if type(ftr_list_inds) != list and type(ftr_list_inds) != str:
-                raise ValueError('\'feature_list_indices\' should be a list or string but parsed as a {}'
+                raise ValueError('\'feature_list_indices\' should be a list or string '
+                                 'but parsed as a {}'
                                  .format(type(ftr_list_inds)))
             if type(ftr_list_inds) == str:
                 if ftr_list_inds == 'all':
@@ -170,50 +173,66 @@ def _validate_model_dict(model_dict,
                 if ftr_inds is not None:
                     validated_model_dict['feature_list_indices'] = ftr_inds
 
-        hyperparams = model_dict['hyperparameters']
-        required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model_name']].keys())
-        model_dict_hyperparams = set(hyperparams.keys())
-        # if not all keys, i.e. model dict hyperparams is a subset of required
-        if model_dict_hyperparams < required_hyperparams:
-            missing_keys = required_hyperparams - model_dict_hyperparams
-            raise KeyError('missing hyperparameters from model dict for {0}: {1}'
-                           .format(model_dict['model_name'], missing_keys))
-        # OTOH if extra keys , i.e. required is actually a subset of model dict hyperparams
-        if model_dict_hyperparams > required_hyperparams:
-            extra_keys = model_dict_hyperparams - required_hyperparams
-            raise ValueError('invalid hyperparameters for model for {0}: {1}'
-                             .format(model_dict['model_name'], extra_keys))
+    elif model_dict['model_name'] in MODEL_TYPES['keras']:
+        if 'neuralnet_input' in model_dict:
+            if type(model_dict['neuralnet_input']) != str:
+                raise TypeError('value for key `neuralnet_input` should '
+                                'be an str, but parsed as {}'
+                                .format(type(
+                    model_dict['neuralnet_input'])
+                    )
+                )
 
-        # for validation,
-        # replace `required hyperparams` set defined above
-        # with `required hyperparams` dict
-        # that has param names as keys and valid types as values
-        # if more than one valid type, then it's a tuple
-        required_hyperparams = VALID_HYPERPARAMS[model_dict['model_name']]
-        for hyperparam_name, hyperparam_val in hyperparams.items():
-            valid_type = required_hyperparams[hyperparam_name]
-            if type(valid_type) != tuple:
-                # wrap single type in tuple to be able to check if actual
-                # value type is 'in' valid type(s)
-                valid_type = (valid_type,)
-            # have to use str representation of object, because that's all you
-            # can load from YAML file, instead of comparing directly with type
-            # itself
-            if type(hyperparam_val).__name__ not in valid_type:
-                raise ValueError('Type for hyperparameter {0} for a {1}'
-                                 ' model should be {2} but parsed as {3}.'
-                                 .format(hyperparam_name,
-                                         model_dict['model_name'],
-                                         valid_type,
-                                         type(hyperparam_val)))
+        if model_dict['neuralnet_input'] not in neural_net_features_switch_case_dict:
+            raise KeyError('input {} specified for {} is not recognized '
+                           'as a neural net input'
+                           .format(model_dict['model_name'],
+                                   model_dict['neuralnet_input']))
 
-        if 'predict_proba' in model_dict:
-            if type(model_dict['predict_proba']) is not bool:
-                raise TypeError('predict_proba in model_dict must be '
-                                'either True or False')
-        else:  # if 'predict_proba' not in model_dict
-            # set to False
-            validated_model_dict['predict_proba'] = False
+    hyperparams = model_dict['hyperparameters']
+    required_hyperparams = set(VALID_HYPERPARAMS[model_dict['model_name']].keys())
+    model_dict_hyperparams = set(hyperparams.keys())
+    # if not all keys, i.e. model dict hyperparams is a subset of required
+    if model_dict_hyperparams < required_hyperparams:
+        missing_keys = required_hyperparams - model_dict_hyperparams
+        raise KeyError('missing hyperparameters from model dict for {0}: {1}'
+                       .format(model_dict['model_name'], missing_keys))
+    # OTOH if extra keys , i.e. required is actually a subset of model dict hyperparams
+    if model_dict_hyperparams > required_hyperparams:
+        extra_keys = model_dict_hyperparams - required_hyperparams
+        raise ValueError('invalid hyperparameters for model for {0}: {1}'
+                         .format(model_dict['model_name'], extra_keys))
+
+    # for validation,
+    # replace `required hyperparams` set defined above
+    # with `required hyperparams` dict
+    # that has param names as keys and valid types as values
+    # if more than one valid type, then it's a tuple
+    required_hyperparams = VALID_HYPERPARAMS[model_dict['model_name']]
+    for hyperparam_name, hyperparam_val in hyperparams.items():
+        valid_type = required_hyperparams[hyperparam_name]
+        if type(valid_type) != tuple:
+            # wrap single type in tuple to be able to check if actual
+            # value type is 'in' valid type(s)
+            valid_type = (valid_type,)
+        # have to use str representation of object, because that's all you
+        # can load from YAML file, instead of comparing directly with type
+        # itself
+        if type(hyperparam_val).__name__ not in valid_type:
+            raise ValueError('Type for hyperparameter {0} for a {1}'
+                             ' model should be {2} but parsed as {3}.'
+                             .format(hyperparam_name,
+                                     model_dict['model_name'],
+                                     valid_type,
+                                     type(hyperparam_val)))
+
+    if 'predict_proba' in model_dict:
+        if type(model_dict['predict_proba']) is not bool:
+            raise TypeError('predict_proba in model_dict must be '
+                            'either True or False')
+    else:  # if 'predict_proba' not in model_dict
+        # set to False
+        validated_model_dict['predict_proba'] = False
 
     return validated_model_dict
 
