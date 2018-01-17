@@ -65,25 +65,31 @@ for any dict in a `todo_list`, then that definition will override the top-level 
      dictionary of models, as defined below.
      Required if not defined at top level of file.
   * `num_replicates`: int
-    number of replicates, i.e. number of folds for cross-validation
+      number of replicates, i.e. number of folds for cross-validation
 
   * `num_test_samples`: int
-    number of samples from feature file to put in testing set
+      number of samples from feature file to put in testing set
 
   * `num_train_samples`: int
-    number of samples from feature file to put in training set
+      number of samples from feature file to put in training set
 
 specification for models list of dicts
 --------------------------------------
 Every dict in a `models` list has the following **required** keys:
   * model_name: str
-    name of model, e.g. 'svm'
-  * feature_list_indices: list of ints
-    corresponding to elements in list of feature names in feature_file
-    e.g., [0,1,2,5,7]
+      name of model, e.g. 'svm'
   * hyperparameters: dict
-    with hyperparameters defined for each model
+      with hyperparameters defined for each model
 
+Every dict in a `models` list must also specify the features with which to train the model.
+One of the following is valid, as specified in `validation.yml`.
+   * feature_list_indices: list of ints
+      corresponding to elements in list of feature names in feature_file
+      e.g., [0,1,2,5,7]
+   * feature_group: str
+      name of a feature group: {'knn','svm'}
+   * neuralnet_input: str
+      name of input for am artificial neural net: {'flatwindow'}
 
 example `select_config.yml`
 ---------------------------

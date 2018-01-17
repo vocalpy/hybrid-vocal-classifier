@@ -1,18 +1,19 @@
 select:
-  num_replicates: 3
+  num_replicates: 5
   num_train_samples:
-    start : 200
+    start : 100
     stop : 400
-    step : 200
+    step : 100
   num_test_samples: 400
 
   models:
     -
-      model_name: flatwindow
+      model_name: svm
+      feature_list_indices: all
       hyperparameters:
-        batch_size: 32
-        epochs : 3
-      neuralnet_input: flatwindow
+        C : 1
+        gamma : 0.01
+      predict_proba: True
 
   todo_list:
     - #1

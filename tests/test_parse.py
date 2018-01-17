@@ -177,7 +177,8 @@ class TestParseSelect:
                                                            index=0)
         assert model_dict == {'feature_group': 'knn',
                               'hyperparameters': {'k': 4},
-                              'model_name': 'knn'}
+                              'model_name': 'knn',
+                              'predict_proba': False}
         assert 'feature_list_indices' not in model_dict
 
         # model dict called feature list indices entered as a list
@@ -185,7 +186,8 @@ class TestParseSelect:
                                                            index=0)
         assert model_dict == {'feature_list_indices': [0, 1, 2, 3, 4, 5, 6, 7, 8],
                               'hyperparameters': {'k': 4},
-                              'model_name': 'knn'}
+                              'model_name': 'knn',
+                              'predict_proba': False}
 
         feature_list_group_ID = np.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0])
         feature_group_ID_dict = {'knn': 0}
@@ -197,7 +199,8 @@ class TestParseSelect:
                                 {'feature_group': 'knn',
                                  'feature_list_indices': np.asarray([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=int),
                                  'hyperparameters': {'k': 4},
-                                 'model_name': 'knn'})
+                                 'model_name': 'knn',
+                                 'predict_proba': False})
 
         with pytest.raises(KeyError):
             hvc.parse.select._validate_model_dict(test_yaml[

@@ -54,7 +54,7 @@ def predict(config_file):
 
         extract_params = {
             'bird_ID': todo['bird_ID'],
-            'feature_list': model_meta_file['model_feature_list'],
+            'feature_list': model_meta_file['feature_list'],
             'output_dir': output_dir,
             'home_dir': home_dir,
             'data_dirs': todo['data_dirs'],
@@ -79,22 +79,33 @@ def predict(config_file):
             clf = joblib.load(model_filename)
             scaler = model_meta_file['scaler']
         elif model_name in valid_models['keras']:
-            if 'keras.models' not in sys.modules:
+            if 'keras.models' not in locals():
                 import keras.models
             clf = keras.models.load_model(model_filename)
+            spect_scaler = model_meta_file['spect_scaler']
 
         for ftr_file in ftr_files:
             print("predicting labels for features in file: {}"
                   .format(ftr_file))
             ftr_file_dict = joblib.load(ftr_file)
-            features = ftr_file_dict['features']
-
-            features_scaled = scaler.transform(features)
-            pred_labels = clf.predict(features_scaled)
+            if model_name in valid_models['sklearn']:
+                features = ftr_file_dict['features']
+                features_scaled = scaler.transform(features)
+                pred_labels = clf.predict(features_scaled)
+            elif model_name in valid_models['keras']:
+                neuralnet_inputs_dict = ftr_file_dict['neuralnet_inputs']
+                inputs_key = model_meta_file['feature_list'][0]
+                neuralnet_inputs = neuralnet_inputs_dict[inputs_key]
+                neuralnet_inputs_scaled = spect_scaler.transform(neuralnet_inputs)
+                neuralnet_inputs_scaled = neuralnet_inputs_scaled[:, :, :, np.newaxis]
+                pred_labels = clf.predict(neuralnet_inputs_scaled)
+                
             ftr_file_dict['pred_labels'] = pred_labels
-            if todo['predict_proba'] == True:
-                pred_probs = clf.predict_proba(features_scaled)
-                ftr_file_dict['pred_probs'] = pred_probs
+            
+            if 'predict_proba' in todo:
+                if todo['predict_proba'] == True:
+                    pred_probs = clf.predict_proba(features_scaled)
+                    ftr_file_dict['pred_probs'] = pred_probs
             joblib.dump(ftr_file_dict, ftr_file)
 
             if 'convert' in todo:

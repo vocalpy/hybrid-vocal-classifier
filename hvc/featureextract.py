@@ -66,7 +66,7 @@ def write_select_config(summary_ftr_file_dict,
     Returns
     -------
     None
-    
+
     Doesn't return anything, just saves .yml file
     """
 
