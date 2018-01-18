@@ -7,9 +7,9 @@ Installation
 | Step by step instructions are below.
 | If you need help, please join our email list at `hvc-users@google-groups.com` and ask a new question.
 
-**Note that the ``$`` and ``>`` prompts below are just to indicate that you're in the command line,
+Note that the ``$`` and ``>`` prompts below are just to indicate that you're in the command line,
 you don't have to type them. If the command is the same on Mac/Linux/Windows then only the ``$``
-prompt is shown.**
+prompt is shown.
 
 Easy install for general users
 ------------------------------
