@@ -86,8 +86,8 @@ Citations, repositories, and related work
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 | For use of the library, please cite its DOI:
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1009677.svg
-   :target: https://doi.org/10.5281/zenodo.1009677
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1154239.svg
+   :target: https://doi.org/10.5281/zenodo.844932
 
 | To cite the algorithms used, please see the listing in :ref:`citations`.
 | A list of repositories of birdsong is here: :ref:`repos` 
@@ -104,10 +104,3 @@ We welcome contributions to the codebase and the documentation,
 and are happy to help first-time contributors through the process.
 Project maintainers and contributors are expected to uphold
 the code of conduct described here: :ref:`code-of-conduct`
-
-Indices and tables
-~~~~~~~~~~~~~~~~~~
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
