@@ -1,6 +1,36 @@
 import numpy as np
 import scipy.spatial.distance
+import sklearn.metrics
+from sklearn.externals import joblib
 
+def confusion_matrix(y_true=None, y_pred=None, model_meta_file=None):
+    """confusion matrix
+    wrapper around sklearn.metrics.confusion_matrix
+
+    Parameters:
+    -----------
+    y_true : ndarray
+
+    y_pred : ndarray
+
+    Returns
+    -------
+    cm : ndarray
+        confusion matrix
+    """
+
+    if (y_true is not None 
+        and y_pred is not None) and model_meta_file is not None:
+        raise ValueError('arguments must be either y_true and y_pred, '
+                         'or meta_file, but not both')
+    
+    if model_meta_file:
+        meta = joblib.load(model_meta_file)
+        y_true = meta['test_labels']
+        y_pred = meta['pred_labels']
+    
+    cm = sklearn.metrics.confusion_matrix(y_true, y_pred)
+    return cm
 
 def lev_np(source, target):
     """
