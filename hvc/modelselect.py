@@ -11,6 +11,7 @@ import copy
 # from dependencies
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 from sklearn.externals import joblib
 import yaml
 
@@ -359,14 +360,22 @@ def select(config_file):
                                     epochs=model_dict['hyperparameters']['epochs'],
                                     callbacks=callbacks_list,
                                     verbose=1)
-
+                        
                         pred_labels = flatwin.predict_classes(test_spects_scaled,
                                                               batch_size=32,
                                                               verbose=1)
 
+                        score = accuracy_score(labels_test_zero_to_n, pred_labels)
+                        print('score on test set: {:05.4f} '.format(score), end='')
+                        score_arr[num_samples_ind, replicate, model_ind] = score
+
+                        pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
+                        
                         acc_by_label, avg_acc = get_acc_by_label(labels_test_zero_to_n,
                                                                  pred_labels,
                                                                  classes_zero_to_n)
+                        print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
+                        avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
                 model_meta_fname_str = \
                     '{0}_{1}samples_replicate{2}.meta'.format(model_dict['model_name'],
