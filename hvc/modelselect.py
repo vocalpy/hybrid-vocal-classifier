@@ -305,7 +305,7 @@ def select(config_file):
                             # also add axis so correct input_shape for keras.conv_2d
                             test_spects = spects[test_IDs, :, :]
 
-                        (labels_train_onehot,
+                        (train_labels_onehot,
                          _) = convert_labels_categorical(feature_file['labelset'],
                                                        labels_train)
 
@@ -358,7 +358,7 @@ def select(config_file):
                         callbacks_list = [csv_logger, checkpoint, earlystop]
 
                         flatwin.fit(train_spects_scaled,
-                                    labels_train_onehot,
+                                    train_labels_onehot,
                                     validation_data=(test_spects_scaled,
                                                      test_labels_onehot),
                                     batch_size=model_dict['hyperparameters']['batch_size'],
