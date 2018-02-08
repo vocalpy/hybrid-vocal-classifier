@@ -286,22 +286,27 @@ def select(config_file):
                         if 'convert_labels_categorical' not in locals():
                             from hvc.neuralnet.utils import convert_labels_categorical
 
+                        if 'convert_int_to_labels' not in locals():
+                            from hvc.neuralnet.utils import convert_int_to_labels
+
                         if 'SpectScaler' not in locals():
                             from hvc.neuralnet.utils import SpectScaler
 
                         if 'test_labels_onehot' not in locals():
-                            test_labels_onehot, test_labels_zero_to_n, classes_zero_to_n = \
-                                convert_labels_categorical(feature_file['labelset'],
-                                                           test_labels,
-                                                           return_zero_to_n=True)
+                            (test_labels_onehot,
+                             test_labels_zero_to_n,
+                             label_to_int_map) = convert_labels_categorical(
+                                feature_file['labelset'],
+                                test_labels,
+                                return_label_to_int_map=True)
 
                         if 'test_spects' not in locals():
                             # get spects for test set,
                             # also add axis so correct input_shape for keras.conv_2d
                             test_spects = spects[test_IDs, :, :]
 
-                        labels_train_onehot = \
-                            convert_labels_categorical(feature_file['labelset'],
+                        (labels_train_onehot,
+                         _) = convert_labels_categorical(feature_file['labelset'],
                                                        labels_train)
 
                         # get spects for train set,
@@ -364,16 +369,17 @@ def select(config_file):
                         pred_labels = flatwin.predict_classes(test_spects_scaled,
                                                               batch_size=32,
                                                               verbose=1)
+                        pred_labels = convert_int_to_labels(pred_labels, label_to_int_map)
 
-                        score = accuracy_score(test_labels_zero_to_n, pred_labels)
+                        score = accuracy_score(test_labels, pred_labels)
                         print('score on test set: {:05.4f} '.format(score), end='')
                         score_arr[num_samples_ind, replicate, model_ind] = score
 
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
                         
-                        acc_by_label, avg_acc = get_acc_by_label(test_labels_zero_to_n,
+                        acc_by_label, avg_acc = get_acc_by_label(test_labels,
                                                                  pred_labels,
-                                                                 classes_zero_to_n)
+                                                                 feature_file['labelset'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
