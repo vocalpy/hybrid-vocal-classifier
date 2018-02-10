@@ -355,9 +355,9 @@ def select(config_file):
                                     callbacks=callbacks_list,
                                     verbose=1)
                         
-                        pred_labels = flatwin.predict_classes(test_spects_scaled,
-                                                              batch_size=32,
-                                                              verbose=1)
+                        pred_labels = flatwin.predict(test_spects_scaled,
+                                                      batch_size=32,
+                                                      verbose=1)
                         pred_labels = label_binarizer.inverse_transform(pred_labels)
 
                         score = accuracy_score(test_labels, pred_labels)
