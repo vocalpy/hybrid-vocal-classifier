@@ -99,9 +99,11 @@ def predict(config_file):
                 neuralnet_inputs_scaled = spect_scaler.transform(neuralnet_inputs)
                 neuralnet_inputs_scaled = neuralnet_inputs_scaled[:, :, :, np.newaxis]
                 pred_labels = clf.predict(neuralnet_inputs_scaled)
-                
+                label_binarizer = model_meta_file['label_binarizer']
+                pred_labels = label_binarizer.inverse_transform(pred_labels)
+
             ftr_file_dict['pred_labels'] = pred_labels
-            
+
             if 'predict_proba' in todo:
                 if todo['predict_proba'] == True:
                     pred_probs = clf.predict_proba(features_scaled)

@@ -1,5 +1,4 @@
 import numpy as np
-from keras.utils.np_utils import to_categorical
 
 
 class SpectScaler:
@@ -63,44 +62,3 @@ class SpectScaler:
             z_norm_spects[i, :, :] = self._transform(spects[i, :, :])
 
         return z_norm_spects
-
-
-def convert_labels_categorical(labelset, labels, return_zero_to_n=False):
-    """convert array of labels to matrix of one-hot vectors
-    where each vector is the training label for a neural net.
-    Can then be supplied as output to conditional crossentropy
-    layer. Uses keras.utilts.np_utils.to_categorical
-
-    Parameters
-    ----------
-    labelset : str
-    labels : vector
-    return_zero_to_n : bool
-        if True, returns labels but with values in vector replaced by ints
-        so that there are zero to n-1 unique ints in the labels_zero_to_n
-        vector.
-        Default is False.
-
-    Returns
-    -------
-    labels_categorical : m x n 2d numpy array
-    """
-
-    # reshape labels so they match output for neural net
-    num_syl_classes = np.size(labelset)
-    # make a dictionary that maps labels to classes 0 to n-1 where n is number of
-    # classes of syllables.
-    # Need this map instead of e.g. converting from char to int because
-    # keras to_categorical function requires
-    # input where classes are labeled from 0 to n-1
-    classes_zero_to_n = range(num_syl_classes)
-    label_map = dict(zip(labelset, classes_zero_to_n))
-    labels_zero_to_n = np.asarray([label_map[label] for label in labels])
-    # so we can then convert to array of binary / one-hot vectors for training
-    if return_zero_to_n:
-        return to_categorical(labels_zero_to_n, num_syl_classes),\
-               labels_zero_to_n,\
-               classes_zero_to_n
-    else:
-        return to_categorical(labels_zero_to_n, num_syl_classes)
-

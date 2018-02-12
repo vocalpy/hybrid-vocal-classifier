@@ -117,7 +117,7 @@ def select(config_file):
                                                               feature_file['labels'],
                                                               num_test_samples,
                                                               return_popped_songlist=True)
-        labels_test = labels[test_IDs]
+        test_labels = labels[test_IDs]
 
         score_arr = np.zeros((len(num_train_samples_list),
                            len(range(num_replicates)),
@@ -148,7 +148,7 @@ def select(config_file):
                                                    num_train_samples,
                                                    song_ID_list=train_song_ID_list)
                 train_IDs_arr[num_samples_ind, replicate] = train_IDs
-                labels_train = labels[train_IDs]
+                train_labels = labels[train_IDs]
                 for model_ind, model_dict in enumerate(model_list):
 
                     # save info associated with model such as indices of training samples.
@@ -252,13 +252,13 @@ def select(config_file):
                         features_test = scaler.transform(features_test)
 
                         print('fitting model. ', end='')
-                        clf.fit(features_train, labels_train)
-                        score = clf.score(features_test, labels_test)
+                        clf.fit(features_train, train_labels)
+                        score = clf.score(features_test, test_labels)
                         print('score on test set: {:05.4f} '.format(score), end='')
                         score_arr[num_samples_ind, replicate, model_ind] = score
                         pred_labels = clf.predict(features_test)
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
-                        acc_by_label, avg_acc = get_acc_by_label(labels_test,
+                        acc_by_label, avg_acc = get_acc_by_label(test_labels,
                                                                  pred_labels,
                                                                  feature_file['labelset'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
@@ -283,26 +283,20 @@ def select(config_file):
                                                'feature file'
                                                .format(model_dict['model_name']))
 
-                        if 'convert_labels_categorical' not in locals():
-                            from hvc.neuralnet.utils import convert_labels_categorical
-
                         if 'SpectScaler' not in locals():
                             from hvc.neuralnet.utils import SpectScaler
 
-                        if 'labels_test_onehot' not in locals():
-                            labels_test_onehot, labels_test_zero_to_n, classes_zero_to_n = \
-                                convert_labels_categorical(feature_file['labelset'],
-                                                           labels_test,
-                                                           return_zero_to_n=True)
+                        if 'test_labels_onehot' not in locals():
+                            from sklearn.preprocessing import LabelBinarizer
+                            label_binarizer = LabelBinarizer()
+                            test_labels_onehot = label_binarizer.fit_transform(test_labels)
 
                         if 'test_spects' not in locals():
                             # get spects for test set,
                             # also add axis so correct input_shape for keras.conv_2d
                             test_spects = spects[test_IDs, :, :]
 
-                        labels_train_onehot = \
-                            convert_labels_categorical(feature_file['labelset'],
-                                                       labels_train)
+                        train_labels_onehot = label_binarizer.transform(train_labels)
 
                         # get spects for train set,
                         # also add axis so correct input_shape for keras.conv_2d
@@ -353,27 +347,28 @@ def select(config_file):
                         callbacks_list = [csv_logger, checkpoint, earlystop]
 
                         flatwin.fit(train_spects_scaled,
-                                    labels_train_onehot,
+                                    train_labels_onehot,
                                     validation_data=(test_spects_scaled,
-                                                     labels_test_onehot),
+                                                     test_labels_onehot),
                                     batch_size=model_dict['hyperparameters']['batch_size'],
                                     epochs=model_dict['hyperparameters']['epochs'],
                                     callbacks=callbacks_list,
                                     verbose=1)
                         
-                        pred_labels = flatwin.predict_classes(test_spects_scaled,
-                                                              batch_size=32,
-                                                              verbose=1)
+                        pred_labels = flatwin.predict(test_spects_scaled,
+                                                      batch_size=32,
+                                                      verbose=1)
+                        pred_labels = label_binarizer.inverse_transform(pred_labels)
 
-                        score = accuracy_score(labels_test_zero_to_n, pred_labels)
+                        score = accuracy_score(test_labels, pred_labels)
                         print('score on test set: {:05.4f} '.format(score), end='')
                         score_arr[num_samples_ind, replicate, model_ind] = score
 
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
                         
-                        acc_by_label, avg_acc = get_acc_by_label(labels_test_zero_to_n,
+                        acc_by_label, avg_acc = get_acc_by_label(test_labels,
                                                                  pred_labels,
-                                                                 classes_zero_to_n)
+                                                                 feature_file['labelset'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
@@ -389,7 +384,9 @@ def select(config_file):
                     'feature_file': todo['feature_file'],
                     'test_IDs': test_IDs,
                     'train_IDs': train_IDs,
-                    'model_name': model_dict['model_name']
+                    'model_name': model_dict['model_name'],
+                    'pred_labels': pred_labels,
+                    'test_labels': test_labels
                 }
 
                 if 'scaler' in locals():
@@ -404,6 +401,9 @@ def select(config_file):
                     # instead of vanilla sklearn scalar
                     model_meta_output_dict['spect_scaler'] = spect_scaler
                     del spect_scaler
+
+                if 'label_binarizer' in locals():
+                    model_meta_output_dict['label_binarizer'] = label_binarizer
 
                 if model_dict['model_name'] in model_types['sklearn']:
                     # to be able to extract features for predictions
