@@ -421,7 +421,7 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
 
             total_samples = todo_list_dict['num_test_samples'] + \
                             max(num_samples)
-            samples_in_ftr_file = ftr_file['features'].shape[0]
+            samples_in_ftr_file = ftr_file['num_samples']
             if total_samples > samples_in_ftr_file:
                 raise ValueError('config file specifies {} samples in '
                                  'training set and {} samples in test '
@@ -570,7 +570,7 @@ def validate_yaml(config_path, select_config_yaml):
         for todo_list_dict in validated_select_config['todo_list']:
             if 'num_train_samples' not in todo_list_dict:
                 ftr_file = joblib.load(todo_list_dict['feature_file'])
-                samples_in_ftr_file = ftr_file['features'].shape[0]
+                samples_in_ftr_file = ftr_file['num_samples']
                 if samples_in_ftr_file < total_samples:
                     raise ValueError('config file specifies {} samples in '
                                      'training set and {} samples in test '
