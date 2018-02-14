@@ -143,8 +143,8 @@ def _extract(extract_params, calling_function, make_summary_file=True):
             # (need to re-initialize for each directory)
             del features_from_all_files
 
-        if 'neuralnet_inputs_dict' in locals():
-            del neuralnet_inputs_dict
+        if 'neuralnet_inputs_all_files' in locals():
+            del neuralnet_inputs_all_files
 
         if extract_params['file_format'] == 'evtaf':
             songfiles_list = glob.glob('*.cbin')
@@ -239,6 +239,8 @@ def _extract(extract_params, calling_function, make_summary_file=True):
         if 'features_from_all_files' in locals():
             feature_file_dict['features'] = features_from_all_files
             feature_file_dict['features_arr_column_IDs'] = feature_inds
+            num_samples = feature_file_dict['features'].shape[0]
+            feature_file_dict['num_samples'] = num_samples
 
             if 'feature_list_group_ID' in extract_params:
                 feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']
@@ -246,6 +248,20 @@ def _extract(extract_params, calling_function, make_summary_file=True):
 
         if 'neuralnet_inputs_all_files' in locals():
             feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
+            if 'num_samples' in feature_file_dict:
+                # because we computed it for non-neural net features already
+                pass
+            else:
+                if len(feature_file_dict['neuralnet_inputs']) == 1:
+                    key = list(
+                        feature_file_dict['neuralnet_inputs'].keys()
+                              )[0]
+                    num_samples = feature_file_dict['neuralnet_inputs'][key].shape[0]
+                    feature_file_dict['num_samples'] = num_samples
+                else:
+                    raise ValueError('can\'t determine number of samples '
+                                     'in neuralnet_inputs because there\'s '
+                                     'more than one key in dictionary.')
 
         joblib.dump(feature_file_dict,
                     feature_file,
@@ -401,6 +417,21 @@ def _extract(extract_params, calling_function, make_summary_file=True):
                             newval = np.concatenate((summary_ftr_file_dict['neuralnet_inputs'][key],
                                                      feature_file_dict['neuralnet_inputs'][key]))
                             summary_ftr_file_dict['neuralnet_inputs'][key] = newval
+
+            if 'features' in summary_ftr_file_dict:
+                summary_ftr_file_dict['num_samples'] = \
+                    summary_ftr_file_dict['features'].shape[0]
+            elif 'neuralnet_inputs' in summary_ftr_file_dict:
+                if len(summary_ftr_file_dict['neuralnet_inputs']) == 1:
+                    key = list(
+                        summary_ftr_file_dict['neuralnet_inputs'].keys()
+                              )[0]
+                    num_samples = summary_ftr_file_dict['neuralnet_inputs'][key].shape[0]
+                    summary_ftr_file_dict['num_samples'] = num_samples
+                else:
+                    raise ValueError('can\'t determine number of samples '
+                                     'in neuralnet_inputs because there\'s '
+                                     'more than one key in dictionary.')
 
             joblib.dump(summary_ftr_file_dict,
                         summary_filename)
