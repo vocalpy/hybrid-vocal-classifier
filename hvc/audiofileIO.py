@@ -833,5 +833,5 @@ class Song:
 
         if return_spects:
             # stack with dimensions (samples, height, width)
-            return np.stack([syl.spect for syl in all_syls])
+            return np.stack([syl.spect for syl in all_syls], axis=0)
 
