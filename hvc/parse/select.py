@@ -366,11 +366,23 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
         if 'feature_group_ID_dict' in feature_file_keys:
             ftr_list_group_ID = ftr_file['feature_list_group_ID']
             ftr_grp_ID_dict = ftr_file['feature_group_ID_dict']
-        del ftr_file
     except:
         raise IOError('Unable to open {}'.format(feature_file))
 
     validated_todo_list_dict = copy.deepcopy(todo_list_dict)
+
+    ks = ('num_replicates', 'num_test_samples', 'num_train_samples')
+    if any(k in todo_list_dict
+           for k in ks) and not all(k in todo_list_dict
+                                    for k in ks):
+        not_in_ks = (k for k in ks if k in todo_list_dict and k not in ks)
+        in_ks = (k for k in ks if k in todo_list_dict and k in ks)
+        raise KeyError('{} specified in todo list item # {}, but not {}. '
+                       'Must specify all of: {}'.format(in_ks,
+                                                        not_in_ks,
+                                                        index,
+                                                        ks))
+
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
 
@@ -395,21 +407,41 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if type(val) != dict:
                 raise ValueError('{} should be a dict but parsed as {}'
                                  .format(key, type(val)))
-            else:
-                samples_keys = {'start', 'stop', 'step'}
-                if set(val.keys()) != samples_keys:
-                    raise KeyError('incorrect keys in {}'.format(key))
-                else:
-                    num_samples = range(val['start'],
-                                        val['stop'],
-                                        val['step'])
-                    validated_select_config['num_train_samples'] = num_samples
+
+            samples_keys = {'start', 'stop', 'step'}
+            if set(val.keys()) != samples_keys:
+                raise KeyError('incorrect keys in {}'.format(key))
+
+            num_samples = range(val['start'],
+                                val['stop'],
+                                val['step'])
+            validated_todo_list_dict[
+                'num_train_samples'
+            ] = num_samples
+
+            total_samples = todo_list_dict['num_test_samples'] + \
+                            max(num_samples)
+            samples_in_ftr_file = ftr_file['num_samples']
+            if total_samples > samples_in_ftr_file:
+                raise ValueError('config file specifies {} samples in '
+                                 'training set and {} samples in test '
+                                 'set for a total of {} samples, but '
+                                 'there are only {} samples in the '
+                                 'feature file.'.format(
+                    max(num_samples),
+                    todo_list_dict['num_test_samples'],
+                    total_samples,
+                    samples_in_ftr_file)
+                )
 
         elif key == 'output_dir':
             if type(val) != str:
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
                                  .format(type(val)))
 
+
+
+    del ftr_file
     return validated_todo_list_dict
 
 VALID_SELECT_KEYS = {'todo_list',
@@ -464,6 +496,16 @@ def validate_yaml(config_path, select_config_yaml):
                                ' every item in the todo_list.'.format(select_key))
 
     validated_select_config = copy.deepcopy(select_config_yaml)
+
+    ks = ('num_replicates', 'num_test_samples', 'num_train_samples')
+    if any(k in select_config_yaml
+           for k in ks) and not all(k in select_config_yaml
+                                    for k in ks):
+        not_in_ks = (k for k in ks if k in select_config_yaml and k not in ks)
+        in_ks = (k for k in ks if k in select_config_yaml and k in ks)
+        raise KeyError('{} specified in top level of select config, but not {}. '
+                       'Must specify all of: {}'.format(in_ks, not_in_ks, ks))
+
     for key, val in select_config_yaml.items():
 
         if key == 'models':
@@ -519,5 +561,26 @@ def validate_yaml(config_path, select_config_yaml):
         else:  # if key is not found in list
             raise KeyError('key {} in \'select\' is an invalid key'.
                            format(key))
+
+
+    if 'num_train_samples' in validated_select_config:
+        total_samples = validated_select_config['num_test_samples'] + \
+                        max(validated_select_config['num_train_samples'])
+
+        for todo_list_dict in validated_select_config['todo_list']:
+            if 'num_train_samples' not in todo_list_dict:
+                ftr_file = joblib.load(todo_list_dict['feature_file'])
+                samples_in_ftr_file = ftr_file['num_samples']
+                if samples_in_ftr_file < total_samples:
+                    raise ValueError('config file specifies {} samples in '
+                                     'training set and {} samples in test '
+                                     'set for a total of {} samples, but '
+                                     'there are only {} samples in the '
+                                     'feature file.'.format(
+                        max(validated_select_config['num_train_samples']),
+                        validated_select_config['num_test_samples'],
+                        total_samples,
+                        samples_in_ftr_file)
+                    )
 
     return validated_select_config

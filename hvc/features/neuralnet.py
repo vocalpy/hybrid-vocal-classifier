@@ -24,8 +24,8 @@ def flatwindow(song, spect_params, spect_width=0.3):
     Returns
     -------
     spects : 3-d array, (m x n x p)
-        spectrograms from p syllables,
-        all with m rows and n columns
+        spectrograms from m syllables,
+        all with n rows and p columns
     """
 
     return song.make_syl_spects(spect_params=spect_params,
