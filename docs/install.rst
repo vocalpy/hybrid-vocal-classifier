@@ -68,23 +68,32 @@ using the Anaconda distribution and the `conda` package manager
 
 | 1. Install the Anaconda distribution for your operating system: https://www.anaconda.com/download/
 | 
-| 2. Create an environment for the bleeding-edge version
+| 2. Use `conda to create an environment for the bleeding-edge version
 | ``$ conda create --name hvc-bleeding-edge python=3.5 numpy scipy sklearn matplotlib pyyaml keras tensorflow``
-| (say yes to everything)
+| conda will ask you if you want to install these packages and their dependencies, say `[y]es`.
 |
 | 3. ``git clone`` the repository
-| ``$ activate hvc-bleeding-edge``
 | ``(hvc-bleeding-edge) $ git clone https://github.com/NickleDave/hybrid-vocal-classifier.git``
 |
-| 4. use pip to install the code as editable in the conda environment, using the "-e" flag:
-| ``(hvc-bleeding-edge) C:/Roman> pip install -e hybrid-vocal-classifier``
+| 4. Activate the environment so you can work with it.
+| ``$ source activate hvc-bleeding-edge``
 |
-| and then whenever you want to get the most up-to-date version you can execute
+| 5. use pip to install the `hvc` code into the conda environment, using the "-e" flag (for "editable"):
+| ``(hvc-bleeding-edge) pip install -e hybrid-vocal-classifier``
+| To do this, you need to be in the parent directory just above the `hybrid-vocal-classifier` directory
+| (which you probably already are if you just executed the `git clone` command)
+| so that pip can find the necessary `setup.py` file for the install.
+|
+| Now whenever you want to get the most up-to-date version you can execute
 | ``(hvc-bleeding-edge) $ git pull``
-| and as long as you haven't made any changes to the code base, git should just pull new changes in from the remote and merge them with the old version
+| and as long as you haven't made any changes to the code base,
+| git should just pull new changes in from the remote and merge them with the old version.
 |
 | You probably also want to install Jupyter and iPython in the bleeding-edge environment.
-| If you try to run them without installing, you will run the versions in the conda root environment, but they won't know that hvc et al. are installed.
 | ``(hvc-bleeding-edge) $ conda install ipython jupyter``
+| Beware: confusingly, you can start iPython and Jupyter from the command line
+| even if they are not installed in your environment,
+| but you will be running the versions in the `root` conda environment,
+| and so iPython and Jupyter won't know that hvc et al. are installed.
 |
 | You should now be able to start iPython or a Jupyter notebook and ``import hvc`` to work with it.
