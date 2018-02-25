@@ -8,3 +8,4 @@ from .labelpredict import predict
 from .modelselect import select
 from .parseconfig import parse_config
 from . import metrics
+from . import plot

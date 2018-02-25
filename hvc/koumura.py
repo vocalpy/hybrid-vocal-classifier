@@ -43,11 +43,12 @@ class Syllable:
         self.position = position
         self.length = length
         self.label = label
-    
+
     def __repr__(self):
         rep_str = "Syllable labeled {} at position {} with length {}".format(
                    self.label,self.position,self.length) 
         return rep_str
+
 
 class Sequence:
     """
@@ -65,7 +66,7 @@ class Sequence:
         list of syllable objects that make up sequence
     seqSpect : spectrogram object
     """
-    
+
     def __init__(self, wav_file,position, length, syl_list):
         self.wavFile = wav_file
         self.position = position
@@ -73,11 +74,12 @@ class Sequence:
         self.numSyls = len(syl_list)
         self.syls = syl_list
         self.seqSpect = None
-    
+
     def __repr__(self):
         rep_str = "Sequence from {} with position {} and length {}".format(
                   self.wavFile,self.position,self.length)
         return rep_str
+
 
 def parse_xml(xml_file,concat_seqs_into_songs=False):
     """
@@ -107,7 +109,7 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
             syl_position = int(syl.find('Position').text)
             syl_length = int(syl.find('Length').text)
             label = syl.find('Label').text
-            
+
             syl_obj = Syllable(position = syl_position,
                                length = syl_length,
                                label = label)
@@ -117,62 +119,106 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
                            length = length,
                            syl_list = syl_list)
         seq_list.append(seq_obj)
-        
+
     if concat_seqs_into_songs:
         song_list = []
         curr_wavFile = seq_list[0].wavFile
         new_seq_obj = seq_list[0]
+        for syl in new_seq_obj.syls:
+            syl.position += new_seq_obj.position
 
         for seq in seq_list[1:]:
             if seq.wavFile == curr_wavFile:
                 new_seq_obj.length += seq.length
                 new_seq_obj.numSyls += seq.numSyls
-                new_syls = []
                 for syl in seq.syls:
                     syl.position += seq.position
                 new_seq_obj.syls += seq.syls
 
             else:
                 song_list.append(new_seq_obj)
-                new_seq_obj = seq
                 curr_wavFile = seq.wavFile
-        
+                new_seq_obj = seq
+                for syl in new_seq_obj.syls:
+                    syl.position += new_seq_obj.position
+
         return song_list
-                        
-    else:    
+
+    else:
         return seq_list
+
+
+def load_song_annot(songfile):
+    """
+
+    Parameters
+    ----------
+    songfile : str
+        filename of .wav file from Koumura dataset
+
+    Returns
+    -------
+    songfile_dict :
+        with keys onsets, offsets, and labels
+    """
+
+    dirname, songfile = os.path.split(songfile)
+    if dirname == '':
+        annot_file = glob.glob('../Annotation.xml')
+    else:
+        annot_file = glob.glob(os.path.join(dirname, '../Annotation.xml'))
+    if len(annot_file) < 1:
+        raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
+                         format(songfile))
+    elif len(annot_file) > 1:
+        raise ValueError('Can\'t open {}, found more than one Annotation.xml file in parent of current directory'.
+                         format(songfile))
+    else:
+        annot_file = annot_file[0]
+
+    seq_list = parse_xml(annot_file, concat_seqs_into_songs=True)
+    wav_files = [seq.wavFile for seq in seq_list]
+    ind = wav_files.index(songfile)
+    this_seq = seq_list[ind]
+    onsets = np.asarray([syl.position for syl in this_seq.syls])
+    offsets = np.asarray([syl.position + syl.length for syl in this_seq.syls])
+    labels = [syl.label for syl in this_seq.syls]
+    songfile_dict = {
+        'onsets' : onsets,
+        'offsets' : offsets,
+        'labels' : labels
+    }
+    return songfile_dict
+
 
 class resequencer():
     """
     Computes most likely sequence of labels given observation probabilities
     at each time step in sequence and a second-order transition probability
     matrix taken from training data.
-    
+
     Uses a Viterbi-like dynamic programming algorithm. (Viterbi-like because
     the observation probabilities are not strictly speaking the emission
     probabilities from hidden states but instead are outputs from some machine
     learning model, e.g., the softmax layer of a DCNN that assigns a probability
     to each label at each time step.)
-    
+
     This is a Python implementation of the algorithm from Koumura Okanoya 2016.
-    See "compLabelSequence" in: 
+    See "compLabelSequence" in:
         https://github.com/cycentum/birdsong-recognition/blob/master/
         birdsong-recognition/src/computation/ViterbiSequencer.java
-        
-        
+
     Parameters
     ----------
     sequences : list of strings
         Each string represents a sequence of syllables
     observation_prob : ndarray
         n x m x p matrix, n sequences of m estimated probabilities for p classes
-    
     transition_prob : ndarray
         second-order transition matrix, n x m x p matrix where the value at
         [n,m,p] is the probability of transitioning to labels[p] at time step
         t given that labels[m] was observed at t-1 and labels[n] was observed
         at t-2
-    
     labels : list of chars
         Contains all unique labels used to label songs being resequenced
 
@@ -296,7 +342,7 @@ class resequencer():
                     break
             resequenced.append(source_label)
             current_state = previous_state
-        
+
         previous_state = self.head_state
         source_label = -1
         possible_dest_states = self.destination_states[previous_state]
@@ -309,31 +355,32 @@ class resequencer():
         resequenced.reverse()
         return resequenced
 
+
 def get_trans_mat(seqs,smoothing_constant=1e-4):
     """
     calculate second-order transition matrix given sequences of syllable labels
-    
+
     Parameters
     ----------
     seqs : list of Sequence objects
-    
+
     smoothing_constant : float
         default is 1e-4. Added to all probabilities so that none are zero.
         Mathematically convenient for computing Viterbi algorithm with
         exponential.
-    
+
     Returns
     -------
     labels : 1-d array of ints
         set of unique labels across all Sequences.
-    
+
     trans_mat : 3-d array
         Shape is n * n * n where n is the number of labels.
         trans_mat[i,j,k] is the probability of transitioning to labels[k]
         at time step t, given that label at time step t-1 was labels[k]
         and the label at time step t-2 was labels[i].
     """
-    
+
     all_syls = [syl.label for seq in seqs for syl in seq.syls]
     labels = np.unique(all_syls)
 
@@ -364,48 +411,3 @@ def get_trans_mat(seqs,smoothing_constant=1e-4):
                 trans_mat[i,j,:] /= np.sum(trans_mat[i,j,:])
 
     return trans_mat
-
-
-def load_song_annot(songfile):
-    """
-    
-    Parameters
-    ----------
-    songfile : str
-        filename of .wav file from Koumura dataset
-
-    Returns
-    -------
-    songfile_dict :
-        with keys onsets, offsets, and labels
-    """
-
-    dirname, songfile = os.path.split(songfile)
-    if dirname == '':
-        annot_file = glob.glob('../Annotation.xml')
-    else:
-        annot_file = glob.glob(os.path.join(dirname, '../Annotation.xml'))
-    if len(annot_file) < 1:
-        raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
-                         format(songfile))
-    elif len(annot_file) > 1:
-        raise ValueError('Can\'t open {}, found more than one Annotation.xml file in parent of current directory'.
-                         format(songfile))
-    else:
-        annot_file = annot_file[0]
-
-    seq_list = parse_xml(annot_file, concat_seqs_into_songs=True)
-    wav_files = [seq.wavFile for seq in seq_list]
-    ind = wav_files.index(songfile)
-    this_seq = seq_list[ind]
-    onsets = np.asarray([this_seq.position + syl.position
-                         for syl in this_seq.syls])
-    offsets = np.asarray([this_seq.position + syl.position + syl.length
-                          for syl in this_seq.syls])
-    labels = [syl.label for syl in this_seq.syls]
-    songfile_dict = {
-        'onsets' : onsets,
-        'offsets' : offsets,
-        'labels' : labels
-    }
-    return songfile_dict
