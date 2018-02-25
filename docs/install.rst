@@ -69,9 +69,13 @@ using the Anaconda distribution and the `conda` package manager
 | 1. Install the Anaconda distribution for your operating system: https://www.anaconda.com/download/
 | 
 | 2. Use `conda to create an environment for the bleeding-edge version
-| ``$ conda create --name hvc-bleeding-edge python=3.5 numpy scipy sklearn matplotlib pyyaml keras tensorflow``
+| ``$ conda create --name hvc-bleeding-edge python=3.5 numpy scipy scikit-learn matplotlib pyyaml keras tensorflow``
 | conda will ask you if you want to install these packages and their dependencies, say `[y]es`.
-|
+| You may need to add the conda forge channel in order to find binaries of these packages that will work on your
+| operating system. To add the channel, you execute the following:
+| ``$ conda config --add channels conda-forge`` 
+| More about conda forge here: https://conda-forge.org/
+| 
 | 3. ``git clone`` the repository
 | ``(hvc-bleeding-edge) $ git clone https://github.com/NickleDave/hybrid-vocal-classifier.git``
 |
