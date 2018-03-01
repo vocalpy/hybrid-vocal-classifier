@@ -142,6 +142,8 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
                 for syl in new_seq_obj.syls:
                     syl.position += new_seq_obj.position
 
+        song_list.append(new_seq_obj)  # to append last song
+
         return song_list
 
     else:
