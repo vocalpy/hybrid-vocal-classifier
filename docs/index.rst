@@ -2,7 +2,7 @@
    sphinx-quickstart on Sat Jun 24 22:04:45 2017.
 
 hybrid-vocal-classifier (`hvc`)
-=============================
+===============================
 
 Voice to text for songbirds
 ---------------------------

@@ -16,7 +16,7 @@ workflows: high-level overviews
 walkthroughs
 ------------
 
-* autolabel with k-Nearest Neighbors
+* :ref:`autolabel-knn`
 * autolabel with Support Vector Machine
 * autolabel with Convolutional Neural Net
 
