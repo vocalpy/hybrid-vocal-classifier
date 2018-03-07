@@ -1,7 +1,7 @@
 .. hybrid-vocal-classifier documentation master file, created by
    sphinx-quickstart on Sat Jun 24 22:04:45 2017.
 
-hybrid-vocal-classifier (HVC)
+hybrid-vocal-classifier (`hvc`)
 =============================
 
 Voice to text for songbirds
@@ -9,20 +9,20 @@ Voice to text for songbirds
 
 .. image:: /images/gr41rd41_song.png
 
-hybrid-vocal-classifier (HVC for short) makes it easy to
+hybrid-vocal-classifier (`hvc` for short) makes it easy to
 segment and classify vocalizations with machine learning algorithms,
 and to compare the performance of different algorithms.
 
 The main application is for scientists studying birdsong.
 (You can read more about that on the :doc:`more_about` page.)
 
-Running HVC requires almost no coding.
+Running `hvc` requires almost no coding.
 The user writes configuration files in YAML, a simple language that
 is meant to be easy for humans to read and write.
 Most users will only have to copy the example .yml files and then
 change a couple of parameters.
 
-Here's a code sample that gives a high-level view of how you run HVC:
+Here's a code sample that gives a high-level view of how you run `hvc`:
 
 .. code-block:: python
 
@@ -35,8 +35,8 @@ Here's a code sample that gives a high-level view of how you run HVC:
    # use trained model to predict labels for unlabeled data
    hvc.predict('predict_config.yml')
 
-Advantages of hybrid-vocal-classifier:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Advantages of hybrid-vocal-classifier
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 + frees up hundreds of hours spent hand labeling data
 + completely open source, free

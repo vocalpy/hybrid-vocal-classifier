@@ -1,4 +1,4 @@
-.. _autocompare-workflow:
+.. _autocompare:
 
 ====================
 autocompare workflow
