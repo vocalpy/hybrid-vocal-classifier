@@ -20,6 +20,7 @@ doi:10.1371/journal.pone.0159188
 import os
 import glob
 import xml.etree.ElementTree as ET
+import csv
 
 #from dependencies
 import numpy as np
@@ -191,6 +192,47 @@ def load_song_annot(songfile):
         'labels' : labels
     }
     return songfile_dict
+
+
+def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
+    """converts annotation file to a csv file
+    for use by hvc.predict
+
+    Parameters
+    ----------
+    annotation_file : str
+        filename of annotation file
+    concat_seqs_into_songs : bool
+        if True, concatenate 'sequences' from annotation file
+        by song (i.e., .wav file that sequences are found in).
+        Default is True.
+    csv_filename : str
+        Optional, name of .csv file to save. Defaults to None,
+         in which case name is name .xml file, but with 
+         extension changed to .csv.
+
+    Returns
+    -------
+    None
+    """
+    if not annotation_file.endswith('.xml'):
+        raise ValueError('Name of annotation file should end with .xml, '
+                         'but name passed was {}'.format(annotation_file))
+    annotation = parse_xml(annotation_file, 
+                           concat_seqs_into_songs=concat_seqs_into_songs)
+    header = ['filename','index','onset','offset','label']
+    csv_list = [header]
+    for song in annotation:
+        for ind, syl in enumerate(song.syls):
+            csv_list.append(
+                [song.wavFile, ind, syl.position, syl.position + syl.length, syl.label])
+
+    if csv_filename is None:
+        csv_filename = annotation_file.replace('.xml','.csv')
+
+    with open(csv_filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(csv_list)
 
 
 class resequencer():
