@@ -10,6 +10,8 @@ import copy
 import yaml
 from sklearn.externals import joblib
 
+from .utils import check_for_missing_keys
+
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 
@@ -45,8 +47,8 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
 
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
-    if not set(todo_list_dict.keys()) >= REQUIRED_TODO_LIST_KEYS:
-        missing_keys = REQUIRED_TODO_LIST_KEYS - set(todo_list_dict.keys())
+    missing_keys = check_for_missing_keys(todo_list_dict, REQUIRED_TODO_LIST_KEYS)
+    if missing_keys:
         raise KeyError('The following required keys '
                        'were not found in todo_list item #{}: {}'
                        .format(index, missing_keys))

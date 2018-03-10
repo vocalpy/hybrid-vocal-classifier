@@ -54,7 +54,7 @@ hyperparameters:
 
 required_predict_todo_list_keys:
   - file_format
-  - data_dirs
+  - !!python/tuple [data_dirs, annotation_file]
   - output_dir
   - model_meta_file
 
