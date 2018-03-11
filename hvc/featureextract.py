@@ -5,7 +5,7 @@ feature extraction
 # from standard library
 import sys
 import os
-import glob
+from glob import glob
 
 # from dependencies
 import numpy as np
@@ -133,139 +133,132 @@ def _extract(extract_params, calling_function, make_summary_file=True):
     # so we're putting it where user specified, if user wrote a relative path in config file
     output_dir = os.path.abspath(extract_params['output_dir'])
 
-    for data_dir in extract_params['data_dirs']:
-        print('Changing to data directory: {}'.format(data_dir))
-        os.chdir(extract_params['home_dir'])
-        os.chdir(data_dir)
+    if 'data_dirs' in extract_params:
+        songfiles_list = []
+        for data_dir in extract_params['data_dirs']:
+            os.chdir(extract_params['home_dir'])
+            os.chdir(data_dir)
+            if extract_params['file_format'] == 'evtaf':
+                songfiles_this_dir = glob('*.cbin')
+            elif extract_params['file_format'] == 'koumura':
+                songfiles_this_dir = glob('*.wav')
+            songfiles_this_dir = [os.path.abspath(songfile)
+                                  for songfile in songfiles_this_dir]
+            songfiles_list.extend(songfiles_this_dir)
 
-        if 'features_from_all_files' in locals():
-            # from last time through loop
-            # (need to re-initialize for each directory)
-            del features_from_all_files
+    if 'features_from_all_files' in locals():
+        # from last time through loop
+        # (need to re-initialize for each directory)
+        del features_from_all_files
 
-        if 'neuralnet_inputs_all_files' in locals():
-            del neuralnet_inputs_all_files
+    if 'neuralnet_inputs_all_files' in locals():
+        del neuralnet_inputs_all_files
 
-        if extract_params['file_format'] == 'evtaf':
-            songfiles_list = glob.glob('*.cbin')
-        elif extract_params['file_format'] == 'koumura':
-            songfiles_list = glob.glob('*.wav')
+    num_songfiles = len(songfiles_list)
+    all_labels = []
+    all_onsets_s = []
+    all_onsets_Hz = []
+    all_offsets_s = []
+    all_offsets_Hz = []
+    songfile_IDs = []
+    songfile_ID_counter = 0
+    for file_num, songfile in enumerate(songfiles_list):
+        print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
+        # segment_params defined for todo_list item takes precedence over any default
+        # defined for `extract` config
+        extract_dict = features.extract.from_file(songfile,
+                                                  extract_params['file_format'],
+                                                  calling_function,
+                                                  extract_params['feature_list'],
+                                                  extract_params['spect_params'],
+                                                  extract_params['labelset'],
+                                                  extract_params['segment_params'])
 
-        num_songfiles = len(songfiles_list)
-        all_labels = []
-        all_onsets_s = []
-        all_onsets_Hz = []
-        all_offsets_s = []
-        all_offsets_Hz = []
-        songfile_IDs = []
-        songfile_ID_counter = 0
-        for file_num, songfile in enumerate(songfiles_list):
-            print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
-            # segment_params defined for todo_list item takes precedence over any default
-            # defined for `extract` config
-            extract_dict = features.extract.from_file(songfile,
-                                                      extract_params['file_format'],
-                                                      calling_function,
-                                                      extract_params['feature_list'],
-                                                      extract_params['spect_params'],
-                                                      extract_params['labelset'],
-                                                      extract_params['segment_params'])
+        if extract_dict is None:
+            # because no labels from labels_to_use were found in songfile
+            continue
 
-            if extract_dict is None:
-                # because no labels from labels_to_use were found in songfile
-                continue
-
-            if 'feature_inds' in extract_dict:
-                if 'feature_inds' not in locals():
-                    feature_inds = extract_dict['feature_inds']
-                else:
-                    ftr_inds_err_msg = "feature indices changed between files"
-                    assert np.array_equal(feature_inds, extract_dict['feature_inds']), ftr_inds_err_msg
-
-            all_labels.extend(extract_dict['labels'])
-            all_onsets_s.extend(extract_dict['onsets_s'])
-            all_onsets_Hz.extend(extract_dict['onsets_Hz'])
-            all_offsets_s.extend(extract_dict['offsets_s'])
-            all_offsets_Hz.extend(extract_dict['offsets_Hz'])
-            songfile_IDs.extend(
-                [songfile_ID_counter] * extract_dict['onsets_s'].shape[0])
-            songfile_ID_counter += 1
-
-            if 'features_arr' in extract_dict:
-                if 'features_from_all_files' in locals():
-                    features_from_all_files = np.concatenate((features_from_all_files,
-                                                              extract_dict['features_arr']),
-                                                             axis=0)
-                else:
-                    features_from_all_files = extract_dict['features_arr']
-
-            if 'neuralnet_inputs_dict' in extract_dict:
-                if 'neuralnet_inputs_all_files' in locals():
-                    for key, val in neuralnet_inputs_all_files.items():
-                        new_val = np.concatenate((neuralnet_inputs_all_files[key],
-                                                  extract_dict['neuralnet_inputs_dict'][key]))
-                        neuralnet_inputs_all_files[key] = new_val
-                else:
-                    neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
-
-        # save songfile names with full path
-        # so hvc.convert can use full path
-        # to save annotation files in same directory as original audio files
-        songfiles_list = [os.path.join(os.getcwd(),
-                                       songfile)
-                          for songfile in songfiles_list]
-
-        # get dir name without the rest of path so it doesn't have separators in the name
-        # because those can't be in filename
-        just_dir_name = os.getcwd().split(os.path.sep)[-1]
-        feature_file = os.path.join(output_dir,
-                                    'features_from_' + just_dir_name + '_created_' + timestamp())
-        feature_file_dict = {
-            'labels': all_labels,
-            'onsets_s': np.asarray(all_onsets_s),
-            'onsets_Hz': np.asarray(all_onsets_Hz),
-            'offsets_s': np.asarray(all_offsets_s),
-            'offsets_Hz': np.asarray(all_offsets_Hz),
-            'feature_list': extract_params['feature_list'],
-            'spect_params': extract_params['spect_params'],
-            'segment_params': extract_params['segment_params'],
-            'labelset': extract_params['labelset'],
-            'file_format': extract_params['file_format'],
-            'bird_ID': extract_params['bird_ID'],
-            'songfile_IDs': songfile_IDs,
-            'songfiles': songfiles_list
-        }
-
-        if 'features_from_all_files' in locals():
-            feature_file_dict['features'] = features_from_all_files
-            feature_file_dict['features_arr_column_IDs'] = feature_inds
-            num_samples = feature_file_dict['features'].shape[0]
-            feature_file_dict['num_samples'] = num_samples
-
-            if 'feature_list_group_ID' in extract_params:
-                feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']
-                feature_file_dict['feature_group_ID_dict'] = extract_params['feature_group_ID_dict']
-
-        if 'neuralnet_inputs_all_files' in locals():
-            feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
-            if 'num_samples' in feature_file_dict:
-                # because we computed it for non-neural net features already
-                pass
+        if 'feature_inds' in extract_dict:
+            if 'feature_inds' not in locals():
+                feature_inds = extract_dict['feature_inds']
             else:
-                if len(feature_file_dict['neuralnet_inputs']) == 1:
-                    key = list(
-                        feature_file_dict['neuralnet_inputs'].keys()
-                              )[0]
-                    num_samples = feature_file_dict['neuralnet_inputs'][key].shape[0]
-                    feature_file_dict['num_samples'] = num_samples
-                else:
-                    raise ValueError('can\'t determine number of samples '
-                                     'in neuralnet_inputs because there\'s '
-                                     'more than one key in dictionary.')
+                ftr_inds_err_msg = "feature indices changed between files"
+                assert np.array_equal(feature_inds, extract_dict['feature_inds']), ftr_inds_err_msg
 
-        joblib.dump(feature_file_dict,
-                    feature_file,
-                    compress=3)
+        all_labels.extend(extract_dict['labels'])
+        all_onsets_s.extend(extract_dict['onsets_s'])
+        all_onsets_Hz.extend(extract_dict['onsets_Hz'])
+        all_offsets_s.extend(extract_dict['offsets_s'])
+        all_offsets_Hz.extend(extract_dict['offsets_Hz'])
+        songfile_IDs.extend(
+            [songfile_ID_counter] * extract_dict['onsets_s'].shape[0])
+        songfile_ID_counter += 1
+
+        if 'features_arr' in extract_dict:
+            if 'features_from_all_files' in locals():
+                features_from_all_files = np.concatenate((features_from_all_files,
+                                                          extract_dict['features_arr']),
+                                                         axis=0)
+            else:
+                features_from_all_files = extract_dict['features_arr']
+    
+        if 'neuralnet_inputs_dict' in extract_dict:
+            if 'neuralnet_inputs_all_files' in locals():
+                for key, val in neuralnet_inputs_all_files.items():
+                    new_val = np.concatenate((neuralnet_inputs_all_files[key],
+                                              extract_dict['neuralnet_inputs_dict'][key]))
+                    neuralnet_inputs_all_files[key] = new_val
+            else:
+                neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
+
+    feature_file = os.path.join(output_dir,
+                                'features_created_' + timestamp())
+    feature_file_dict = {
+        'labels': all_labels,
+        'onsets_s': np.asarray(all_onsets_s),
+        'onsets_Hz': np.asarray(all_onsets_Hz),
+        'offsets_s': np.asarray(all_offsets_s),
+        'offsets_Hz': np.asarray(all_offsets_Hz),
+        'feature_list': extract_params['feature_list'],
+        'spect_params': extract_params['spect_params'],
+        'segment_params': extract_params['segment_params'],
+        'labelset': extract_params['labelset'],
+        'file_format': extract_params['file_format'],
+        'bird_ID': extract_params['bird_ID'],
+        'songfile_IDs': songfile_IDs,
+        'songfiles': songfiles_list
+    }
+
+    if 'features_from_all_files' in locals():
+        feature_file_dict['features'] = features_from_all_files
+        feature_file_dict['features_arr_column_IDs'] = feature_inds
+        num_samples = feature_file_dict['features'].shape[0]
+        feature_file_dict['num_samples'] = num_samples
+
+        if 'feature_list_group_ID' in extract_params:
+            feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']
+            feature_file_dict['feature_group_ID_dict'] = extract_params['feature_group_ID_dict']
+
+    if 'neuralnet_inputs_all_files' in locals():
+        feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
+        if 'num_samples' in feature_file_dict:
+            # because we computed it for non-neural net features already
+            pass
+        else:
+            if len(feature_file_dict['neuralnet_inputs']) == 1:
+                key = list(
+                    feature_file_dict['neuralnet_inputs'].keys()
+                          )[0]
+                num_samples = feature_file_dict['neuralnet_inputs'][key].shape[0]
+                feature_file_dict['num_samples'] = num_samples
+            else:
+                raise ValueError('can\'t determine number of samples '
+                                 'in neuralnet_inputs because there\'s '
+                                 'more than one key in dictionary.')
+
+    joblib.dump(feature_file_dict,
+                feature_file,
+                compress=3)
 
     ##########################################################
     # after looping through all data_dirs for this todo_item #
@@ -277,7 +270,7 @@ def _extract(extract_params, calling_function, make_summary_file=True):
         summary_filename = 'summary_feature_file_created_' + timestamp()
         summary_filename_with_path = os.path.join(output_dir,
                                                   summary_filename)
-        ftr_output_files = glob.glob('*features_from_*')
+        ftr_output_files = glob('features_created_*')
         if len(ftr_output_files) > 1:
             # make a 'summary' data file
             list_of_output_dicts = []
