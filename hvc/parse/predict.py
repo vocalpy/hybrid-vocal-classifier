@@ -5,6 +5,7 @@ YAML parser for predict config files
 #from standard library
 import os
 import copy
+import csv
 
 # from dependencies
 import yaml
@@ -65,7 +66,14 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
 
-        if key == 'bird_ID':
+        if key == 'annotation_file':
+            with open(val, newline='') as f:
+                reader = csv.reader(f, delimiter=',')
+                first_row = next(reader)
+                if first_row != 'filename,index,onset,offset,label'.split(','):
+                    raise ValueError('annotation_file did not have correct header')
+
+        elif key == 'bird_ID':
             if type(val) != str:
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -160,7 +168,7 @@ def validate_yaml(config_path, predict_config_yaml):
     config_path : str
         absolute path to YAML config file. Used to validate directory names
         in YAML files, which are assumed to be written relative to the
-        location of the file itself.    
+        location of the file itself.
     predict_config_yaml : dict
         dict should be config from YAML file as loaded with pyyaml.
 
