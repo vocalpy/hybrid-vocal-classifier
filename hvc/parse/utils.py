@@ -41,3 +41,17 @@ def check_for_missing_keys(a_dict, a_list_of_keys):
     # which evaluates as False
     keys_not_found = ', '.join(keys_not_found)
     return keys_not_found
+
+
+def flatten(a_list_of_keys):
+    """flatten a list of keys
+    where items in list can be str or tuple of str.
+    Used when checking for keys that are not"""
+    flattened = []
+    for str_or_tuple_key in a_list_of_keys:
+        if type(str_or_tuple_key) == str:
+            flattened.append(str_or_tuple_key)
+        elif type(str_or_tuple_key) == tuple:
+            for key_from_tuple in str_or_tuple_key:
+                flattened.append(key_from_tuple)
+    return flattened

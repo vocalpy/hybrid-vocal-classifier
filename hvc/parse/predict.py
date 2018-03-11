@@ -10,7 +10,7 @@ import copy
 import yaml
 from sklearn.externals import joblib
 
-from .utils import check_for_missing_keys
+from .utils import check_for_missing_keys, flatten
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
@@ -19,6 +19,8 @@ with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
+REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(
+    validate_dict['required_predict_todo_list_keys']))
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
 VALID_MODELS = validate_dict['valid_models']
 VALID_CONVERT_TYPES = validate_dict['valid_convert_types']
@@ -53,7 +55,7 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
                        'were not found in todo_list item #{}: {}'
                        .format(index, missing_keys))
     else:
-        additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS
+        additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS_FLATTENED
         for extra_key in additional_keys:
             if extra_key not in OPTIONAL_TODO_LIST_KEYS:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
