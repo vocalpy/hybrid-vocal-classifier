@@ -74,63 +74,63 @@ def check_extract_output(output_dir):
     """
     """
 
-    ftr_files = glob(os.path.join(output_dir, 'features_from*'))
-    ftr_dicts = []
-    for ftr_file in ftr_files:
-        ftr_dicts.append(joblib.load(ftr_file))
-
-    # if features were extracted (not spectrograms)
-    if any(['features' in ftr_dict for ftr_dict in ftr_dicts]):
-        # then all ftr_dicts should have `features` key
-        assert all(['features' in ftr_dict for ftr_dict in ftr_dicts])
-        # and the number of rows in features should equal number of labels
-        for ftr_dict in ftr_dicts:
-            labels = ftr_dict['labels']
-            features = ftr_dict['features']
-            assert features.shape[0] == len(labels)
-
-        # make sure number of features i.e. columns is constant across feature matrices
-        ftr_cols = [ftr_dict['features'].shape[1] for ftr_dict in ftr_dicts]
-        assert np.unique(ftr_cols).shape[-1] == 1
-
-    # if features are spectrograms for neural net
-    if any(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
-        # then all feature dicts should have spectrograms
-        assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
-        neuralnet_keys = [ftr_dict['neuralnets_input_dict'].keys()
-                          for ftr_dict in ftr_dicts]
-        # make sure keys are all the same for neuralnets_input_dict from every ftr_dict
-        for ind, keyset in enumerate(neuralnet_keys):
-            other_keysets = neuralnet_keys[:ind] + neuralnet_keys[(ind+1):]
-            assert keyset.difference(other_keysets) == set()
-        # if they are all the same, then save that set of keys
-        # to compare with summary feature dict below
-        neuralnet_keys = neuralnet_keys[0]
-
-        for ftr_dict in ftr_dicts:
-            labels = ftr_dict['labels']
-            for key, val in ftr_dict['neuralnet_inputs_dict']:
-                assert val.shape[0] == len(labels)
+    # ftr_files = glob(os.path.join(output_dir, 'features_from*'))
+    # ftr_dicts = []
+    # for ftr_file in ftr_files:
+    #     ftr_dicts.append(joblib.load(ftr_file))
+    # 
+    # # if features were extracted (not spectrograms)
+    # if any(['features' in ftr_dict for ftr_dict in ftr_dicts]):
+    #     # then all ftr_dicts should have `features` key
+    #     assert all(['features' in ftr_dict for ftr_dict in ftr_dicts])
+    #     # and the number of rows in features should equal number of labels
+    #     for ftr_dict in ftr_dicts:
+    #         labels = ftr_dict['labels']
+    #         features = ftr_dict['features']
+    #         assert features.shape[0] == len(labels)
+    # 
+    #     # make sure number of features i.e. columns is constant across feature matrices
+    #     ftr_cols = [ftr_dict['features'].shape[1] for ftr_dict in ftr_dicts]
+    #     assert np.unique(ftr_cols).shape[-1] == 1
+    # 
+    # # if features are spectrograms for neural net
+    # if any(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
+    #     # then all feature dicts should have spectrograms
+    #     assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
+    #     neuralnet_keys = [ftr_dict['neuralnets_input_dict'].keys()
+    #                       for ftr_dict in ftr_dicts]
+    #     # make sure keys are all the same for neuralnets_input_dict from every ftr_dict
+    #     for ind, keyset in enumerate(neuralnet_keys):
+    #         other_keysets = neuralnet_keys[:ind] + neuralnet_keys[(ind+1):]
+    #         assert keyset.difference(other_keysets) == set()
+    #     # if they are all the same, then save that set of keys
+    #     # to compare with summary feature dict below
+    #     neuralnet_keys = neuralnet_keys[0]
+    # 
+    #     for ftr_dict in ftr_dicts:
+    #         labels = ftr_dict['labels']
+    #         for key, val in ftr_dict['neuralnet_inputs_dict']:
+    #             assert val.shape[0] == len(labels)
 
     # make sure rows in summary dict features == sum of rows of each ftr file features
     summary_file = glob(os.path.join(output_dir, 'summary_feature_file_*'))
     # (should only be one summary file)
     assert len(summary_file) == 1
     summary_dict = joblib.load(summary_file[0])
-    if all(['features' in ftr_dict for ftr_dict in ftr_dicts]):
-        sum_ftr_rows = summary_dict['features'].shape[0]
-        total_ftr_dict_rows = sum([ftr_dict['features'].shape[0]
-                                   for ftr_dict in ftr_dicts])
-        assert sum_ftr_rows == total_ftr_dict_rows
-
-    if all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
-        assert summary_dict['neuralnet_inputs_dict'].keys() == neuralnet_keys
-        for key, val in summary_dict['neuralnet_inputs_dict']:
-            sum_ftr_rows = summary_dict['neuralnets_input_dict'][key].shape[0]
-            total_ftr_dict_rows = sum(
-                [ftr_dict['neuralnet_inputs_dict'][key].shape[0]
-                 for ftr_dict in ftr_dicts])
-            assert sum_ftr_rows == total_ftr_dict_rows
+    # if all(['features' in ftr_dict for ftr_dict in ftr_dicts]):
+    #     sum_ftr_rows = summary_dict['features'].shape[0]
+    #     total_ftr_dict_rows = sum([ftr_dict['features'].shape[0]
+    #                                for ftr_dict in ftr_dicts])
+    #     assert sum_ftr_rows == total_ftr_dict_rows
+    # 
+    # if all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
+    #     assert summary_dict['neuralnet_inputs_dict'].keys() == neuralnet_keys
+    #     for key, val in summary_dict['neuralnet_inputs_dict']:
+    #         sum_ftr_rows = summary_dict['neuralnets_input_dict'][key].shape[0]
+    #         total_ftr_dict_rows = sum(
+    #             [ftr_dict['neuralnet_inputs_dict'][key].shape[0]
+    #              for ftr_dict in ftr_dicts])
+    #         assert sum_ftr_rows == total_ftr_dict_rows
 
     return True  # because called with assert
 
