@@ -224,8 +224,13 @@ def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
     csv_list = [header]
     for song in annotation:
         for ind, syl in enumerate(song.syls):
+            wav_filename = os.path.normpath(
+                os.path.join('.',
+                             'Wave',
+                             song.wavFile))
+            wav_filename = os.path.abspath(wav_filename)
             csv_list.append(
-                [song.wavFile, ind, syl.position, syl.position + syl.length, syl.label])
+                [wav_filename, ind, syl.position, syl.position + syl.length, syl.label])
 
     if csv_filename is None:
         csv_filename = annotation_file.replace('.xml','.csv')
