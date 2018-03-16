@@ -5,7 +5,7 @@ valid_file_formats:
 required_extract_todo_list_keys:
   - bird_ID
   - file_format
-  - data_dirs
+  - !!python/tuple [data_dirs, annotation_file]
   - output_dir
   - labelset
 
