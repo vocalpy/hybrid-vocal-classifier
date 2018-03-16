@@ -240,6 +240,20 @@ def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
         writer.writerows(csv_list)
 
 
+def determine_unique_labels(annotation_file):
+    """given an annotation.xml file
+    from a bird in BirdsongRecognition dataset,
+    determine unique set of labels applied to syllables from that bird"""
+    annotation = parse_xml(annotation_file,
+                           concat_seqs_into_songs=True)
+    lbls = [syl.label
+            for seq in annotation
+            for syl in seq.syls]
+    unique_lbls = np.unique(lbls).tolist()
+    unique_lbls = ''.join(unique_lbls)  # convert from list to string
+    return unique_lbls
+
+
 class resequencer():
     """
     Computes most likely sequence of labels given observation probabilities
