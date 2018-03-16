@@ -72,7 +72,7 @@ def predict(config_file):
                                     make_summary_file=False)
 
         os.chdir(output_dir)
-        ftr_files = glob.glob('features_from*')
+        ftr_files = glob.glob('features_created*')
         model_filename = model_meta_file['model_filename']
         model_name = model_meta_file['model_name']
         if model_name in valid_models['sklearn']:
