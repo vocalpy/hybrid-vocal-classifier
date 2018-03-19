@@ -145,6 +145,8 @@ def _extract(extract_params, calling_function, make_summary_file=True):
             songfiles_this_dir = [os.path.abspath(songfile)
                                   for songfile in songfiles_this_dir]
             songfiles_list.extend(songfiles_this_dir)
+    elif 'annotation_file' in extract_params:
+        pass
 
     if 'features_from_all_files' in locals():
         # from last time through loop
@@ -480,10 +482,14 @@ def extract(config_file):
             'feature_list': todo['feature_list'],
             'output_dir': output_dir_with_path,
             'home_dir': home_dir,
-            'data_dirs': todo['data_dirs'],
             'labelset': todo['labelset'],
             'file_format': todo['file_format']
         }
+        
+        if 'data_dirs' in todo:
+            extract_params['data_dirs'] = todo['data_dirs']
+        elif 'annotation_file' in todo:
+            extract_params['annotation_file'] = todo['annotation_file']
 
         # segment_params defined for todo_list item takes precedence over any default
         # defined for `extract` config
