@@ -6,7 +6,7 @@ import scipy.signal
 from matplotlib.mlab import specgram
 
 from . import evfuncs, koumura
-
+from .parse.ref_spect_params import refs_dict
 
 class WindowError(Exception):
     pass
@@ -650,22 +650,21 @@ class Song:
             self.spectParams = spect_params
             self.segmentParams = segment_params
 
-            spect_maker = Spectrogram(**spect_params)
-            spect, freq_bins, time_bins = spect_maker.make(self.rawAudio,
-                                                           self.sampFreq)
-            # redundant that I make spect but then throw it away after finding
-            # onsets + offsets. Could just keep segment spectrograms but for
-            # 'syls_to_use' not being set. Possibly could just assume that
-            # 'syls_to_use' == 'all' for unlabeled song
-            # Is there any time that would be unwanted behavior?
-
             # will need to add ability to segment in different ways
             # e.g. with different amplitudes
             # amp = compute_amp(spect, amplitude_type)
             # for now doing it with the way evsonganaly does
-            amp = evfuncs.smooth_data(self.rawAudio,
-                                      self.sampFreq,
-                                      self.spectParams['freq_cutoffs'])
+            if self.fileFormat == 'evtaf':
+                # need to use same frequency cutoffs that 
+                # the matlab function SmoothData.m uses
+                # when applying Butterworth filter before segmenting
+                amp = evfuncs.smooth_data(self.rawAudio,
+                                          self.sampFreq,
+                                          refs_dict['evsonganaly']['freq_cutoffs'])
+            else:
+                amp = evfuncs.smooth_data(self.rawAudio,
+                                          self.sampFreq,
+                                          self.spectParams['freq_cutoffs'])
             onsets, offsets = segment_song(amp,
                                            segment_params,
                                            samp_freq=self.sampFreq)
