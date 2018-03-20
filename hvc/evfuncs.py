@@ -261,7 +261,7 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     return all_syls, all_labels
 
 
-def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=None):
+def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=(500, 10000)):
     """filter song audio with band pass filter, run through filtfilt
     (zero-phase filter)
 
@@ -272,17 +272,26 @@ def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=None):
     samp_freq : int
         sampling frequency
     freq_cutoffs : list
-        2 elements long, cutoff frequencies for bandpass filter
-        if None, set to [500, 10000]. Default is None.
+        2 elements long, cutoff frequencies for bandpass filter.
+        If None, no cutoffs; filtering is done with cutoffs set
+        to range from 0 to the Nyquist rate.
+        Default is [500, 10000].
 
     Returns
     -------
     filtsong : ndarray
     """
+    if freq_cutoffs[0] <= 0:
+        raise ValueError('Low frequency cutoff {} is invalid, '
+                         'must be greater than zero.'
+                         .format(freq_cutoffs[0]))
 
     Nyquist_rate = samp_freq / 2
-    if freq_cutoffs is None:
-        freq_cutoffs = [500, 10000]
+    if freq_cutoffs[1] >= Nyquist_rate:
+        raise ValueError('High frequency cutoff {} is invalid, '
+                         'must be less than Nyquist rate, {}.'
+                         .format(freq_cutoffs[1], Nyquist_rate))
+
     if rawsong.shape[-1] < 387:
         numtaps = 64
     elif rawsong.shape[-1] < 771:
