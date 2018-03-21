@@ -27,4 +27,4 @@ install:
   - python setup.py install
 
 script:
-  - pytest --ignore=tests/main_modules/
+  - pytest --ignore=tests/main_modules -s
