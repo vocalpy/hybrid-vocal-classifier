@@ -8,6 +8,7 @@ from matplotlib.mlab import specgram
 from . import evfuncs, koumura
 from .parse.ref_spect_params import refs_dict
 
+
 class WindowError(Exception):
     pass
 
@@ -135,7 +136,7 @@ class Spectrogram:
             i.e. the DC offset, which in a sound recording should be zero.
             Default is True. Calculation of some features (e.g. cepstrum)
             requires the DC component however.
-            
+
         References
         ----------
         .. [1] Tachibana, Ryosuke O., Naoya Oosugi, and Kazuo Okanoya. "Semi-
@@ -466,371 +467,96 @@ def segment_song(amp,
     return onsets, offsets
 
 
-class syllable:
-    """
-    syllable object, returned by make_syl_spect.
-    Properties
+def make_syl_spects(raw_audio,
+                    samp_freq,
+                    spect_maker,
+                    labels,
+                    labels_to_use,
+                    onsets_Hz,
+                    offsets_Hz,
+                    syl_spect_width=-1,
+                    return_as_stack=False):
+    """Make spectrograms from syllables.
+    This method isolates making spectrograms from selecting syllables
+    to use so that spectrograms can be loaded 'lazily', e.g., if only
+    duration features are being extracted that don't require spectrograms.
+
+    Parameters
     ----------
-    syl_audio : 1-d numpy array
-        raw waveform from audio file
-    sampfreq : integer
-        sampling frequency in Hz as determined by scipy.io.wavfile function
-    spect : 2-d m by n numpy array
-        spectrogram as computed by Spectrogram.make(). Each of the m rows is a frequency bin,
-        and each of the n columns is a time bin. Value in each bin is power at that frequency and time.
-    nfft : integer
-        number of samples used for each FFT
-    overlap : integer
-        number of samples that each consecutive FFT window overlapped
-    time_bins : 1d vector
-        values are times represented by each bin in s
-    freq_bins : 1d vector
-        values are power spectral density in each frequency bin
-    index: int
-        index of this syllable in song.syls.labels
-    label: int
-        label of this syllable from song.syls.labels
+    syl_spect_width : float
+        Optional parameter to set constant duration for each spectrogram of a
+        syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
+        Used for creating inputs to neural network where each input
+        must be of a fixed size.
+        Default value is -1; in this case, the width of the spectrogram will
+        be the duration of the syllable as determined by the segmentation
+        algorithm, i.e. the onset and offset that are stored in an annotation file.
+        If a different value is given, then the duration of each spectrogram
+        will be that value. Note that if any individual syllable has a duration
+        greater than syl_spect_duration, the function raises an error.
     """
-    def __init__(self,
-                 syl_audio,
-                 samp_freq,
-                 spect,
-                 nfft,
-                 overlap,
-                 freq_cutoffs,
-                 freq_bins,
-                 time_bins,
-                 index,
-                 label):
-        self.sylAudio = syl_audio
-        self.sampFreq = samp_freq
-        self.spect = spect
-        self.nfft = nfft
-        self.overlap = overlap
-        self.freqCutoffs = freq_cutoffs
-        self.freqBins = freq_bins
-        self.timeBins = time_bins
-        self.index = index
-        self.label = label
+    if syl_spect_width > 0:
+        if syl_spect_width > 1:
+            warnings.warn('syl_spect_width set greater than 1; note that '
+                          'this parameter is in units of seconds, so using '
+                          'a value greater than one will make it hard to '
+                          'center the syllable/segment of interest within'
+                          'the spectrogram, and additionally consume a lot '
+                          'of memory.')
+        syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
+        if syl_spect_width_Hz > self.rawAudio.shape[-1]:
+            raise ValueError('syl_spect_width, converted to samples, '
+                             'is longer than song file {}.'
+                             .format(self.filename))
 
+    all_syls = []
 
-class Song:
-    """Song object
-    used for feature extraction
-    """
+    for ind, (label, onset, offset) in enumerate(zip(labels, onsets_Hz, offsets_Hz)):
+        if 'syl_spect_width_Hz' in locals():
+            syl_duration_in_samples = offset - onset
+            if syl_duration_in_samples > syl_spect_width_Hz:
+                raise ValueError('syllable duration of syllable {} with label {} '
+                                 'in file {} is greater than '
+                                 'width specified for all syllable spectrograms.'
+                                 .format(ind, label, self.filename))
 
-    class SegmentParametersMismatchError(SegmentParametersMismatchError):
-        pass
-
-    def __init__(self,
-                 filename,
-                 file_format,
-                 segment_params=None,
-                 use_annotation=True,
-                 annote_filename=None,
-                 spect_params=None):
-        """__init__ function for song object
-
-        either loads annotations, or segments song to find annotations.
-        Annotations are:
-            onsets_s : 1-d array
-            offsets_s : 1-d array, same length as onsets_s
-                onsets and offsets of segments in seconds
-            onsets_Hz : 1-d array, same length as onsets_s
-            offsets_Hz : 1-d array, same length as onsets_s
-                onsets and offsets of segments in Hertz
-                for isolating segments from raw audio instead of from spectrogram
-            labels: 1-d array, same length as onsets_s
-
-        Parameters
-        ----------
-        filename : str
-            name of file
-        file_format : str
-            {'evtaf','koumura'}
-            'evtaf' -- files obtained with EvTAF program [1]_, extension is '.cbin'
-            'koumura' -- .wav files from repository [2]_ that accompanied paper [3]_.
-        segment_params : dict
-            Parameters for segmenting audio file into "syllables".
-            If use_annotation is True, checks values in this dict against
-            the parameters in the annotation file (if they are present, not all
-            data sets include segmentation parameters).
-            Default is None.
-            segment_params dict has the following keys:
-                threshold : int
-                    value above which amplitude is considered part of a segment. default is 5000.
-                min_syl_dur : float
-                    minimum duration of a segment. default is 0.02, i.e. 20 ms.
-                min_silent_dur : float
-                    minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
-        use_annotation : bool
-            if True, loads annotations from file.
-            default is True.
-            if False, segment song during init using spect_params and segment_params.
-            if annotation file not found, raises FileNotFound error.
-        annote_filename : str
-            name of file that contains annotations to use for segments
-            default is None.
-            If None, __init__ tries to find file automatically
-        spect_params : dict
-            not required unless use_annotation is False
-            keys should be parameters for Spectrogram.__init__,
-            see the docstring for those keys.
-        """
-
-        if use_annotation is False and segment_params is None:
-            raise ValueError('use_annotation set to False but no segment_params '
-                             'was provided; segment_params are required to '
-                             'find segments.')
-
-        if use_annotation is False and spect_params is None:
-            raise ValueError('use_annotation set to False but no spect_params '
-                             'was provided; spect_params are required to '
-                             'find segments.')
-
-        self.filename = filename
-        self.fileFormat = file_format
-
-        if file_format == 'evtaf':
-            raw_audio, samp_freq = evfuncs.load_cbin(filename)
-        elif file_format == 'koumura':
-            samp_freq, raw_audio = wavfile.read(filename)
-
-        self.rawAudio = raw_audio
-        self.sampFreq = samp_freq
-
-        if use_annotation:
-            if file_format == 'evtaf':
-                if segment_params is None:
-                    ValueError('segment_params required when '
-                               'use_annotation is true for '
-                               'evtaf file format')
-                if annote_filename:
-                    song_dict = evfuncs.load_notmat(annote_filename)
-                else:
-                    song_dict = evfuncs.load_notmat(filename)
-
-                # in .not.mat files saved by evsonganaly,
-                # onsets and offsets are in units of ms, have to convert to s
-                if segment_params['threshold'] != song_dict['threshold']:
-                    raise Song.SegmentParametersMismatchError('\'threshold\' parameter for {} does not match parameter '
-                                     'value for segment_params[\'threshold\'].'
-                                     .format(filename))
-                if segment_params['min_syl_dur'] != song_dict['min_dur']/1000:
-                    raise Song.SegmentParametersMismatchError('\'min_dur\' parameter for {} does not match parameter '
-                                     'value for segment_params[\'min_syl_dur\'].'
-                                     .format(filename))
-                if segment_params['min_silent_dur'] != song_dict['min_int']/1000:
-                    raise Song.SegmentParametersMismatchError('\'min_int\' parameter for {} does not match parameter '
-                                     'value for segment_params[\'min_silent_dur\'].'
-                                     .format(filename))
-                self.onsets_s = song_dict['onsets'] / 1000
-                self.offsets_s = song_dict['offsets'] / 1000
-                # subtract one because of Python's zero indexing (first sample is sample zero)
-                self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int) - 1
-                self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
-            elif file_format == 'koumura':
-                if annote_filename:
-                    song_dict = koumura.load_song_annot(annote_filename)
-                else:
-                    try:
-                        song_dict = koumura.load_song_annot(filename)
-                    except FileNotFoundError:
-                        print("Could not automatically find an annotation file for {}."
-                              .format(filename))
-                        raise
-                self.onsets_Hz = song_dict['onsets']  # in Koumura annotation.xml files, onsets given in Hz
-                self.offsets_Hz = song_dict['offsets']  # and offsets
-                self.onsets_s = self.onsets_Hz / self.sampFreq  # so need to convert to seconds
-                self.offsets_s = song_dict['offsets'] / self.sampFreq
-
-            self.labels = song_dict['labels']
-
-        elif use_annotation is False:
-            self.spectParams = spect_params
-            self.segmentParams = segment_params
-
-            # will need to add ability to segment in different ways
-            # e.g. with different amplitudes
-            # amp = compute_amp(spect, amplitude_type)
-            # for now doing it with the way evsonganaly does
-            if self.fileFormat == 'evtaf':
-                # need to use same frequency cutoffs that 
-                # the matlab function SmoothData.m uses
-                # when applying Butterworth filter before segmenting
-                amp = evfuncs.smooth_data(self.rawAudio,
-                                          self.sampFreq,
-                                          refs_dict['evsonganaly']['freq_cutoffs'])
-            else:
-                amp = evfuncs.smooth_data(self.rawAudio,
-                                          self.sampFreq,
-                                          self.spectParams['freq_cutoffs'])
-            onsets, offsets = segment_song(amp,
-                                           segment_params,
-                                           samp_freq=self.sampFreq)
-
-            self.onsets_s = onsets
-            self.offsets_s = offsets
-            self.onsets_Hz = np.round(self.onsets_s * self.sampFreq).astype(int)
-            self.offsets_Hz = np.round(self.offsets_s * self.sampFreq).astype(int)
-            self.labels = '-' * len(onsets)
-
-    def set_syls_to_use(self, labels_to_use='all'):
-        """
-        Parameters
-        ----------
-        labels_to_use : list or string
-            List or string of all labels for which associated spectrogram should be made.
-            When called by extract, this function takes a list created by the
-            extract config parser. But a user can call the function with a string.
-            E.g., if labels_to_use = 'iab' then syllables labeled 'i','a',or 'b'
-            will be extracted and returned, but a syllable labeled 'x' would be
-            ignored. If labels_to_use=='all' then all spectrograms are returned with
-            empty strings for the labels. Default is 'all'.
-
-        sets syls_to_use to a numpy boolean that can be used to index e.g. labels, onsets
-        This method must be called before get_syls
-        """
-
-        if labels_to_use != 'all':
-            if type(labels_to_use) != list and type(labels_to_use) != str:
-                raise ValueError('labels_to_use argument should be a list or string')
-            if type(labels_to_use) == str:
-                labels_to_use = list(labels_to_use)
-
-        if labels_to_use == 'all':
-            self.syls_to_use = np.ones((self.onsets_s.shape),dtype=bool)
-        else:
-            self.syls_to_use = np.in1d(list(self.labels),
-                                       labels_to_use)
-
-    def make_syl_spects(self,
-                        spect_params,
-                        syl_spect_width=-1,
-                        set_syl_spects=True,
-                        return_spects=False):
-        """Make spectrograms from syllables.
-        This method isolates making spectrograms from selecting syllables
-        to use so that spectrograms can be loaded 'lazily', e.g., if only
-        duration features are being extracted that don't require spectrograms.
-
-        Parameters
-        ----------
-        spect_params : dict
-            keys should be parameters for Spectrogram.__init__,
-            see the docstring for those keys.
-        syl_spect_width : float
-            Optional parameter to set constant duration for each spectrogram of a
-            syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
-            Used for creating inputs to neural network where each input
-            must be of a fixed size.
-            Default value is -1; in this case, the width of the spectrogram will
-            be the duration of the syllable as determined by the segmentation
-            algorithm, i.e. the onset and offset that are stored in an annotation file.
-            If a different value is given, then the duration of each spectrogram
-            will be that value. Note that if any individual syllable has a duration
-            greater than syl_spect_duration, the function raises an error.
-        set_syl_spects : bool
-            if True, creates syllable objects for each segment in song,
-             as defined by onsets and offsets,
-             and assigns to each syllable's `spect` property the
-            spectrogram of that segment.
-            Default is True.
-        return_spects : bool
-            if True, return spectrograms.
-            Can be used without affecting syllables that have already been set
-            for a song.
-            Default is False.
-        """
-
-        if not hasattr(self, 'syls_to_use'):
-            raise ValueError('Must set syls_to_use by calling set_syls_to_use method '
-                             'before calling get_syls.')
-
-        if not hasattr(self, 'raw_audio') and not hasattr(self, 'sampFreq'):
-            if self.fileFormat == 'evtaf':
-                    raw_audio, samp_freq = evfuncs.load_cbin(self.filename)
-            elif self.fileFormat == 'koumura':
-                samp_freq, raw_audio = wavfile.read(self.filename)
-            self.rawAudio = raw_audio
-            self.sampFreq = samp_freq
-
-        if syl_spect_width > 0:
-            if syl_spect_width > 1:
-                warnings.warn('syl_spect_width set greater than 1; note that '
-                              'this parameter is in units of seconds, so using '
-                              'a value greater than one will make it hard to '
-                              'center the syllable/segment of interest within'
-                              'the spectrogram, and additionally consume a lot '
-                              'of memory.')
-            syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
-            if syl_spect_width_Hz > self.rawAudio.shape[-1]:
-                raise ValueError('syl_spect_width, converted to samples, '
-                                 'is longer than song file {}.'
-                                 .format(self.filename))
-
-        all_syls = []
-
-        spect_maker = Spectrogram(**spect_params)
-
-        for ind, (label, onset, offset) in enumerate(zip(self.labels, self.onsets_Hz, self.offsets_Hz)):
+        if label in labels_to_use:
             if 'syl_spect_width_Hz' in locals():
-                syl_duration_in_samples = offset - onset
-                if syl_duration_in_samples > syl_spect_width_Hz:
-                    raise ValueError('syllable duration of syllable {} with label {} '
-                                     'in file {} is greater than '
-                                     'width specified for all syllable spectrograms.'
-                                     .format(ind, label, self.filename))
-
-            if self.syls_to_use[ind]:
-                if 'syl_spect_width_Hz' in locals():
-                    width_diff = syl_spect_width_Hz - syl_duration_in_samples
-                    # take half of difference between syllable duration and spect width
-                    # so one half of 'empty' area will be on one side of spect
-                    # and the other half will be on other side
-                    # i.e., center the spectrogram
-                    left_width = int(round(width_diff / 2))
-                    right_width = width_diff - left_width
-                    if left_width > onset:  # if duration before onset is less than left_width
-                        # (could happen with first onset)
-                        syl_audio = self.rawAudio[0:syl_spect_width_Hz]
-                    elif offset + right_width > self.rawAudio.shape[-1]:
-                        # if right width greater than length of file
-                        syl_audio = self.rawAudio[-syl_spect_width_Hz:]
-                    else:
-                        syl_audio = self.rawAudio[onset - left_width:offset + right_width]
+                width_diff = syl_spect_width_Hz - syl_duration_in_samples
+                # take half of difference between syllable duration and spect width
+                # so one half of 'empty' area will be on one side of spect
+                # and the other half will be on other side
+                # i.e., center the spectrogram
+                left_width = int(round(width_diff / 2))
+                right_width = width_diff - left_width
+                if left_width > onset:  # if duration before onset is less than left_width
+                    # (could happen with first onset)
+                    syl_audio = raw_audio[0:syl_spect_width_Hz]
+                elif offset + right_width > raw_audio.shape[-1]:
+                    # if right width greater than length of file
+                    syl_audio = raw_audio[-syl_spect_width_Hz:]
                 else:
-                    syl_audio = self.rawAudio[onset:offset]
+                    syl_audio = raw_audio[onset - left_width:offset + right_width]
+            else:
+                syl_audio = raw_audio[onset:offset]
 
-                try:
-                    spect, freq_bins, time_bins = spect_maker.make(syl_audio,
-                                                                   self.sampFreq)
-                except WindowError as err:
-                    warnings.warn('Segment {0} in {1} with label {2} '
-                                  'not long enough for window function'
-                                  ' set with current spect_params.\n'
-                                  'spect will be set to nan.'
-                                  .format(ind, self.filename, label))
-                    spect, freq_bins, time_bins = (np.nan,
-                                                   np.nan,
-                                                   np.nan)
+            try:
+                spect, freq_bins, time_bins = spect_maker.make(syl_audio,
+                                                               samp_freq)
+            except WindowError as err:
+                warnings.warn('Segment {0} in {1} with label {2} '
+                              'not long enough for window function'
+                              ' set with current spect_params.\n'
+                              'spect will be set to nan.'
+                              .format(ind, self.filename, label))
+                spect, freq_bins, time_bins = (np.nan,
+                                               np.nan,
+                                               np.nan)
 
-                curr_syl = syllable(syl_audio,
-                                    self.sampFreq,
-                                    spect,
-                                    spect_maker.nperseg,
-                                    spect_maker.noverlap,
-                                    spect_maker.freqCutoffs,
-                                    freq_bins,
-                                    time_bins,
-                                    ind,
-                                    label)
+            all_syls.append(spect)
 
-                all_syls.append(curr_syl)
-        if set_syl_spects:
-            self.syls = all_syls
-
-        if return_spects:
-            # stack with dimensions (samples, height, width)
-            return np.stack([syl.spect for syl in all_syls], axis=0)
-
+    if return_as_stack:
+        # stack with dimensions (samples, height, width)
+        return np.stack([syl for syl in all_syls], axis=0)
+    else:
+        return all_syls
