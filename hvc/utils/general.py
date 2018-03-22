@@ -407,3 +407,75 @@ def get_acc_by_label(labels, pred_labels, labelset):
         acc_by_label[ind] = acc
     avg_acc = np.mean(acc_by_label)
     return acc_by_label,avg_acc
+
+
+SELECT_TEMPLATE = """select:
+  num_replicates: None
+  num_train_samples:
+    start : None
+    stop : None
+    step : None
+  num_test_samples: None
+
+    models:"""
+
+MODELS_TEMPLATE = """
+    -
+      model: {0}
+      feature_list_indices: {1}
+      hyperparameters:
+        {2}
+"""
+
+SVM_HYPERPARAMS = """C : None
+        gamma : None
+"""
+
+KNN_HYPERPARAMS = """k : None
+"""
+
+TODO_TEMPLATE = """  todo_list:
+    -
+      feature_file : {0}
+      output_dir: {1}"""
+
+
+def write_select_config(summary_ftr_file_dict,
+                       summary_filename,
+                       output_dir):
+    """writes summary output dict from extract to a config file for select
+    Only called when feature_group is a list, to save user from figuring
+    out manually which features belong to which group.
+
+    Parameters
+    ----------
+    summary_ftr_file_dict : dictionary
+        as defined in featureextract.extract
+    summary_filename : string
+        name of summary feature file
+    output_dir : string
+        name of output directory -- assumes it will be the same as it was for extract.yml
+
+    Returns
+    -------
+    None
+
+    Doesn't return anything, just saves .yml file
+    """
+
+    select_config_filename = 'select.config.from_' + summary_filename + '.yml'
+    with open(select_config_filename, 'w') as yml_outfile:
+        yml_outfile.write(SELECT_TEMPLATE)
+        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
+            inds = [ftr_list_ind for ftr_list_ind, grp_ID in
+                    enumerate(summary_ftr_file_dict['feature_list_group_ID'])
+                    if grp_ID == model_ID]
+            if model_name == 'svm':
+                hyperparams = SVM_HYPERPARAMS
+            elif model_name == 'knn':
+                hyperparams = KNN_HYPERPARAMS
+            yml_outfile.write(MODELS_TEMPLATE.format(model_name,
+                                                     inds,
+                                                     hyperparams))
+        yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
+                                               output_dir))
