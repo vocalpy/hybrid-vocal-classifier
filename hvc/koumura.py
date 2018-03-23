@@ -195,8 +195,7 @@ def load_song_annot(songfile):
 
 
 def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
-    """converts annotation file to a csv file
-    for use by hvc.predict
+    """converts Annotation.xml file to a csv file
 
     Parameters
     ----------
@@ -220,7 +219,7 @@ def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
                          'but name passed was {}'.format(annotation_file))
     annotation = parse_xml(annotation_file, 
                            concat_seqs_into_songs=concat_seqs_into_songs)
-    header = ['filename','index','onset','offset','label']
+    header = ['filename','index','onset_Hz','offset_Hz','label']
     csv_list = [header]
     for song in annotation:
         for ind, syl in enumerate(song.syls):
@@ -382,10 +381,10 @@ class resequencer():
             tmp = current_score
             current_score = next_score
             next_score = tmp
-        
+
         # retrieve best state sequence in reverse using scores directly
         current_state = -1
-        
+
         # initial step to get best state
         for state in self.tail_states:
             if current_state == -1 \
