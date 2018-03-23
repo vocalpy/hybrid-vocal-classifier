@@ -11,6 +11,7 @@ from .parseconfig import parse_config
 from . import features
 from .parse.extract import _validate_feature_group_and_convert_to_list
 
+
 def extract(config_file=None,
             data_dirs=None,
             file_format=None,

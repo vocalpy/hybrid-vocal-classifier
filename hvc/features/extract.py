@@ -9,7 +9,7 @@ from scipy.io import wavfile
 from sklearn.externals import joblib
 
 from ..utils import timestamp, write_select_config
-from ..audiofileIO import Spectrogram, make_syl_spects
+from ..audiofileIO import Spectrogram, Segmenter, make_syl_spects
 from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
@@ -39,6 +39,7 @@ class FeatureExtractor:
         self.spect_params = spect_params
         self.spectrogram_maker = Spectrogram(spect_params)
         self.segment_params = segment_params
+        self.segmenter = Segmenter(self.segment_params)
         self.feature_list = feature_list
         if feature_list_group_ID:
             self.feature_list_group_ID = feature_list_group_ID
@@ -50,6 +51,7 @@ class FeatureExtractor:
                 data_dirs_validated=False,
                 file_format=None,
                 annotation_file=None,
+                segment=False,
                 output_dir=None,
                 make_summary_file=True):
         """loops through data dirs,
@@ -68,7 +70,7 @@ class FeatureExtractor:
             Default is 'all' in which features are extracted from all segments regardless of label.
         make_summary_file : bool
             if True, combine feature files from each directory to make a summary file
-        """    
+        """
         # get absolute path to output
         # **before** we change directories
         # so we're putting it where user specified, if user wrote a relative path in config file
@@ -99,13 +101,18 @@ class FeatureExtractor:
                     validated_data_dirs.append(data_dir)
                 data_dirs = validated_data_dirs
 
-            songfiles_list = []
+            annotation_list = []
             for data_dir in data_dirs:
                 os.chdir(data_dir)
-                if extract_params['file_format'] == 'evtaf':
-                    songfiles_this_dir = glob('*.cbin')
-                elif extract_params['file_format'] == 'koumura':
-                    songfiles_this_dir = glob('*.wav')
+                cbins = glob('*.cbin')
+                if cbins:
+                    for cbin in cbins:
+                        annotation_dict = evfuncs.load_notmat(cbin)
+                wavs = glob('*.wav')
+                if wavs:
+                    if 
+                    else:
+                        raise ValueError('found .wav files but did not find annotation.xml file')
                 songfiles_this_dir = [os.path.abspath(songfile)
                                       for songfile in songfiles_this_dir]
                 songfiles_list.extend(songfiles_this_dir)
@@ -152,7 +159,7 @@ class FeatureExtractor:
             # segment_params defined for todo_list item takes precedence over any default
             # defined for `extract` config
             extract_dict = self._from_file(**annotation_dict,
-                                           labelset)
+                                           labels_to_use=labelset)
 
             if extract_dict is None:
                 # because no labels from labels_to_use were found in songfile
@@ -480,9 +487,6 @@ class FeatureExtractor:
                           .format(filename, labelset))
             return None
 
-
-    
-    
         # initialize indexing array for features
         # used to split back up into feature groups
         feature_inds = []
@@ -570,7 +574,6 @@ class FeatureExtractor:
                     features_arr = curr_feature_arr
 
             elif current_feature in multiple_syl_features_switch_case_dict:
-                syls_to_use = np.asarray([label in ])
                 curr_feature_arr = multiple_syl_features_switch_case_dict[current_feature](onsets,
                                                                                            offsets,
                                                                                            labels_to_use)
