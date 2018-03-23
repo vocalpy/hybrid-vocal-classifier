@@ -64,6 +64,10 @@ def extract(config_file=None,
             print('Completing item {} of {} in to-do list'.format(ind + 1, len(todo_list)))
 
             extract_init_params = {'feature_list': todo['feature_list']}
+            if 'feature_list_group_ID' in todo:
+                extract_init_params['feature_list_group_ID'] = todo['feature_list_group_ID']
+                extract_init_params['feature_group_ID_dict'] = todo['feature_group_ID_dict']
+
             # segment_params defined for todo_list item takes precedence over any default
             # defined for `extract` config
             if 'segment_params' in todo:
@@ -75,10 +79,6 @@ def extract(config_file=None,
                 extract_init_params['spect_params'] = todo['spect_params']
             else:
                 extract_init_params['spect_params'] = extract_config['spect_params']
-
-            if 'feature_list_group_ID' in todo:
-                extract_init_params['feature_list_group_ID'] = todo['feature_list_group_ID']
-                extract_init_params['feature_group_ID_dict'] = todo['feature_group_ID_dict']
 
             fe = features.extract.FeatureExtractor(**extract_init_params)
 
@@ -95,8 +95,6 @@ def extract(config_file=None,
                 extract_params['annotation_file'] = todo['annotation_file']
 
             fe.extract(**extract_params)
-
-#            _extract(extract_params, calling_function='extract')
 
     elif data_dirs or annotation_file:
         if data_dirs and annotation_file:
