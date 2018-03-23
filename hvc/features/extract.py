@@ -8,12 +8,12 @@ import numpy as np
 from scipy.io import wavfile
 from sklearn.externals import joblib
 
-from ..utils import timestamp, write_select_config
+from ..utils import timestamp, write_select_config, annotation
 from ..audiofileIO import Spectrogram, Segmenter, make_syl_spects
 from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
-
+from .. import evfuncs
 
 class FeatureExtractor:
     def __init__(self,
@@ -23,7 +23,6 @@ class FeatureExtractor:
                  feature_group_ID_dict=None,
                  segment_params=None):
         """
-        
         Parameters
         ----------
         spect_params : dict
@@ -37,9 +36,10 @@ class FeatureExtractor:
             as defined for hvc.audiofileIO.segment_song
         """
         self.spect_params = spect_params
-        self.spectrogram_maker = Spectrogram(spect_params)
-        self.segment_params = segment_params
-        self.segmenter = Segmenter(self.segment_params)
+        self.spectrogram_maker = Spectrogram(**self.spect_params)
+        if segment_params:
+            self.segment_params = segment_params
+            self.segmenter = Segmenter(**self.segment_params)
         self.feature_list = feature_list
         if feature_list_group_ID:
             self.feature_list_group_ID = feature_list_group_ID
@@ -54,9 +54,7 @@ class FeatureExtractor:
                 segment=False,
                 output_dir=None,
                 make_summary_file=True):
-        """loops through data dirs,
-        extracts features, saves feature files, and then
-        makes summary feature file.
+        """extract features and save feature files
 
         Parameters
         ----------
@@ -75,13 +73,14 @@ class FeatureExtractor:
         # **before** we change directories
         # so we're putting it where user specified, if user wrote a relative path in config file
         if output_dir:
-            output_dir = 'extract_output_' + timestamp()
+            output_subdir = 'extract_output_' + timestamp()
             output_dir_with_path = os.path.join(
-                os.path.normpath(todo['output_dir']),
-                output_dir)
+                os.path.abspath(
+                    os.path.normpath(output_dir)),
+                output_subdir)
             if not os.path.isdir(output_dir_with_path):
                 os.makedirs(output_dir_with_path)
-            self.output_dir = output_dir_with_path
+            output_dir = output_dir_with_path
 
         if data_dirs:
             if data_dirs_validated is False:
@@ -95,58 +94,58 @@ class FeatureExtractor:
                         data_dir = os.path.join(
                             os.path.dirname(cwd),
                             os.path.normpath(data_dir))
-                        if not os.path.isdir(item):
+                        if not os.path.isdir(data_dir):
                             raise ValueError('directory {} in data_dirs is not a valid directory.'
                                              .format(data_dir))
                     validated_data_dirs.append(data_dir)
                 data_dirs = validated_data_dirs
 
-            annotation_list = []
-            for data_dir in data_dirs:
-                os.chdir(data_dir)
+            # try to auto-discover file format
+            if file_format is None:
+                os.chdir(data_dirs[0])
                 cbins = glob('*.cbin')
-                if cbins:
-                    for cbin in cbins:
-                        annotation_dict = evfuncs.load_notmat(cbin)
                 wavs = glob('*.wav')
-                if wavs:
-                    if 
-                    else:
-                        raise ValueError('found .wav files but did not find annotation.xml file')
-                songfiles_this_dir = [os.path.abspath(songfile)
-                                      for songfile in songfiles_this_dir]
-                songfiles_list.extend(songfiles_this_dir)
+                if cbins and wavs:
+                    raise ValueError('Could not determine file format for feature extract automatically,'
+                                     'found more than one valid format in {}.'
+                                     .format(data_dirs[0]))
+                elif cbins and wavs==[]:
+                    print('found .cbin files in {}, will use .cbin as file format'
+                          .format(data_dirs[0]))
+                    file_format = 'cbin'
+                elif wavs and cbins==[]:
+                    file_format = 'wav'
+                    print('found .wav files in {}, will use .wav as file format'
+                          .format(data_dirs[0]))
+
+            if segment is False:
+                # if we are not segmenting songs (e.g. for prediction of unlabeled song)
+                # look for annotation files, for now just .not.mat
+                notmats = []
+                for data_dir in data_dirs:
+                    notmat_search_str = os.path.join(data_dir,'*.not.mat')
+                    notmats_this_dir = glob(notmat_search_str)
+                    if notmats_this_dir:
+                        notmats.extend(notmats_this_dir)
+
+                annotation_list = []  # list of annotation_dicts
+                for notmat in notmats:
+                    annotation_dict = annotation.notmat_to_annotat_dict(notmat)
+                    annotation_list.append(annotation_dict)
+                    # wavs = glob('*.wav')
+                    # if wavs:
+                    #     if 
+                    #     else:
+                    #         raise ValueError('found .wav files but did not find annotation.xml file')
+
+        # if user passed argument for annotation_file, not data_dirs
         elif 'annotation_file' in extract_params:
-            pass
+            annotation_csv = annotation.load_annotation_csv(extract_params['annotation_file'])
+            # load annotation file
+            # then convert to annotation_list
+            annotation_list = annotation.csv_to_list(annotation_csv)
 
-        if file_format:
-            if file_format == 'evtaf':
-                if 'evfuncs' not in sys.modules:
-                    from .. import evfuncs
-            elif file_format == 'koumura':
-                if 'koumura' not in sys.modules:
-                    from .. import koumura
-        else:
-            extensions = [songfile[-4:] for songfile in songfiles_list]
-            unique_extensions = set(extensions)
-            if len(unique_extensions) > 1:
-                raise ValueError
-            if all([songfile.endswith('.cbin') for songfile in songfiles_list]):
-                file_format = 'evtaf'
-                if 'evfuncs' not in sys.modules:
-                    from .. import evfuncs
-            elif all([songfile.endswith('.wav') for songfile in songfiles_list]):
-                file_format = 'wav'
-
-        if 'features_from_all_files' in locals():
-            # from last time through loop
-            # (need to re-initialize for each directory)
-            del features_from_all_files
-
-        if 'neuralnet_inputs_all_files' in locals():
-            del neuralnet_inputs_all_files
-
-        num_songfiles = len(songfiles_list)
+        num_songfiles = len(annotation_list)
         all_labels = []
         all_onsets_s = []
         all_onsets_Hz = []
@@ -154,7 +153,7 @@ class FeatureExtractor:
         all_offsets_Hz = []
         songfile_IDs = []
         songfile_ID_counter = 0
-        for file_num, songfile in enumerate(songfiles_list):
+        for file_num, annotation_dict in enumerate(annotation_list):
             print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
             # segment_params defined for todo_list item takes precedence over any default
             # defined for `extract` config
