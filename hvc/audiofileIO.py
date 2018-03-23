@@ -373,7 +373,9 @@ def compute_amp(spect):
 
 class Segmenter:
     def __init__(self,
-                 segment_params=None):
+                 threshold=5000,
+                 min_syl_dur=0.02,
+                 min_silent_dur=.002):
         """__init__ for Segmenter
 
         Parameters
@@ -387,9 +389,9 @@ class Segmenter:
             min_silent_dur : float
                 minimum duration of silent gap between segment. default is 0.002, i.e. 2 ms.
         """
-        if segment_params is None:
-            segment_params = {'threshold': 5000, 'min_syl_dur': 0.2, 'min_silent_dur': 0.02}
-        self.segment_params = segment_params
+        self.threshold = threshold
+        self.min_syl_dur = min_syl_dur
+        self.min_silent_dur = min_silent_dur
 
     def segment(amp,
                 time_bins=None,
