@@ -480,15 +480,62 @@ class Segmenter:
         return onsets, offsets
 
 
-def make_syl_spects(raw_audio,
-                    samp_freq,
-                    spect_maker,
-                    labels,
-                    labels_to_use,
-                    onsets_Hz,
-                    offsets_Hz,
-                    syl_spect_width=-1,
-                    return_as_stack=False):
+class Syllable:
+    """
+    syllable object, returned by make_syl_spect.
+    Properties
+    ----------
+    syl_audio : 1-d numpy array
+        raw waveform from audio file
+    sampfreq : integer
+        sampling frequency in Hz as determined by scipy.io.wavfile function
+    spect : 2-d m by n numpy array
+        spectrogram as computed by Spectrogram.make(). Each of the m rows is a frequency bin,
+        and each of the n columns is a time bin. Value in each bin is power at that frequency and time.
+    nfft : integer
+        number of samples used for each FFT
+    overlap : integer
+        number of samples that each consecutive FFT window overlapped
+    time_bins : 1d vector
+        values are times represented by each bin in s
+    freq_bins : 1d vector
+        values are power spectral density in each frequency bin
+    index: int
+        index of this syllable in song.syls.labels
+    label: int
+        label of this syllable from song.syls.labels
+    """
+    def __init__(self,
+                 syl_audio,
+                 samp_freq,
+                 spect,
+                 nfft,
+                 overlap,
+                 freq_cutoffs,
+                 freq_bins,
+                 time_bins,
+                 index,
+                 label):
+        self.sylAudio = syl_audio
+        self.sampFreq = samp_freq
+        self.spect = spect
+        self.nfft = nfft
+        self.overlap = overlap
+        self.freqCutoffs = freq_cutoffs
+        self.freqBins = freq_bins
+        self.timeBins = time_bins
+        self.index = index
+        self.label = label
+
+
+def make_syls(raw_audio,
+              samp_freq,
+              spect_maker,
+              labels,
+              onsets_Hz,
+              offsets_Hz,
+              syl_spect_width=-1,
+              return_as_stack=False):
     """Make spectrograms from syllables.
     This method isolates making spectrograms from selecting syllables
     to use so that spectrograms can be loaded 'lazily', e.g., if only
@@ -533,43 +580,53 @@ def make_syl_spects(raw_audio,
                                  'width specified for all syllable spectrograms.'
                                  .format(ind, label, self.filename))
 
-        if label in labels_to_use:
-            if 'syl_spect_width_Hz' in locals():
-                width_diff = syl_spect_width_Hz - syl_duration_in_samples
-                # take half of difference between syllable duration and spect width
-                # so one half of 'empty' area will be on one side of spect
-                # and the other half will be on other side
-                # i.e., center the spectrogram
-                left_width = int(round(width_diff / 2))
-                right_width = width_diff - left_width
-                if left_width > onset:  # if duration before onset is less than left_width
-                    # (could happen with first onset)
-                    syl_audio = raw_audio[0:syl_spect_width_Hz]
-                elif offset + right_width > raw_audio.shape[-1]:
-                    # if right width greater than length of file
-                    syl_audio = raw_audio[-syl_spect_width_Hz:]
-                else:
-                    syl_audio = raw_audio[onset - left_width:offset + right_width]
+        if 'syl_spect_width_Hz' in locals():
+            width_diff = syl_spect_width_Hz - syl_duration_in_samples
+            # take half of difference between syllable duration and spect width
+            # so one half of 'empty' area will be on one side of spect
+            # and the other half will be on other side
+            # i.e., center the spectrogram
+            left_width = int(round(width_diff / 2))
+            right_width = width_diff - left_width
+            if left_width > onset:  # if duration before onset is less than left_width
+                # (could happen with first onset)
+                syl_audio = raw_audio[0:syl_spect_width_Hz]
+            elif offset + right_width > raw_audio.shape[-1]:
+                # if right width greater than length of file
+                syl_audio = raw_audio[-syl_spect_width_Hz:]
             else:
-                syl_audio = raw_audio[onset:offset]
+                syl_audio = raw_audio[onset - left_width:offset + right_width]
+        else:
+            syl_audio = raw_audio[onset:offset]
 
-            try:
-                spect, freq_bins, time_bins = spect_maker.make(syl_audio,
-                                                               samp_freq)
-            except WindowError as err:
-                warnings.warn('Segment {0} in {1} with label {2} '
-                              'not long enough for window function'
-                              ' set with current spect_params.\n'
-                              'spect will be set to nan.'
-                              .format(ind, self.filename, label))
-                spect, freq_bins, time_bins = (np.nan,
-                                               np.nan,
-                                               np.nan)
+        try:
+            spect, freq_bins, time_bins = spect_maker.make(syl_audio,
+                                                           samp_freq)
+        except WindowError as err:
+            warnings.warn('Segment {0} in {1} with label {2} '
+                          'not long enough for window function'
+                          ' set with current spect_params.\n'
+                          'spect will be set to nan.'
+                          .format(ind, self.filename, label))
+            spect, freq_bins, time_bins = (np.nan,
+                                           np.nan,
+                                           np.nan)
 
-            all_syls.append(spect)
+        curr_syl = Syllable(syl_audio=syl_audio,
+                            samp_freq=samp_freq,
+                            spect=spect,
+                            nfft=spect_maker.nperseg,
+                            overlap=spect_maker.noverlap,
+                            freq_cutoffs=spect_maker.freqCutoffs,
+                            freq_bins=freq_bins,
+                            time_bins=time_bins,
+                            index=ind,
+                            label=label)
+
+        all_syls.append(curr_syl)
 
     if return_as_stack:
         # stack with dimensions (samples, height, width)
-        return np.stack([syl for syl in all_syls], axis=0)
+        return np.stack([syl.spect for syl in all_syls], axis=0)
     else:
         return all_syls
