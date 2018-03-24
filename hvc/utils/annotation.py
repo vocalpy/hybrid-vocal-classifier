@@ -28,12 +28,10 @@ def notmat_to_annotat_dict(notmat):
     annotation_dict = {
         'filename': audio_filename,
         'labels': notmat_dict['labels'],
-        'onsets_s': onsets_s,
-        'offsets_s': offsets_s,
         'onsets_Hz': onsets_Hz,
         'offsets_Hz': offsets_Hz,
     }
-    
+
     return annotation_dict
 
 
@@ -44,7 +42,7 @@ def load_annotation_csv(annotation_file):
 def csv_to_list(annotation_csv):
     annotation_list = []
     annotation_dict = {
-        
+
     }
     annotation_list.append(annotation_dict)
     for row in annotation_csv[1:]:
