@@ -9,11 +9,12 @@ from scipy.io import wavfile
 from sklearn.externals import joblib
 
 from ..utils import timestamp, write_select_config, annotation
-from ..audiofileIO import Spectrogram, Segmenter, make_syl_spects
+from ..audiofileIO import Spectrogram, Segmenter, make_syls
 from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
 from .. import evfuncs
+from ..koumura import to_csv
 
 class FeatureExtractor:
     def __init__(self,
@@ -69,6 +70,11 @@ class FeatureExtractor:
         make_summary_file : bool
             if True, combine feature files from each directory to make a summary file
         """
+        if data_dirs and annotation_file:
+            raise ValueError('received values for both data_dirs and '
+                             'annotation_file arguments, unclear which to use. '
+                             'Please only specify one or the other.')
+
         # get absolute path to output
         # **before** we change directories
         # so we're putting it where user specified, if user wrote a relative path in config file
@@ -120,27 +126,48 @@ class FeatureExtractor:
 
             if segment is False:
                 # if we are not segmenting songs (e.g. for prediction of unlabeled song)
-                # look for annotation files, for now just .not.mat
+                # but user passed data_dir instead of annotation_file,
+                # look for annotation files (for now just .not.mat files)
                 notmats = []
+                annot_xmls = []
                 for data_dir in data_dirs:
-                    notmat_search_str = os.path.join(data_dir,'*.not.mat')
+                    notmat_search_str = os.path.join(data_dir, '*.not.mat')
                     notmats_this_dir = glob(notmat_search_str)
                     if notmats_this_dir:
                         notmats.extend(notmats_this_dir)
+                    else:
+                        if file_format == 'cbin':
+                            # if audio files are .cbin, we expect .not.mat files, so raise error
+                            raise ValueError('Identified file format as .cbin but did not find '
+                                             'files with annotations in data_dir {}.'
+                                             .format(data_dir))
+                        elif file_format == 'wav':
+                            # if audio files are .wav, annotation could be xml files (from Koumura dataset),
+                            # try looking in parent directory
+                            annot_xml = glob(os.path.join(data_dir,
+                                                          '..',
+                                                          'Annotation.xml'))
+                            if annot_xml:
+                                annot_xmls.append(annot_xml)
+                            else:
+                                raise ValueError('Identified file format as .wav but did not find '
+                                                 'files with annotations in data_dir {}.'
+                                                 .format(data_dir))
 
                 annotation_list = []  # list of annotation_dicts
-                for notmat in notmats:
-                    annotation_dict = annotation.notmat_to_annotat_dict(notmat)
-                    annotation_list.append(annotation_dict)
-                    # wavs = glob('*.wav')
-                    # if wavs:
-                    #     if 
-                    #     else:
-                    #         raise ValueError('found .wav files but did not find annotation.xml file')
+                if notmats:
+                    for notmat in notmats:
+                        annotation_dict = annotation.notmat_to_annotat_dict(notmat)
+                        annotation_list.append(annotation_dict)
+
+                if annot_xmls:
+                    for annot_xml in annot_xmls:
+                        annotation_csv = to_csv(annot_xml)
+                        annotation_list.extend(annotation.csv_to_list(annotation_csv))
 
         # if user passed argument for annotation_file, not data_dirs
-        elif 'annotation_file' in extract_params:
-            annotation_csv = annotation.load_annotation_csv(extract_params['annotation_file'])
+        elif annotation_file:
+            annotation_csv = annotation.load_annotation_csv(annotation_file)
             # load annotation file
             # then convert to annotation_list
             annotation_list = annotation.csv_to_list(annotation_csv)
@@ -429,12 +456,12 @@ class FeatureExtractor:
 
     def _from_file(self,
                    filename,
+                   labels,
+                   onsets_Hz,
+                   offsets_Hz,
                    labels_to_use,
-                   song_labels,
-                   onsets,
-                   offsets,
                    file_format=None,
-                  ):
+                   ):
         """
         extracts features from an audio file containing birdsong
 
@@ -448,7 +475,7 @@ class FeatureExtractor:
             Defined in config file, generated by hvc.parse.extract
         file_format : str
             'evtaf' or 'koumura'
-    
+
         Returns
         -------
         extract_dict : dict
@@ -471,14 +498,14 @@ class FeatureExtractor:
                     dict where keys are names of a neuralnet model and value is corresponding
                     input for each model, e.g., 2-d array containing spectrogram
         """
-
         if filename.endswith('.cbin'):
             raw_audio, samp_freq = evfuncs.load_cbin(filename)
         elif filename.endswith('.wav'):
             samp_freq, raw_audio = wavfile.read(filename)
 
-        labels_to_use = np.asarray([label_to_use in song_labels
-                                    for label_to_use in labels_to_use])
+        labels_to_use = np.asarray([label in labels_to_use
+                                    for label in labels])
+        labels = np.asarray(list(labels))
 
         if not np.any(labels_to_use):
             warnings.warn('No labels in {0} matched labels to use: {1}\n'
@@ -502,18 +529,17 @@ class FeatureExtractor:
             # if this is a feature extracted from a single syllable, i.e.,
             # if this feature requires a spectrogram
             if current_feature in single_syl_features_switch_case_dict:
-                if 'syl_spects' not in locals():
-                    syl_spects = make_syl_spects(raw_audio,
-                                                 samp_freq,
-                                                 self.spectrogram_maker,
-                                                 song_labels,
-                                                 labels_to_use,
-                                                 onsets,
-                                                 offsets)
+                if 'syls' not in locals():
+                    syls = make_syls(raw_audio,
+                                     samp_freq,
+                                     self.spectrogram_maker,
+                                     labels[labels_to_use],
+                                     onsets_Hz[labels_to_use],
+                                     offsets_Hz[labels_to_use])
                 if 'curr_feature_arr' in locals():
                     del curr_feature_arr
 
-                for ind, syl in enumerate(syl_spects):
+                for ind, syl in enumerate(syls):
                     # extract current feature from every syllable
                     if syl.spect is np.nan:
                         # can't extract feature so leave as nan
@@ -537,12 +563,12 @@ class FeatureExtractor:
                         # (e.g. because segment was too short to make spectrogram
                         # with given spectrogram values)
                         if np.isscalar(ftr):
-                            curr_feature_arr = np.full((len(song.syls)), np.nan)
+                            curr_feature_arr = np.full((len(syls)), np.nan)
                             # may not be on first syllable if first spectrogram was nan
                             # so need to index into initialized array
                             curr_feature_arr[ind] = ftr
                         else:
-                            curr_feature_arr = np.full((len(song.syls),
+                            curr_feature_arr = np.full((len(syls),
                                                         ftr.shape[-1]), np.nan)
                             # may not be on first syllable if first spectrogram was nan
                             # so need to index into initialized array
@@ -573,8 +599,8 @@ class FeatureExtractor:
                     features_arr = curr_feature_arr
 
             elif current_feature in multiple_syl_features_switch_case_dict:
-                curr_feature_arr = multiple_syl_features_switch_case_dict[current_feature](onsets,
-                                                                                           offsets,
+                curr_feature_arr = multiple_syl_features_switch_case_dict[current_feature](onsets_Hz,
+                                                                                           offsets_Hz,
                                                                                            labels_to_use)
                 feature_inds.extend([ftr_ind])
                 if 'features_arr' in locals():
@@ -598,7 +624,7 @@ class FeatureExtractor:
                 else:
                     neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
-        labels = [label for label in song.labels if label in labels_to_use]
+        labels = [label for label in labels if label in labels_to_use]
         # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
         extract_dict = {'labels': labels}
         extract_dict['onsets_s'] = song.onsets_s[song.syls_to_use]

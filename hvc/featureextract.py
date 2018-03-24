@@ -2,10 +2,6 @@
 feature extraction
 """
 
-# from standard library
-import sys
-import os
-
 # from hvc
 from .parseconfig import parse_config
 from . import features
