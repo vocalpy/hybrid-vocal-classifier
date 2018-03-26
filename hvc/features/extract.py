@@ -174,9 +174,7 @@ class FeatureExtractor:
 
         num_songfiles = len(annotation_list)
         all_labels = []
-        all_onsets_s = []
         all_onsets_Hz = []
-        all_offsets_s = []
         all_offsets_Hz = []
         songfile_IDs = []
         songfile_ID_counter = 0
@@ -199,12 +197,10 @@ class FeatureExtractor:
                     assert np.array_equal(feature_inds, extract_dict['feature_inds']), ftr_inds_err_msg
 
             all_labels.extend(extract_dict['labels'])
-            all_onsets_s.extend(extract_dict['onsets_s'])
             all_onsets_Hz.extend(extract_dict['onsets_Hz'])
-            all_offsets_s.extend(extract_dict['offsets_s'])
             all_offsets_Hz.extend(extract_dict['offsets_Hz'])
             songfile_IDs.extend(
-                [songfile_ID_counter] * extract_dict['onsets_s'].shape[0])
+                [songfile_ID_counter] * extract_dict['onsets_Hz'].shape[0])
             songfile_ID_counter += 1
 
             if 'features_arr' in extract_dict:
@@ -228,18 +224,15 @@ class FeatureExtractor:
                                     'features_created_' + timestamp())
         feature_file_dict = {
             'labels': all_labels,
-            'onsets_s': np.asarray(all_onsets_s),
             'onsets_Hz': np.asarray(all_onsets_Hz),
-            'offsets_s': np.asarray(all_offsets_s),
             'offsets_Hz': np.asarray(all_offsets_Hz),
-            'feature_list': extract_params['feature_list'],
-            'spect_params': extract_params['spect_params'],
-            'segment_params': extract_params['segment_params'],
-            'labelset': extract_params['labelset'],
-            'file_format': extract_params['file_format'],
-            'bird_ID': extract_params['bird_ID'],
+            'feature_list': self.feature_list,
+            'spect_params': self.spect_params,
+            'segment_params': self.segment_params,
+            'labelset': labelset,
+            'file_format': file_format,
             'songfile_IDs': songfile_IDs,
-            'songfiles': songfiles_list
+            'annotation_list': annotation_list
         }
 
         if 'features_from_all_files' in locals():
@@ -248,9 +241,9 @@ class FeatureExtractor:
             num_samples = feature_file_dict['features'].shape[0]
             feature_file_dict['num_samples'] = num_samples
 
-            if 'feature_list_group_ID' in extract_params:
-                feature_file_dict['feature_list_group_ID'] = extract_params['feature_list_group_ID']
-                feature_file_dict['feature_group_ID_dict'] = extract_params['feature_group_ID_dict']
+            if hasattr(self, 'feature_list_group_ID'):
+                feature_file_dict['feature_list_group_ID'] = self.feature_list_group_ID
+                feature_file_dict['feature_group_ID_dict'] = self.feature_group_ID_dict
 
         if 'neuralnet_inputs_all_files' in locals():
             feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
@@ -297,26 +290,12 @@ class FeatureExtractor:
                         summary_ftr_file_dict['labels'] = \
                             summary_ftr_file_dict['labels'] + feature_file_dict['labels']
 
-                    if 'onsets_s' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['onsets_s'] = feature_file_dict['onsets_s']
-                    else:
-                        summary_ftr_file_dict['onsets_s'] = \
-                            np.concatenate((summary_ftr_file_dict['onsets_s'],
-                                            feature_file_dict['onsets_s']))
-
                     if 'onsets_Hz' not in summary_ftr_file_dict:
                         summary_ftr_file_dict['onsets_Hz'] = feature_file_dict['onsets_Hz']
                     else:
                         summary_ftr_file_dict['onsets_Hz'] = \
                             np.concatenate((summary_ftr_file_dict['onsets_Hz'],
                                             feature_file_dict['onsets_Hz']))
-
-                    if 'offsets_s' not in summary_ftr_file_dict:
-                        summary_ftr_file_dict['offsets_s'] = feature_file_dict['offsets_s']
-                    else:
-                        summary_ftr_file_dict['offsets_s'] = \
-                            np.concatenate((summary_ftr_file_dict['offsets_s'],
-                                            feature_file_dict['offsets_s']))
 
                     if 'offsets_Hz' not in summary_ftr_file_dict:
                         summary_ftr_file_dict['offsets_Hz'] = feature_file_dict['offsets_Hz']
@@ -396,7 +375,7 @@ class FeatureExtractor:
                                 raise ValueError('mismatch between features_arr_column_IDs in {} '
                                                  'and other feature files'.format(feature_file))
 
-                        if 'feature_list_group_ID' in extract_params:
+                        if hasattr(self, 'feature_list_group_ID'):
                             if 'feature_list_group_ID' not in summary_ftr_file_dict:
                                 summary_ftr_file_dict['feature_list_group_ID'] = feature_file_dict[
                                     'feature_list_group_ID']
@@ -624,13 +603,10 @@ class FeatureExtractor:
                 else:
                     neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
-        labels = [label for label in labels if label in labels_to_use]
         # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
-        extract_dict = {'labels': labels}
-        extract_dict['onsets_s'] = song.onsets_s[song.syls_to_use]
-        extract_dict['onsets_Hz'] = song.onsets_Hz[song.syls_to_use]
-        extract_dict['offsets_s'] = song.offsets_s[song.syls_to_use]
-        extract_dict['offsets_Hz'] = song.offsets_Hz[song.syls_to_use]
+        extract_dict = {'labels': labels[labels_to_use]}
+        extract_dict['onsets_Hz'] = onsets_Hz[labels_to_use]
+        extract_dict['offsets_Hz'] = offsets_Hz[labels_to_use]
         if 'features_arr' in locals():
             extract_dict['features_arr'] = features_arr
             extract_dict['feature_inds'] = np.asarray(feature_inds)
