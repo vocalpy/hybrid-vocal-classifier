@@ -597,8 +597,7 @@ def make_syls(raw_audio,
         syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
         if syl_spect_width_Hz > self.rawAudio.shape[-1]:
             raise ValueError('syl_spect_width, converted to samples, '
-                             'is longer than song file {}.'
-                             .format(self.filename))
+                             'is longer than song file.')
 
     all_syls = []
 
@@ -607,9 +606,8 @@ def make_syls(raw_audio,
             syl_duration_in_samples = offset - onset
             if syl_duration_in_samples > syl_spect_width_Hz:
                 raise ValueError('syllable duration of syllable {} with label {} '
-                                 'in file {} is greater than '
                                  'width specified for all syllable spectrograms.'
-                                 .format(ind, label, self.filename))
+                                 .format(ind, label))
 
         if 'syl_spect_width_Hz' in locals():
             width_diff = syl_spect_width_Hz - syl_duration_in_samples
@@ -634,11 +632,11 @@ def make_syls(raw_audio,
             spect, freq_bins, time_bins = spect_maker.make(syl_audio,
                                                            samp_freq)
         except WindowError as err:
-            warnings.warn('Segment {0} in {1} with label {2} '
+            warnings.warn('Segment {0} with label {1} '
                           'not long enough for window function'
                           ' set with current spect_params.\n'
                           'spect will be set to nan.'
-                          .format(ind, self.filename, label))
+                          .format(ind, label))
             spect, freq_bins, time_bins = (np.nan,
                                            np.nan,
                                            np.nan)
