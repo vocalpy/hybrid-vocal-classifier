@@ -16,6 +16,7 @@ from .feature_dicts import neural_net_features_switch_case_dict
 from .. import evfuncs
 from ..koumura import to_csv
 
+
 class FeatureExtractor:
     def __init__(self,
                  spect_params,
