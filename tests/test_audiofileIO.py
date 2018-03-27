@@ -13,6 +13,8 @@ import hvc.audiofileIO
 import hvc.evfuncs
 import hvc.koumura
 import hvc.parse.ref_spect_params
+from hvc.utils import annotation
+
 
 @pytest.fixture()
 def has_window_error():
@@ -106,7 +108,7 @@ class TestAudiofileIO:
 
 
     def test_make_syls(self):
-        """test that set_syls_to_use and make_syl_spects work
+        """test make_syls function
         """
 
         segment_params = {
@@ -117,18 +119,25 @@ class TestAudiofileIO:
 
         # test that make_syl_spects works
         # with spect params given individually
+        cbin = os.path.join(os.path.dirname(__file__),
+                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+                            'gy6or6_baseline_240312_0811.1165.cbin'))
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
+
         spect_params = {
             'nperseg': 512,
             'noverlap': 480,
             'freq_cutoffs': [1000, 8000]}
-        cbin = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath('test_data/cbins/gy6or6/032412/'
-                            'gy6or6_baseline_240312_0811.1165.cbin'))
-        cbin_song = hvc.audiofileIO.Song(filename=cbin,
-                                         file_format='evtaf',
-                                         segment_params=segment_params)
-        cbin_song.set_syls_to_use('iabcdefghjk')
-        cbin_song.make_syl_spects(spect_params)
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
+
+        notmat = hvc.evfuncs.load_notmat(cbin + '.not.mat')
+
+        hvc.audiofileIO.syls = make_syls(raw_audio,
+                                         samp_freq,
+                                         spect_maker,
+                                         notmat['labels'],
+                                         notmat['onsets'] / 1000,
+                                         notmat['offsets'] / 1000)
 
         wav = os.path.join(os.path.dirname(__file__),
                            os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
@@ -176,20 +185,19 @@ class TestAudiofileIO:
                                          segment_params=segment_params)
         cbin_song.set_syls_to_use('iabcdefghjk')
 
-    def check_window_error_set_to_nan(self, has_window_error):
+    def test_window_error_set_to_nan(self, has_window_error):
         """check that, if an audio file raises a window error for Spectrogram.make
         for a certain syllable, then that syllable's spectrogram is set to np.nan
         """
         filename, index = has_window_error
-        segment_params = {
-            'threshold': 1500,
-            'min_syl_dur': 0.01,
-            'min_silent_dur': 0.006
-        }
-        cbin_song = hvc.audiofileIO.Song(filename=filename,
-                                         file_format='evtaf',
-                                         segment_params=segment_params)
-        cbin_song.set_syls_to_use('iabcdefghjk')
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(filename)
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
-        cbin_song.make_syl_spects(spect_params)
-        assert cbin_song.syls[index] is np.nan
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
+        annotation_dict = annotation.notmat_to_annotat_dict(filename + '.not.mat')
+        syls = hvc.audiofileIO.make_syls(raw_audio,
+                                         samp_freq,
+                                         spect_maker,
+                                         annotation_dict['labels'],
+                                         annotation_dict['onsets_Hz'],
+                                         annotation_dict['offsets_Hz'])
+        assert syls[index].spect is np.nan
