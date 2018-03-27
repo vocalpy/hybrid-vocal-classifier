@@ -28,16 +28,15 @@ def test_segment_song():
         os.path.normpath('./test_data/cbins/gy6or6/032312/*.cbin'))
     for cbin in cbins:
         print('loading {}'.format(cbin))
-        data, samp_freq = hvc.evfuncs.load_cbin(cbin)
-        spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
-        amp = hvc.evfuncs.smooth_data(data, samp_freq, spect_params['freq_cutoffs'])
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
         notmat = hvc.evfuncs.load_notmat(cbin)
         segment_params = {'threshold': notmat['threshold'],
                           'min_syl_dur': notmat['min_dur'] / 1000,
                           'min_silent_dur': notmat['min_int'] / 1000}
-        onsets, offsets = hvc.audiofileIO.segment_song(amp,
-                                                       segment_params,
-                                                       samp_freq=samp_freq)
+        segmenter = hvc.audiofileIO.Segmenter(**segment_params)
+        onsets, offsets = segmenter.segment(raw_audio,
+                                            samp_freq=samp_freq,
+                                            method='evsonganaly')
         if onsets.shape == notmat['onsets'].shape:
             np.testing.assert_allclose(actual=onsets,
                                        desired=notmat['onsets'] / 1000,
@@ -105,30 +104,8 @@ class TestAudiofileIO:
         with pytest.raises(hvc.audiofileIO.WindowError):
             spect_maker.make(raw_audio, fs)
 
-    def test_Song_init(self):
-        """test whether Song object inits properly
-        """
 
-        segment_params = {
-            'threshold': 1500,
-            'min_syl_dur': 0.01,
-            'min_silent_dur': 0.006
-        }
-
-        cbin = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath('test_data/cbins/gy6or6/032412/'
-                            'gy6or6_baseline_240312_0811.1165.cbin'))
-        song = hvc.audiofileIO.Song(filename=cbin,
-                                    file_format='evtaf',
-                                    segment_params=segment_params)
-
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
-        song = hvc.audiofileIO.Song(filename=wav,
-                                    file_format='koumura')
-
-
-    def test_Song_set_and_make_syls(self):
+    def test_make_syls(self):
         """test that set_syls_to_use and make_syl_spects work
         """
 
