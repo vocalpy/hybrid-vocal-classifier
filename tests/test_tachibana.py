@@ -35,25 +35,25 @@ class TestTachibana:
 
     @pytest.fixture()
     def a_syl(self):
-        """make a a_syl object
+        """make a syl object
 
-        Should get fancy later and have this return random a_syls
+        Should get fancy later and have this return random syls
         for more thorough testing
 
         Returns
         -------
-        a_syl: a_syl object
+        a_syl: a syl object
             used to text feature extraction functions
         """
 
-        a_sylfiles_dir = os.path.join(this_file_just_path,
+        songfiles_dir = os.path.join(this_file_just_path,
                                  os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
-        a_sylfiles_list = glob(a_sylfiles_dir)
-        first_a_syl = a_sylfiles_list[0]
-        raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_a_syl)
+        songfiles_list = glob(songfiles_dir)
+        first_song = songfiles_list[0]
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_song)
 
-        first_a_syl_notmat = first_a_syl + '.not.mat'
-        annotation_dict = annotation.notmat_to_annotat_dict(first_a_syl_notmat)
+        first_song_notmat = first_song + '.not.mat'
+        annotation_dict = annotation.notmat_to_annotat_dict(first_song_notmat)
 
         spect_params = refs_dict['tachibana']
         spect_maker = Spectrogram(**spect_params)
