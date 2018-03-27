@@ -4,16 +4,19 @@ tests tachibana module
 
 # from standard library
 import os
-import glob
+from glob import glob
 
 # from dependencies
 import yaml
 import pytest
+import numpy as np
 
-import hvc.audiofileIO
+from hvc.audiofileIO import Spectrogram, Segmenter, make_syls
 from hvc.features import tachibana
-from hvc.parse.ref_spect_params import refs_dict
 from hvc.features.extract import single_syl_features_switch_case_dict
+from hvc.parse.ref_spect_params import refs_dict
+import hvc.evfuncs
+from hvc.utils import annotation
 
 this_file_with_path = __file__
 this_file_just_path = os.path.split(this_file_with_path)[0]
@@ -31,31 +34,40 @@ class TestTachibana:
     """
 
     @pytest.fixture()
-    def song(self):
-        """make a song object
+    def a_syl(self):
+        """make a a_syl object
 
-        Should get fancy later and have this return random songs
+        Should get fancy later and have this return random a_syls
         for more thorough testing
 
         Returns
         -------
-        song: song object
+        a_syl: a_syl object
             used to text feature extraction functions
         """
 
-        segment_params = {'threshold': 1500,
-                          'min_syl_dur': 0.01,
-                          'min_silent_dur': 0.006
-                          }
-        songfiles_dir = os.path.join(this_file_just_path,
+        a_sylfiles_dir = os.path.join(this_file_just_path,
                                  os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
-        songfiles_list = glob.glob(songfiles_dir)
-        song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
-        song.set_syls_to_use('iabcdefghjk')
-        song.make_syl_spects(spect_params=refs_dict['tachibana'])
-        return song
+        a_sylfiles_list = glob(a_sylfiles_dir)
+        first_a_syl = a_sylfiles_list[0]
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_a_syl)
 
-    def test_mean_spect(self, song):
+        first_a_syl_notmat = first_a_syl + '.not.mat'
+        annotation_dict = annotation.notmat_to_annotat_dict(first_a_syl_notmat)
+
+        spect_params = refs_dict['tachibana']
+        spect_maker = Spectrogram(**spect_params)
+
+        syls = make_syls(raw_audio,
+                         samp_freq,
+                         spect_maker,
+                         annotation_dict['labels'],
+                         annotation_dict['onsets_Hz'],
+                         annotation_dict['offsets_Hz'])
+
+        return syls[0]
+
+    def test_mean_spect(self, a_syl):
         """test mean spectrum
         """
         # if using `tachibana` reference to make syllable spectra
@@ -63,22 +75,22 @@ class TestTachibana:
         # length of vector returned by mean_spectrum should be 128.
         # Want to be sure to return exact same number of features
         # in case it matters for e.g. feature selection
-        assert tachibana.mean_spectrum(song.syls[0]).shape[0] == 128
+        assert tachibana.mean_spectrum(a_syl).shape[0] == 128
 
-    def test_delta_mean_spect(self, song):
+    def test_delta_mean_spect(self, a_syl):
         """test delta spectrum
         """
-        assert tachibana.mean_delta_spectrum(song.syls[0]).shape[0] == 128
+        assert tachibana.mean_delta_spectrum(a_syl).shape[0] == 128
 
-    def test_mean_cepst(self, song):
+    def test_mean_cepst(self, a_syl):
         """test mean cepstrum
         """
-        assert tachibana.mean_cepstrum(song.syls[0]).shape[0] == 128
+        assert tachibana.mean_cepstrum(a_syl).shape[0] == 128
 
-    def test_delta_mean_cepstrum(self, song):
+    def test_delta_mean_cepstrum(self, a_syl):
         """test delta cepstrum
         """
-        assert tachibana.mean_delta_cepstrum(song.syls[0]).shape[0] == 128
+        assert tachibana.mean_delta_cepstrum(a_syl).shape[0] == 128
 
     def test_that_deltas_return_zero_instead_of_nan(self):
         """tests that 'five-point-delta' features return zero instead of NaN
@@ -89,17 +101,32 @@ class TestTachibana:
         a_cbin = os.path.join(this_file_just_path,
                               os.path.normpath('test_data/cbins/gy6or6/032612/'
                                                'gy6or6_baseline_260312_0810.3440.cbin'))
+        raw_audio, samp_freq = hvc.evfuncs.load_cbin(a_cbin)
+
+        spect_params = refs_dict['evsonganaly']
+        spect_maker = Spectrogram(**spect_params)
+
         segment_params = {'threshold': 1500,
                           'min_syl_dur': 0.01,
                           'min_silent_dur': 0.006
                           }
-        spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
-        song = hvc.audiofileIO.Song(a_cbin, 'evtaf', segment_params,
-                                    use_annotation=False,
-                                    spect_params=spect_params)
-        song.set_syls_to_use('all')
-        song.make_syl_spects(spect_params)
-        syl = song.syls[6]  # spect has shape (153,1) so can't take 5-point delta
+        segmenter = Segmenter(**segment_params)
+        onsets_s, offsets_s = segmenter.segment(raw_audio,
+                                                samp_freq=samp_freq,
+                                                method='evsonganaly')
+        # subtract one because of Python's zero indexing (first sanmple is sample zero)
+        onsets_Hz = np.round(onsets_s * samp_freq).astype(int) - 1
+        offsets_Hz = np.round(offsets_s * samp_freq).astype(int)
+        labels = np.ones(onsets_Hz.shape)
+
+        syls = make_syls(raw_audio,
+                         samp_freq,
+                         spect_maker,
+                         labels,
+                         onsets_Hz,
+                         offsets_Hz)
+
+        syl = syls[6]  # spect has shape (153,1) so can't take 5-point delta
 
         for feature_to_test in [
             'mean delta spectral centroid',
@@ -130,15 +157,15 @@ class TestTachibana:
     #                       'min_silent_dur': 0.006
     #                       }
     #
-    #     songfiles_list = glob.glob('./test_data/cbins*.cbin')
+    #     a_sylfiles_list = glob.glob('./test_data/cbins*.cbin')
     #
-    #     # note that I'm only testing first 10 songs!!!
-    #     for songfile in songfiles_list[:10]:
-    #         song = hvc.audiofileIO.Song(songfile, 'evtaf', segment_params)
-    #         song.set_syls_to_use('iabcdefghjk')
-    #         song.make_syl_spects(spect_params={'ref': 'tachibana'})
+    #     # note that I'm only testing first 10 a_syls!!!
+    #     for a_sylfile in a_sylfiles_list[:10]:
+    #         a_syl = hvc.audiofileIO.a_syl(a_sylfile, 'evtaf', segment_params)
+    #         a_syl.set_syls_to_use('iabcdefghjk')
+    #         a_syl.make_syl_spects(spect_params={'ref': 'tachibana'})
     #
-    #         for syl in song.syls:
+    #         for syl in a_syl.syls:
     #             for feature in svm_features:
     #                 ftr = single_syl_features_switch_case_dict[feature](syl)
     #                 if 'feature_vec' in locals():
@@ -164,7 +191,7 @@ class TestTachibana:
     #             features_arr = curr_feature_arr
     #         del curr_feature_arr
     #
-    #     ftrs_dict = joblib.load('./test_data/cbins/features_from_MakeAllFeatures_songs1through10')
+    #     ftrs_dict = joblib.load('./test_data/cbins/features_from_MakeAllFeatures_a_syls1through10')
     #     # features_mat is has 536 columns
     #     # because in my wrapper script around MakeAllFeatures.mat,
     #     # I added duration features on top of original 532-feature set
