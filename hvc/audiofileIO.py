@@ -357,20 +357,6 @@ class Spectrogram:
         return spect, freq_bins, time_bins
 
 
-def compute_amp(spect):
-    """
-    compute amplitude of spectrogram
-    Assumes the values for frequencies are power spectral density (PSD).
-    Sums PSD for each time bin, i.e. in each column.
-    Inputs:
-        spect -- output from spect_from_song
-    Returns:
-        amp -- amplitude
-    """
-
-    return np.sum(spect, axis=0)
-
-
 class Segmenter:
     def __init__(self,
                  threshold=5000,
@@ -393,7 +379,22 @@ class Segmenter:
         self.min_syl_dur = min_syl_dur
         self.min_silent_dur = min_silent_dur
 
-    def segment(amp,
+    def compute_amp(spect):
+        """
+        compute amplitude of spectrogram
+        Assumes the values for frequencies are power spectral density (PSD).
+        Sums PSD for each time bin, i.e. in each column.
+        Inputs:
+            spect -- output from spect_from_song
+        Returns:
+            amp -- amplitude
+        """
+
+        return np.sum(spect, axis=0)
+
+    def segment(self,
+                array_to_segment,
+                method,
                 time_bins=None,
                 samp_freq=None):
         """Divides songs into segments based on threshold crossings of amplitude.
@@ -401,13 +402,20 @@ class Segmenter:
 
         Parameters
         ----------
-        amp : 1-d numpy array
+        array_to_segment : ndarray
             Either amplitude of power spectral density, returned by compute_amp,
             or smoothed amplitude of filtered audio, returned by evfuncs.smooth_data
         time_bins : 1-d numpy array
             time in s, must be same length as log amp. Returned by Spectrogram.make.
         samp_freq : int
             sampling frequency
+        method : str
+            {'evsonganaly','psd'}
+            Method to use.
+            evsonganaly -- gives same result as segmentation by evsonganaly.m
+            (a Matlab GUI for labeling song developed in the Brainard lab)
+            Uses smoothed filtered amplitude of audio, as returned by hvc.evfuncs.smooth_data
+            psd -- uses power spectral density of spectrogram, as returned by _compute_amp 
 
         Returns
         -------
@@ -425,12 +433,35 @@ class Segmenter:
             raise ValueError('Can only use one of time_bins or samp_freq to segment song, '
                              'but values were passed for both parameters')
 
-        if time_bins is not None:
-            if amp.shape[-1] != time_bins.shape[-1]:
-                raise ValueError('if using time_bins, '
-                                 'amp and time_bins must have same length')
+        if method == 'evsonganaly':
+            if time_bins is not None:
+                raise ValueError("cannot use time_bins with method 'evsonganaly'")
+            if samp_freq is None:
+                raise ValueError("must provide samp_freq with method 'evsonganaly'")
+            if array_to_segment.ndim != 1:
+                raise ValueError("If method is 'evsonganaly', then array_to_segment "
+                                 "must be one-dimensional (i.e., raw audio signal)")
 
-        above_th = amp > segment_params['threshold']
+        if method == 'psd':
+            if samp_freq is not None:
+                raise ValueError("cannot use samp_freq with method 'psd'")
+            if time_bins is None:
+                raise ValueError("must provide time_bins with method 'psd'")
+            if array_to_segment.ndim != 2:
+                raise ValueError("If method is 'psd', then array_to_segment "
+                                 "must be two-dimensional (i.e., a spectrogram)")
+            if array_to_segment.shape[-1] != time_bins.shape[-1]:
+                raise ValueError('if using time_bins, '
+                                 'array_to_segment and time_bins must have same length')
+
+        if method=='evsonganaly':
+            amp = evfuncs.smooth_data(array_to_segment,
+                                      samp_freq,
+                                      refs_dict['evsonganaly']['freq_cutoffs'])
+        elif method=='psd':
+            amp = self.compute_amp(array_to_segment)
+
+        above_th = amp > self.threshold
         h = [1, -1]
         # convolving with h causes:
         # +1 whenever above_th changes from 0 to 1
@@ -459,7 +490,7 @@ class Segmenter:
         if samp_freq is not None:
             # need to convert to s
             silent_gap_durs = silent_gap_durs / samp_freq
-        keep_these = np.nonzero(silent_gap_durs > segment_params['min_silent_dur'])
+        keep_these = np.nonzero(silent_gap_durs > self.min_silent_dur)
         onsets = np.concatenate(
             (onsets[0, np.newaxis], onsets[1:][keep_these]))
         offsets = np.concatenate(
@@ -469,7 +500,7 @@ class Segmenter:
         syl_durs = offsets - onsets
         if samp_freq is not None:
             syl_durs = syl_durs / samp_freq
-        keep_these = np.nonzero(syl_durs > segment_params['min_syl_dur'])
+        keep_these = np.nonzero(syl_durs > self.min_syl_dur)
         onsets = onsets[keep_these]
         offsets = offsets[keep_these]
 
