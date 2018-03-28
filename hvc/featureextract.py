@@ -12,6 +12,7 @@ def extract(config_file=None,
             data_dirs=None,
             file_format=None,
             annotation_file=None,
+            labels_to_use=None,
             feature_group=None,
             feature_list=None,
             output_dir=None,
@@ -42,6 +43,13 @@ def extract(config_file=None,
     return_features : bool
         if True, returns features and labels
     """
+    if config_file and (data_dirs or file_format or annotation_file or labels_to_use
+                        or feature_group or feature_list or output_dir or spect_params):
+        raise ValueError('Cannot specify config_file and other parameters '
+                         'when calling hvc.extract, '
+                         'please specify either config_file or all other '
+                         'parameters ')
+
     if config_file and data_dirs:
         raise ValueError('Please specify either config_file or data_dirs, '
                          'not clear which to use when both are specified')
@@ -80,7 +88,7 @@ def extract(config_file=None,
 
             extract_params = {
                 'output_dir': todo['output_dir'],
-                'labelset': todo['labelset'],
+                'labels_to_use': todo['labels_to_use'],
                 'file_format': todo['file_format']
             }
 
