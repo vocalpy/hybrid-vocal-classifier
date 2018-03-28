@@ -48,7 +48,7 @@ class FeatureExtractor:
             self.feature_group_ID_dict = feature_group_ID_dict
 
     def extract(self,
-                labelset='all',
+                labels_to_use='all',
                 data_dirs=None,
                 data_dirs_validated=False,
                 file_format=None,
@@ -64,7 +64,7 @@ class FeatureExtractor:
         data_dirs : list
             list of directories with data files
         output_dir :
-        labelset : str
+        labels_to_use : str
             set of labels for syllables from which features should be extracted
             specified as one string, e.g., 'iabd' would be the set {'i', 'a', 'b', 'd'}.
             Features will not be extracted from segments with labels not in this set.
@@ -151,7 +151,7 @@ class FeatureExtractor:
                     segment_dict = self.segmenter.segment(raw_audio,
                                                           method='evsonganaly',
                                                           samp_freq=samp_freq)
-                    fake_labels = np.full((segment_dict['onsets'].shape),
+                    fake_labels = np.full((segment_dict['onsets_s'].shape),
                                           '-')
                     annotation_dict = {'filename': audio_file,
                                        'labels': fake_labels,
@@ -227,7 +227,7 @@ class FeatureExtractor:
                                            annotation_dict['labels'],
                                            annotation_dict['onsets_Hz'],
                                            annotation_dict['offsets_Hz'],
-                                           labels_to_use=labelset)
+                                           labels_to_use=labels_to_use)
 
             if extract_dict is None:
                 # because no labels from labels_to_use were found in songfile
@@ -274,7 +274,7 @@ class FeatureExtractor:
                 'feature_list': self.feature_list,
                 'spect_params': self.spect_params,
                 'segment_params': self.segment_params,
-                'labelset': labelset,
+                'labels_to_use': labels_to_use,
                 'file_format': file_format,
                 'songfile_IDs': songfile_IDs,
                 'annotation_list': annotation_list,
@@ -397,7 +397,7 @@ class FeatureExtractor:
         if not np.any(labels_to_use):
             warnings.warn('No labels in {0} matched labels to use: {1}\n'
                           'Did not extract features from file.'
-                          .format(filename, labelset))
+                          .format(filename, labels_to_use))
             return None
 
         # initialize indexing array for features
