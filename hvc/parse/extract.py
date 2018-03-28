@@ -419,12 +419,12 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key == 'labelset':
+        elif key == 'labels_to_use':
             if type(val) != str:
-                raise ValueError('Labelset should be a string, e.g., \'iabcde\'.')
+                raise ValueError('labels_to_use should be a string, e.g., \'iabcde\'.')
             else:
                 validated_todo_list_dict[key] = list(val) # convert from string to list of chars
-                validated_todo_list_dict['labelset_int'] = [ord(label) for label in list(val)]
+                validated_todo_list_dict['labels_to_use_int'] = [ord(label) for label in list(val)]
 
         elif key == 'output_dir':
             if type(val) != str:
