@@ -21,13 +21,15 @@ def notmat_to_annotat_dict(notmat):
                          .format(notmat))
     rec_dict = evfuncs.readrecf(rec_filename)
     sample_freq = rec_dict['sample_freq']
-    # subtract one because of Python's zero indexing (first sanmple is sample zero)
+    # subtract one because of Python's zero indexing (first sample is sample zero)
     onsets_Hz = np.round(onsets_s * sample_freq).astype(int) - 1
     offsets_Hz = np.round(offsets_s * sample_freq).astype(int)
 
     annotation_dict = {
         'filename': audio_filename,
-        'labels': notmat_dict['labels'],
+        'labels': np.asarray(list(notmat_dict['labels'])),
+        'onsets_s': onsets_s,
+        'offsets_s': offsets_s,
         'onsets_Hz': onsets_Hz,
         'offsets_Hz': offsets_Hz,
     }
