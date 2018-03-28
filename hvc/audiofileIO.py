@@ -419,9 +419,16 @@ class Segmenter:
 
         Returns
         -------
-        onsets : 1-d numpy array
-        offsets : 1-d numpy array
-            arrays of onsets and offsets of segments.
+        segment_dict : dict
+            with following key, value pairs
+                onsets_Hz : ndarray
+                    onset times given in sample number (Hz)
+                offsets_Hz : ndarray
+                    offset times given in sample number (Hz)
+                onsets_s : ndarray
+                    onset times given in sample number (Hz)
+                offsets_s : 1-d numpy array
+                    arrays of onsets and offsets of segments.
 
         So for syllable 1 of a song, its onset is onsets[0] and its offset is offsets[0].
         To get that segment of the spectrogram, you'd take spect[:,onsets[0]:offsets[0]]
@@ -472,43 +479,50 @@ class Segmenter:
             # if amp was taken from time_bins using compute_amp
             # note that np.where calls np.nonzero which returns a tuple
             # but numpy "knows" to use this tuple to index into time_bins
-            onsets = time_bins[np.where(above_th_convoluted > 0)]
-            offsets = time_bins[np.where(above_th_convoluted < 0)]
+            onsets_s = time_bins[np.where(above_th_convoluted > 0)]
+            offsets_s = time_bins[np.where(above_th_convoluted < 0)]
         elif samp_freq is not None:
             # if amp was taken from smoothed audio using smooth_data
             # here, need to get the array out of the tuple returned by np.where
             # **also note we avoid converting from samples to s
             # until *after* we find segments** 
-            onsets = np.where(above_th_convoluted > 0)[0]
-            offsets = np.where(above_th_convoluted < 0)[0]
+            onsets_Hz = np.where(above_th_convoluted > 0)[0]
+            offsets_Hz = np.where(above_th_convoluted < 0)[0]
+            onsets_s = onsets_Hz / samp_freq
+            offsets_s = offsets_Hz / samp_freq
 
-        if onsets.shape[0] < 1 or offsets.shape[0] < 1:
+        if onsets_s.shape[0] < 1 or offsets_s.shape[0] < 1:
             return None, None  # because no onsets or offsets in this file
 
         # get rid of silent intervals that are shorter than min_silent_dur
-        silent_gap_durs = onsets[1:] - offsets[:-1]  # duration of silent gaps
-        if samp_freq is not None:
-            # need to convert to s
-            silent_gap_durs = silent_gap_durs / samp_freq
+        silent_gap_durs = onsets_s[1:] - offsets_s[:-1]  # duration of silent gaps
         keep_these = np.nonzero(silent_gap_durs > self.min_silent_dur)
-        onsets = np.concatenate(
-            (onsets[0, np.newaxis], onsets[1:][keep_these]))
-        offsets = np.concatenate(
-            (offsets[:-1][keep_these], offsets[-1, np.newaxis]))
+        onsets_s = np.concatenate(
+            (onsets_s[0, np.newaxis], onsets_s[1:][keep_these]))
+        offsets_s = np.concatenate(
+            (offsets_s[:-1][keep_these], offsets_s[-1, np.newaxis]))
+        if 'onsets_Hz' in locals():
+            onsets_Hz = np.concatenate(
+                (onsets_Hz[0, np.newaxis], onsets_Hz[1:][keep_these]))
+            offsets_Hz = np.concatenate(
+                (offsets_Hz[:-1][keep_these], offsets_Hz[-1, np.newaxis]))
 
         # eliminate syllables with duration shorter than min_syl_dur
-        syl_durs = offsets - onsets
-        if samp_freq is not None:
-            syl_durs = syl_durs / samp_freq
+        syl_durs = offsets_s - onsets_s
         keep_these = np.nonzero(syl_durs > self.min_syl_dur)
-        onsets = onsets[keep_these]
-        offsets = offsets[keep_these]
+        onsets_s = onsets_s[keep_these]
+        offsets_s = offsets_s[keep_these]
+        if 'onsets_Hz' in locals():
+            onsets_Hz = onsets_Hz[keep_these]
+            offsets_Hz = offsets_Hz[keep_these]
 
-        if samp_freq is not None:
-            onsets = onsets / samp_freq
-            offsets = offsets / samp_freq
+        segment_dict = {'onsets_s': onsets_s,
+                        'offsets_s': offsets_s}
+        if 'onsets_Hz' in locals():
+            segment_dict['onsets_Hz'] = onsets_Hz
+            segment_dict['offsets_Hz'] = offsets_Hz
 
-        return onsets, offsets
+        return segment_dict
 
 
 class Syllable:
