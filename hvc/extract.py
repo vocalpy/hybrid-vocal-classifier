@@ -33,13 +33,25 @@ def extract(config_file=None,
         the directories.
     annotation_file : str
         filename of an annotation.csv file
+    labels_to_use : str
+        either
+            a string representing unique set of labels which, if
+            a syllable/segment is annotated with that label, then features
+            will be calculated for that syllable
+            e.g., 'iabcdef' or '012345'
+        or
+            'all'
+                in which case features are extracted from all syllable segments
     feature_group : str
         One of the following set: {'knn', 'svm', 'flatwindow'}
         Shorthand way of specifying a list of features to extract, see docs for more detail.
+    feature_list : list
+        list of features to extract
     output_dir : str
         absolute path to directory in which to save extracted features
     spect_params : dict
-        parameters of features to save
+        parameters to compute spectrograms,
+        i.e., as defined for hvc.audiofileIO.Spectrogram
     return_features : bool
         if True, returns features and labels
     """
