@@ -608,8 +608,8 @@ def make_syls(raw_audio,
                           'center the syllable/segment of interest within'
                           'the spectrogram, and additionally consume a lot '
                           'of memory.')
-        syl_spect_width_Hz = int(syl_spect_width * self.sampFreq)
-        if syl_spect_width_Hz > self.rawAudio.shape[-1]:
+        syl_spect_width_Hz = int(syl_spect_width * samp_freq)
+        if syl_spect_width_Hz > raw_audio.shape[-1]:
             raise ValueError('syl_spect_width, converted to samples, '
                              'is longer than song file.')
 
