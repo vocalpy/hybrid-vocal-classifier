@@ -13,10 +13,8 @@ import numpy as np
 from sklearn.externals import joblib
 
 # from hvc
-import hvc.featureextract
 from .parseconfig import parse_config
-from .utils import timestamp
-import hvc.convert
+from .utils import timestamp, annotation
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
@@ -27,9 +25,13 @@ valid_models = validate_dict['valid_models']
 
 
 def predict(config_file=None,
+            data_dirs=None,
+            annotation_file=None,
             feature_extractor=None,
             model_meta_file=None,
             output_dir=None,
+            segment=True,
+            predict_proba=False,
             return_predict_dict=True):
     """main function that does prediction
     Does not return anything, just runs through directories specified in config_file
@@ -38,20 +40,28 @@ def predict(config_file=None,
     Parameters
     ----------
     config_file : string
-        filename of YAML file that configures label prediction   
+        filename of YAML file that configures label prediction
     """
     if config_file and (feature_extractor or model_meta_file or output_dir):
         raise ValueError('Cannot specify config_file and other parameters '
-                         'when calling extract, '
+                         'when calling hvc.predict, '
                          'please specify either config_file or all other '
                          'parameters ')
+
+    if config_file and data_dirs:
+        raise ValueError('Please specify either config_file or data_dirs, '
+                         'not clear which to use when both are specified')
+
+    if config_file and annotation_file:
+        raise ValueError('Please specify either config_file or annotation_file, '
+                         'not clear which to use when both are specified')
 
     if config_file:
         predict_config = parse_config(config_file, 'predict')
         print('parsed predict config')
 
         home_dir = os.getcwd()
-    
+
         for todo in predict_config['todo_list']:
             # get absolute path before changing directories
             # in case user specified output as a relative dir
@@ -60,24 +70,23 @@ def predict(config_file=None,
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
 
-            model_meta_file = joblib.load(todo['model_meta_file'])
-
             extract_params = {
-                'bird_ID': todo['bird_ID'],
-                'feature_list': model_meta_file['feature_list'],
                 'output_dir': output_dir,
-                'home_dir': home_dir,
                 'data_dirs': todo['data_dirs'],
-                'labelset': 'all',
+                'labels_to_use': 'all',
                 'file_format': todo['file_format']
             }
-        
+
+            model_meta_file = joblib.load(todo['model_meta_file'])
             feature_file_for_model = model_meta_file['feature_file']
+            print('loading feature file')
             feature_file = joblib.load(feature_file_for_model)
-            extract_params['segment_params'] = feature_file['segment_params']
-            
+
             feature_extractor = feature_file['feature_extractor']
-            feature_extractor.extract(**extract_params)
+            print('extracting features')
+            feature_extractor.extract(**extract_params,
+                                      segment=True,
+                                      make_output_subdir=False)
 
             os.chdir(output_dir)
             ftr_files = glob('features_created*')
@@ -91,7 +100,7 @@ def predict(config_file=None,
                     import keras.models
                 clf = keras.models.load_model(model_filename)
                 spect_scaler = model_meta_file['spect_scaler']
-    
+
             for ftr_file in ftr_files:
                 print("predicting labels for features in file: {}"
                       .format(ftr_file))
@@ -109,34 +118,36 @@ def predict(config_file=None,
                     pred_labels = clf.predict(neuralnet_inputs_scaled)
                     label_binarizer = model_meta_file['label_binarizer']
                     pred_labels = label_binarizer.inverse_transform(pred_labels)
-    
+
                 ftr_file_dict['pred_labels'] = pred_labels
-    
+
                 if 'predict_proba' in todo:
-                    if todo['predict_proba'] == True:
+                    if todo['predict_proba']:
                         pred_probs = clf.predict_proba(features_scaled)
                         ftr_file_dict['pred_probs'] = pred_probs
                 joblib.dump(ftr_file_dict, ftr_file)
-    
+
                 if 'convert' in todo:
                     songfiles = ftr_file_dict['songfiles']
                     songfile_IDs = ftr_file_dict['songfile_IDs']
                     if todo['convert'] == 'notmat':
+                        all_sampfreqs = ftr_file_dict['all_sampfreqs']
                         print('converting to .not.mat files')
                         for curr_song_id, songfile_name in enumerate(songfiles):
                             these = np.asarray(songfile_IDs) == curr_song_id
-                            pred_labels = ftr_file_dict['pred_labels'][these]
-                            onsets_s = ftr_file_dict['onsets_s'][these]
-                            offsets_s = ftr_file_dict['offsets_s'][these]
                             segment_params = ftr_file_dict['segment_params']
-    
-                            hvc.convert.to_notmat(songfile_name,
-                                                  pred_labels,
-                                                  model_name,
-                                                  32000,
-                                                  segment_params,
-                                                  onsets_s,
-                                                  offsets_s,
-                                                  alternate_path=output_dir)
-    
+                            annotation.make_notmat(filename=songfile_name,
+                                                   labels=ftr_file_dict['pred_labels'][these],
+                                                   onsets_Hz=ftr_file_dict['onsets_Hz'][these],
+                                                   offsets_Hz=ftr_file_dict['offsets_Hz'][these],
+                                                   samp_freq=all_sampfreqs[curr_song_id],
+                                                   threshold=segment_params['threshold'],
+                                                   min_syl_dur=segment_params['min_syl_dur'],
+                                                   min_silent_dur=segment_params['min_silent_dur'],
+                                                   clf_file=model_filename,
+                                                   alternate_path=output_dir)
+
             os.chdir(home_dir)
+
+    elif data_dirs or annotation_file:
+        pass
