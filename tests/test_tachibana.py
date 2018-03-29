@@ -111,20 +111,15 @@ class TestTachibana:
                           'min_silent_dur': 0.006
                           }
         segmenter = Segmenter(**segment_params)
-        onsets_s, offsets_s = segmenter.segment(raw_audio,
+        segment_dict = segmenter.segment(raw_audio,
                                                 samp_freq=samp_freq,
                                                 method='evsonganaly')
-        # subtract one because of Python's zero indexing (first sanmple is sample zero)
-        onsets_Hz = np.round(onsets_s * samp_freq).astype(int) - 1
-        offsets_Hz = np.round(offsets_s * samp_freq).astype(int)
-        labels = np.ones(onsets_Hz.shape)
-
         syls = make_syls(raw_audio,
                          samp_freq,
                          spect_maker,
-                         labels,
-                         onsets_Hz,
-                         offsets_Hz)
+                         np.ones(segment_dict['onsets_Hz'].shape),
+                         segment_dict['onsets_Hz'],
+                         segment_dict['offsets_Hz'])
 
         syl = syls[6]  # spect has shape (153,1) so can't take 5-point delta
 
