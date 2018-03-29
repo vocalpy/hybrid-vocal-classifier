@@ -18,4 +18,4 @@ extract:
 
       output_dir: replace with tmp_output_dir
 
-      labelset: iabcdefghjk
+      labels_to_use: iabcdefghjk
