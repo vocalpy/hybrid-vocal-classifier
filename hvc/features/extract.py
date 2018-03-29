@@ -1,5 +1,4 @@
 import os
-import sys
 import warnings
 from glob import glob
 
@@ -55,6 +54,7 @@ class FeatureExtractor:
                 annotation_file=None,
                 segment=False,
                 output_dir=None,
+                make_output_subdir=True,
                 make_summary_file=True,
                 return_extract_dict=True):
         """extract features and save feature files
@@ -87,11 +87,15 @@ class FeatureExtractor:
         # **before** we change directories
         # so we're putting it where user specified, if user wrote a relative path in config file
         if output_dir:
-            output_subdir = 'extract_output_' + timestamp()
-            output_dir_with_path = os.path.join(
-                os.path.abspath(
-                    os.path.normpath(output_dir)),
-                output_subdir)
+            if make_output_subdir:
+                output_subdir = 'extract_output_' + timestamp()
+                output_dir_with_path = os.path.join(
+                    os.path.abspath(
+                        os.path.normpath(output_dir)),
+                    output_subdir)
+            else:
+                output_dir_with_path = os.path.abspath(
+                    os.path.normpath(output_dir))
             if not os.path.isdir(output_dir_with_path):
                 os.makedirs(output_dir_with_path)
             output_dir = output_dir_with_path
@@ -217,6 +221,8 @@ class FeatureExtractor:
         all_labels = []
         all_onsets_Hz = []
         all_offsets_Hz = []
+        all_sampfreqs = []
+        songfiles = []
         songfile_IDs = []
         songfile_ID_counter = 0
         for file_num, annotation_dict in enumerate(annotation_list):
@@ -243,6 +249,8 @@ class FeatureExtractor:
             all_labels.extend(extract_dict['labels'])
             all_onsets_Hz.extend(extract_dict['onsets_Hz'])
             all_offsets_Hz.extend(extract_dict['offsets_Hz'])
+            all_sampfreqs.append(extract_dict['samp_freq'])
+            songfiles.append(annotation_dict['filename'])
             songfile_IDs.extend(
                 [songfile_ID_counter] * extract_dict['onsets_Hz'].shape[0])
             songfile_ID_counter += 1
@@ -276,21 +284,23 @@ class FeatureExtractor:
                 'segment_params': self.segment_params,
                 'labels_to_use': labels_to_use,
                 'file_format': file_format,
+                'songfiles': songfiles,
                 'songfile_IDs': songfile_IDs,
+                'all_sampfreqs': all_sampfreqs,
                 'annotation_list': annotation_list,
                 'feature_extractor': self,
             }
-    
+
             if 'features_from_all_files' in locals():
                 feature_file_dict['features'] = features_from_all_files
                 feature_file_dict['features_arr_column_IDs'] = feature_inds
                 num_samples = feature_file_dict['features'].shape[0]
                 feature_file_dict['num_samples'] = num_samples
-    
+
                 if hasattr(self, 'feature_list_group_ID'):
                     feature_file_dict['feature_list_group_ID'] = self.feature_list_group_ID
                     feature_file_dict['feature_group_ID_dict'] = self.feature_group_ID_dict
-    
+
             if 'neuralnet_inputs_all_files' in locals():
                 feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
                 if 'num_samples' in feature_file_dict:
@@ -357,8 +367,14 @@ class FeatureExtractor:
         offsets_Hz : ndarray
             of dtype 'int'. offsets of segments in units of samples
         labels_to_use : str
-            either string of labels, e.g., 'iabcdef' or '012345'
-            or 'all' in which features are extracted from all segments
+            either
+                a string representing unique set of labels which, if
+                a syllable/segment is annotated with that label, then features
+                will be calculated for that syllable
+                e.g., 'iabcdef' or '012345'
+            or
+                'all'
+                    in which case features are extracted from all syllable segments
         file_format : str
             {'cbin','wav'}
             format of audio file
@@ -366,18 +382,25 @@ class FeatureExtractor:
         Returns
         -------
         extract_dict : dict
-            with following keys:
-                labels : list of chars
-                    of length m, one label for each syllable in features_arr
-                    Always returned.
-                features_arr : m-by-n numpy array
-                    where each column n is a feature or one element of a multi-column feature
+            with following key, value pairs:
+                labels : ndarray
+                    of dtype 'char'. labels applied to segments.
+                    Only will contain labels that were in labels_to_use.
+                onsets_Hz : ndarray
+                    of dtype 'int'. onsets of segments in units of samples
+                    Only for segments which were annotated with labels from labels_to_use.
+                offsets_Hz : ndarray
+                    of dtype 'int'. offsets of segments in units of samples
+                    Only for segments which were annotated with labels from labels_to_use.
+                features_arr : ndarray
+                    m-by-n matrix, where each column n is a feature
+                    or one element of a multi-column feature
                     (e.g. spectrum is a multi-column feature)
                     and each row m represents one syllable
                     Returned for all non-"neuralnet input" features.
-                feature_inds : 1-d numpy array of ints
-                    indexing array used by hvc/extract to split feature_arr back up into
-                    feature groups
+                feature_inds : ndarray
+                    1-dimensional indexing array used by hvc.extract
+                    to split feature_arr back up into feature groups
                     Array will be of length n where n is number of columns in features_arr,
                     but unique(feature_inds) = len(feature_list)
                     Returned for all non-"neuralnet input" features.
@@ -390,11 +413,15 @@ class FeatureExtractor:
         elif filename.endswith('.wav'):
             samp_freq, raw_audio = wavfile.read(filename)
 
-        labels_to_use = np.asarray([label in labels_to_use
-                                    for label in labels])
-        labels = np.asarray(list(labels))
+        if labels_to_use == 'all':
+            use_these_labels_bool = np.ones((labels.shape)).astype(bool)
+        else:
+            use_these_labels_bool = np.asarray([label in labels_to_use
+                                                for label in labels])
+        if type(labels) is str:
+            labels = np.asarray(list(labels))
 
-        if not np.any(labels_to_use):
+        if not np.any(use_these_labels_bool):
             warnings.warn('No labels in {0} matched labels to use: {1}\n'
                           'Did not extract features from file.'
                           .format(filename, labels_to_use))
@@ -420,9 +447,9 @@ class FeatureExtractor:
                     syls = make_syls(raw_audio,
                                      samp_freq,
                                      self.spectrogram_maker,
-                                     labels[labels_to_use],
-                                     onsets_Hz[labels_to_use],
-                                     offsets_Hz[labels_to_use])
+                                     labels[use_these_labels_bool],
+                                     onsets_Hz[use_these_labels_bool],
+                                     offsets_Hz[use_these_labels_bool])
                 if 'curr_feature_arr' in locals():
                     del curr_feature_arr
 
@@ -488,7 +515,7 @@ class FeatureExtractor:
             elif current_feature in multiple_syl_features_switch_case_dict:
                 curr_feature_arr = multiple_syl_features_switch_case_dict[current_feature](onsets_Hz,
                                                                                            offsets_Hz,
-                                                                                           labels_to_use)
+                                                                                           use_these_labels_bool)
                 feature_inds.extend([ftr_ind])
                 if 'features_arr' in locals():
                     features_arr = np.concatenate((features_arr,
@@ -512,12 +539,13 @@ class FeatureExtractor:
                     neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
         # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
-        extract_dict = {'labels': labels[labels_to_use]}
-        extract_dict['onsets_Hz'] = onsets_Hz[labels_to_use]
-        extract_dict['offsets_Hz'] = offsets_Hz[labels_to_use]
+        extract_dict = {'labels': labels[use_these_labels_bool]}
+        extract_dict['onsets_Hz'] = onsets_Hz[use_these_labels_bool]
+        extract_dict['offsets_Hz'] = offsets_Hz[use_these_labels_bool]
         if 'features_arr' in locals():
             extract_dict['features_arr'] = features_arr
             extract_dict['feature_inds'] = np.asarray(feature_inds)
         if 'neuralnet_inputs_dict' in locals():
             extract_dict['neuralnet_inputs_dict'] = neuralnet_inputs_dict
+        extract_dict['samp_freq'] = samp_freq
         return extract_dict
