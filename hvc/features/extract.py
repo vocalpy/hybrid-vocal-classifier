@@ -265,12 +265,12 @@ class FeatureExtractor:
 
             if 'neuralnet_inputs_dict' in extract_dict:
                 if 'neuralnet_inputs_all_files' in locals():
-                    for key, val in neuralnet_inputs_all_files.items():
-                        new_val = np.concatenate((neuralnet_inputs_all_files[key],
-                                                  extract_dict['neuralnet_inputs_dict'][key]))
-                        neuralnet_inputs_all_files[key] = new_val
+                    for input_type, list_of_input_arr in neuralnet_inputs_all_files.items():
+                        list_of_input_arr.append(extract_dict['neuralnet_inputs_dict'][input_type])
                 else:
-                    neuralnet_inputs_all_files = extract_dict['neuralnet_inputs_dict']
+                    neuralnet_inputs_all_files = {}
+                    for input_type, input_arr in extract_dict['neuralnet_inputs_dict'].items():
+                        neuralnet_inputs_all_files[input_type] = [input_arr]  # make list so we can append
 
         if make_summary_file:
             feature_file = os.path.join(output_dir,
@@ -302,6 +302,9 @@ class FeatureExtractor:
                     feature_file_dict['feature_group_ID_dict'] = self.feature_group_ID_dict
 
             if 'neuralnet_inputs_all_files' in locals():
+                for input_type, input_list in neuralnet_inputs_all_files.items():
+                    concatenated = np.concatenate(input_list)
+                    neuralnet_inputs_all_files[input_type] = concatenated
                 feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
                 if 'num_samples' in feature_file_dict:
                     # because we computed it for non-neural net features already
@@ -524,8 +527,15 @@ class FeatureExtractor:
                 else:
                     features_arr = curr_feature_arr[:, np.newaxis]
             elif current_feature in neural_net_features_switch_case_dict:
-                curr_neuralnet_input = neural_net_features_switch_case_dict[current_feature](song,
-                                                                                             spect_params)
+                curr_neuralnet_input = neural_net_features_switch_case_dict[current_feature](raw_audio,
+                                                                                             samp_freq,
+                                                                                             self.spectrogram_maker,
+                                                                                             labels[
+                                                                                                 use_these_labels_bool],
+                                                                                             onsets_Hz[
+                                                                                                 use_these_labels_bool],
+                                                                                             offsets_Hz[
+                                                                                                 use_these_labels_bool])
                 if 'neuralnet_inputs_dict' in locals():
                     if current_feature in neuralnet_inputs_dict:
                         if type(neuralnet_inputs_dict[current_feature]) is np.ndarray:
