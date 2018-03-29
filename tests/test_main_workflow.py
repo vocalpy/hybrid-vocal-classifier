@@ -7,10 +7,11 @@ and this seemed like the easiest, least fragile way to do that
 
 import os
 from glob import glob
+import copy
 
 import pytest
-import numpy as np
 from sklearn.externals import joblib
+import yaml
 
 import hvc
 
@@ -24,11 +25,12 @@ def tmp_output_dir(tmpdir_factory):
     fn = tmpdir_factory.mktemp('tmp_output_dir')
     return fn
 
+
 #########################
 #   utility functions   #
 #########################
 def rewrite_config(config_filename,
-                   save_filename,
+                   config_output_dir,
                    replace_dict):
     """rewrites config files,
     e.g. to insert name of temporary directories
@@ -37,8 +39,8 @@ def rewrite_config(config_filename,
     ----------
     config_filename : str
         absolute path to config file that is being rewritten
-    save_filename : str
-        filename with absolute path which config file should be saved as after rewrite
+    config_output_dir : str
+        absolute path to config file to where rewritten config should be saved
     replace_dict : dict
         keys are strings to search for
         values are 2-element tuples
@@ -51,7 +53,8 @@ def rewrite_config(config_filename,
 
     Returns
     -------
-    None
+    save_filename : str
+        filename with absolute path which config file should be saved as after rewrite
     """
 
     # find key in config dict and replace value for that key
@@ -65,9 +68,49 @@ def rewrite_config(config_filename,
                     val_tuple[1]
                 )
 
+    save_filename = os.path.join(str(config_output_dir),
+                                 os.path.basename(config_filename)[:-3]
+                                 + 'rewrite.yml')
+
     # write to file in temporary configs dir
     with open(save_filename, 'w') as tmp_config_file:
         tmp_config_file.writelines(config_as_list)
+
+    # now open yaml and rewrite paths as absolute, if necessary
+    # (for extract and predict where data_dir path relative to 
+    # tests directory won't work when config is in tmp_output_dir ...
+    # (don't save rewritten config in test dir because that
+    # makes annoying extra files every time you run the test))
+    with open(save_filename, 'r') as yml:
+        config_yaml = yaml.load(yml)
+
+    if 'extract' in config_yaml:
+        config_type = 'extract'
+    elif 'select' in config_yaml:
+        config_type = 'select'
+    elif 'predict' in config_yaml:
+        config_type = 'predict'
+
+    if config_type in ('extract', 'predict'):
+        config_copy = copy.deepcopy(config_yaml)
+        for key, val in config_yaml[config_type].items():
+            if key == 'todo_list':
+                for todo_ind, todo in enumerate(val):
+                    for todo_key, todo_val in todo.items():
+                        if todo_key == 'data_dirs':
+                            new_data_dirs = []
+                            for data_dir in todo_val:
+                                new_data_dirs.append(os.path.join(
+                                    os.path.dirname(config_filename),
+                                    os.path.normpath(data_dir)
+                                ))
+                            config_copy[config_type]['todo_list'
+                            ][todo_ind]['data_dirs'] = new_data_dirs
+
+        with open(save_filename, 'w') as save_again:
+            yaml.dump(config_copy, save_again, default_flow_style=False)
+
+    return save_filename
 
 
 def check_extract_output(output_dir):
@@ -111,18 +154,6 @@ def check_extract_output(output_dir):
     #         labels = ftr_dict['labels']
     #         for key, val in ftr_dict['neuralnet_inputs_dict']:
     #             assert val.shape[0] == len(labels)
-
-    # make sure rows in summary dict features == sum of rows of each ftr file features
-    summary_file = glob(os.path.join(output_dir, 'summary_feature_file_*'))
-    # (should only be one summary file)
-    assert len(summary_file) == 1
-    summary_dict = joblib.load(summary_file[0])
-    # if all(['features' in ftr_dict for ftr_dict in ftr_dicts]):
-    #     sum_ftr_rows = summary_dict['features'].shape[0]
-    #     total_ftr_dict_rows = sum([ftr_dict['features'].shape[0]
-    #                                for ftr_dict in ftr_dicts])
-    #     assert sum_ftr_rows == total_ftr_dict_rows
-    # 
     # if all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
     #     assert summary_dict['neuralnet_inputs_dict'].keys() == neuralnet_keys
     #     for key, val in summary_dict['neuralnet_inputs_dict']:
@@ -167,14 +198,13 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
 
     extract_config_filename = os.path.join(configs,
                                            script_tuple_dict['extract'])
-    extract_config_rewritten = os.path.join(configs,
-                                            extract_config_filename[:-3] + 'rewrite.yml')
+    replace_dict = {'output_dir':
+                        ('replace with tmp_output_dir',
+                         str(tmp_output_dir))}
     # have to put tmp_output_dir into yaml file
-    rewrite_config(extract_config_filename,
-                   extract_config_rewritten,
-                   replace_dict={'output_dir':
-                                     ('replace with tmp_output_dir',
-                                      str(tmp_output_dir))})
+    extract_config_rewritten = rewrite_config(extract_config_filename,
+                                              tmp_output_dir,
+                                              replace_dict)
     hvc.extract(extract_config_rewritten)
     extract_outputs = list(
         filter(os.path.isdir, glob(os.path.join(
@@ -186,7 +216,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
     extract_output_dir = (extract_outputs[-1])  # [-1] is newest dir, after sort
     assert check_extract_output(extract_output_dir)
 
-    feature_file = glob(os.path.join(extract_output_dir, 'summary*'))
+    feature_file = glob(os.path.join(extract_output_dir, 'features_created*'))
     feature_file = feature_file[0]  # because glob returns list
 
     os.remove(extract_config_rewritten)
@@ -197,15 +227,15 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
          predict_config_filename) = select_and_predict_tuple
         select_config_filename = os.path.join(configs,
                                               select_config_filename)
-        select_config_rewritten = select_config_filename[:-3] + 'rewrite.yml'
-        rewrite_config(select_config_filename,
-                       select_config_rewritten,
-                       replace_dict={'feature_file':
-                                         ('replace with feature_file',
-                                          feature_file),
-                                     'output_dir':
-                                         ('replace with tmp_output_dir',
-                                          str(tmp_output_dir))})
+
+        select_config_rewritten = rewrite_config(select_config_filename,
+                                                 tmp_output_dir,
+                                                 replace_dict={'feature_file':
+                                                                   ('replace with feature_file',
+                                                                    feature_file),
+                                                               'output_dir':
+                                                                   ('replace with tmp_output_dir',
+                                                                    str(tmp_output_dir))})
         hvc.select(select_config_rewritten)
         select_outputs = list(
             filter(os.path.isdir, glob(os.path.join(
@@ -229,12 +259,12 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
                             ('replace with tmp_output_dir',
                              str(tmp_output_dir)
                              )}
-        predict_config_filename = os.path.join(configs,
+        predict_config_filename_with_path = os.path.join(configs,
                                                predict_config_filename)
-        predict_config_rewritten = predict_config_filename[:-3] + 'rewrite.yml'
-        rewrite_config(predict_config_filename,
-                       predict_config_rewritten,
-                       replace_dict)
+
+        predict_config_rewritten = rewrite_config(predict_config_filename_with_path,
+                                                  tmp_output_dir,
+                                                  replace_dict)
         hvc.predict(predict_config_rewritten)
         os.remove(predict_config_rewritten)
         predict_outputs = list(
