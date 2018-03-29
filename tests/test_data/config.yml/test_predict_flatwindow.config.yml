@@ -3,7 +3,7 @@ predict:
   todo_list:
     -
       bird_ID : gy6or6
-      file_format: evtaf
+      file_format: cbin
       data_dirs:
         - ../cbins/gy6or6/032512
         - ../cbins/gy6or6/032612

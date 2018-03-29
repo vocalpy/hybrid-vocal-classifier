@@ -12,7 +12,7 @@ test_parse:
     todo_list:
       -
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -23,7 +23,7 @@ test_parse:
         labels_to_use: iabcdef
       - #2
         bird_ID : bl26lb16
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -42,7 +42,7 @@ test_parse:
     todo_list:
       - #1
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -65,7 +65,7 @@ test_parse:
     todo_list:
       - #1
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -81,7 +81,7 @@ test_parse:
 
       - #2
         bird_ID : bl26lb16
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -114,7 +114,7 @@ test_parse:
     todo_list:
       - #1
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -130,7 +130,7 @@ test_parse:
 
       - #2
         bird_ID : bl26lb16
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -150,7 +150,7 @@ test_parse:
     todo_list:
       - #1
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -166,7 +166,7 @@ test_parse:
 
       - #2
         bird_ID : bl26lb16
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -188,7 +188,7 @@ test_parse:
     todo_list:
       -
         bird_ID : gy6or6
-        file_format: evtaf
+        file_format: cbin
         feature_group:
           - svm
           - knn
@@ -220,7 +220,7 @@ test_validate_todo_list_dict:
 
   test_single_group_as_str:
     bird_ID : gy6or6
-    file_format: evtaf
+    file_format: cbin
     feature_group: knn
     data_dirs:
       - ../cbins/gy6or6/032412
@@ -230,7 +230,7 @@ test_validate_todo_list_dict:
 
   test_single_group_as_list:
     bird_ID : gy6or6
-    file_format: evtaf
+    file_format: cbin
     feature_group:
       - knn
     data_dirs:
@@ -241,7 +241,7 @@ test_validate_todo_list_dict:
 
   test_two_groups_as_list:
     bird_ID : gy6or6
-    file_format: evtaf
+    file_format: cbin
     feature_group:
       - knn
       - svm
@@ -253,7 +253,7 @@ test_validate_todo_list_dict:
 
   test_feature_list:
     bird_ID : gy6or6
-    file_format: evtaf
+    file_format: cbin
     feature_list:
       - duration group
       - preceding syllable duration
@@ -272,7 +272,7 @@ test_validate_todo_list_dict:
 
   test_feature_list_and_feature_group:
     bird_ID : gy6or6
-    file_format: evtaf
+    file_format: cbin
     feature_list:
       - duration group
       - preceding syllable duration
