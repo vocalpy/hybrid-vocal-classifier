@@ -579,6 +579,7 @@ def make_syls(raw_audio,
               labels,
               onsets_Hz,
               offsets_Hz,
+              labels_to_use='all',
               syl_spect_width=-1,
               return_as_stack=False):
     """Make spectrograms from syllables.
@@ -588,6 +589,14 @@ def make_syls(raw_audio,
 
     Parameters
     ----------
+    raw_audio : ndarray
+    samp_freq : int
+    labels : str, list, or ndarray
+    onsetz_Hz : ndarray
+    offsets_Hz : ndarray
+    labels_to_use : str or nmmpy ndarray
+        if ndarray, must be of type bool and same length as labels, and
+        will be used to index into labels
     syl_spect_width : float
         Optional parameter to set constant duration for each spectrogram of a
         syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
@@ -612,6 +621,37 @@ def make_syls(raw_audio,
         if syl_spect_width_Hz > raw_audio.shape[-1]:
             raise ValueError('syl_spect_width, converted to samples, '
                              'is longer than song file.')
+
+    if type(labels) not in [str, list, np.ndarray]:
+        raise TypeError('labels must be of type str, list, or numpy ndarray, '
+                        'not {}'.type(labels))
+
+    if type(labels) is str:
+        labels = list(labels)
+
+    if type(labels) is list:
+        labels = np.asarray(labels)
+
+    if type(labels_to_use) is str:
+        if labels_to_use == 'all':
+            use_these_labels_bool = np.ones((labels.shape)).astype(bool)
+        else:
+            use_these_labels_bool = np.asarray([label in labels_to_use
+                                                for label in labels])
+    elif type(labels_to_use) is np.ndarray and labels_to_use.dtype == bool:
+        if labels_to_use.ndim > 2:
+            raise ValueError('if labels_to_use is array, should not have '
+                             'more than two dimensions')
+        else:
+            labels_to_use = np.squeeze(labels_to_use)
+            if labels_to_use.shape[-1] != len(labels):
+                raise ValueError('if labels_to_use is an array, must have '
+                                 'same length as labels')
+    elif type(labels_to_use) is np.ndarray and labels_to_use.dtype != bool:
+        raise TypeError('if labels_to_use is an array, must be of type bool')
+    else:
+        raise TypeError('labels_to_use should be a string or a boolean numpy '
+                        'array, not type {}'.format(type(labels_to_use)))
 
     all_syls = []
 
