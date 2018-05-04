@@ -14,7 +14,7 @@ import hvc.evfuncs
 import hvc.koumura
 import hvc.parse.ref_spect_params
 from hvc.utils import annotation
-
+from hvc.parse.ref_spect_params import refs_dict
 
 @pytest.fixture()
 def has_window_error():
@@ -36,11 +36,11 @@ def test_segment_song():
                           'min_syl_dur': notmat['min_dur'] / 1000,
                           'min_silent_dur': notmat['min_int'] / 1000}
         segmenter = hvc.audiofileIO.Segmenter(**segment_params)
-        onsets, offsets = segmenter.segment(raw_audio,
-                                            samp_freq=samp_freq,
-                                            method='evsonganaly')
-        if onsets.shape == notmat['onsets'].shape:
-            np.testing.assert_allclose(actual=onsets,
+        segment_dict = segmenter.segment(raw_audio,
+                                         samp_freq=samp_freq,
+                                         method='evsonganaly')
+        if segment_dict['onsets_s'].shape == notmat['onsets'].shape:
+            np.testing.assert_allclose(actual=segment_dict['onsets_s'],
                                        desired=notmat['onsets'] / 1000,
                                        rtol=1e-3)
             print('segmentation passed assert_allclose')
@@ -85,6 +85,7 @@ class TestAudiofileIO:
         wav = os.path.join(os.path.dirname(__file__),
                            os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
         fs, dat = wavfile.read(wav)
+        hvc.koumura.load_song_annot(wav)
 
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
@@ -105,7 +106,6 @@ class TestAudiofileIO:
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
         with pytest.raises(hvc.audiofileIO.WindowError):
             spect_maker.make(raw_audio, fs)
-
 
     def test_make_syls(self):
         """test make_syls function
@@ -129,30 +129,37 @@ class TestAudiofileIO:
             'noverlap': 480,
             'freq_cutoffs': [1000, 8000]}
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-
-        notmat = hvc.evfuncs.load_notmat(cbin + '.not.mat')
-
-        hvc.audiofileIO.syls = make_syls(raw_audio,
+        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
                                          spect_maker,
-                                         notmat['labels'],
-                                         notmat['onsets'] / 1000,
-                                         notmat['offsets'] / 1000)
+                                         annot_dict['labels'],
+                                         annot_dict['onsets_Hz'],
+                                         annot_dict['offsets_Hz'])
 
         wav = os.path.join(os.path.dirname(__file__),
                            os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
-        wav_song = hvc.audiofileIO.Song(filename=wav,
-                                        file_format='koumura')
+        samp_freq, raw_audio = wavfile.read(wav)
+        spect_params = refs_dict['koumura']
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
         wav_song.set_syls_to_use('0123456')
-        wav_song.make_syl_spects(spect_params)
+        syls = hvc.audiofileIO.make_syls(raw_audio,
+                                         samp_freq,
+                                         spect_maker,
+                                         annot_dict['labels'],
+                                         annot_dict['onsets_Hz'],
+                                         annot_dict['offsets_Hz'])
 
         # test make_syl_spects works with 'ref' set to 'tachibana'
-        cbin_song = hvc.audiofileIO.Song(filename=cbin,
-                                         file_format='evtaf',
-                                         segment_params=segment_params)
-        cbin_song.set_syls_to_use('iabcdefghjk')
         spect_params = hvc.parse.ref_spect_params.refs_dict['tachibana']
-        cbin_song.make_syl_spects(spect_params=spect_params)
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
+        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        syls = hvc.audiofileIO.make_syls(raw_audio,
+                                         samp_freq,
+                                         spect_maker,
+                                         annot_dict['labels'],
+                                         annot_dict['onsets_Hz'],
+                                         annot_dict['offsets_Hz'])
 
         wav = os.path.join(os.path.dirname(__file__),
                            os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
@@ -169,6 +176,15 @@ class TestAudiofileIO:
         cbin_song.set_syls_to_use('iabcdefghjk')
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
         cbin_song.make_syl_spects(spect_params=spect_params)
+        spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
+        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        syls = hvc.audiofileIO.make_syls(raw_audio,
+                                         samp_freq,
+                                         spect_maker,
+                                         annot_dict['labels'],
+                                         annot_dict['onsets_Hz'],
+                                         annot_dict['offsets_Hz'])
+
 
         wav = os.path.join(os.path.dirname(__file__),
                            os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
