@@ -173,7 +173,7 @@ def load_song_annot(filename, annot_file=None):
     """
 
     if annot_file is None:
-        dirname, songfile = os.path.split(songfile)
+        dirname, songfile = os.path.split(filename)
         if dirname == '':
             annot_file = glob.glob('../Annotation.xml')
         else:
