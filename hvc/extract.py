@@ -20,7 +20,8 @@ def extract(config_file=None,
             return_features=True):
     """high-level function for feature extraction.
     Accepts either a config file or a set of parameters and
-    uses them to extract features from audio files that are then used to train machine learning classifiers.
+    uses them to extract features from audio files 
+    that are then used to train machine learning classifiers.
     Returns features and/or saves them to a file.
 
     Parameters
