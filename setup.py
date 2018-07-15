@@ -9,7 +9,7 @@ setup(
     author_email='nicholdav at gmail dot com',
     url='https://github.com/NickleDave/hybrid-vocal-classifier',
     packages=find_packages(),
-    package_data={'': ['*.yml']},  # install with yml files e.g. from hvc.parse
+    package_data={'': ['*.yml', '*.csv']},  # install with yml files e.g. from hvc.parse
     license='BSD',
     classifiers=[
         'Development Status :: 4 - Beta',
