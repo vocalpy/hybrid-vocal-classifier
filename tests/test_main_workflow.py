@@ -14,6 +14,7 @@ from sklearn.externals import joblib
 import yaml
 
 import hvc
+from hvc.select import determine_model_output_folder_name
 
 configs = os.path.join(
     os.path.dirname(__file__),
@@ -182,7 +183,7 @@ def check_select_output(config_path, output_dir):
         os.walk(
             output_dir)
     )[1]  # [1] to return just dir names
-    select_model_folder_names = [hvc.select.determine_model_output_folder_name(
+    select_model_folder_names = [determine_model_output_folder_name(
         model_dict) for model_dict in select_config['models']]
     for folder_name in select_model_folder_names:
         assert folder_name in select_model_dirs
