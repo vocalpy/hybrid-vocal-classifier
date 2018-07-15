@@ -1,12 +1,38 @@
 import os
+import csv
 
 import numpy as np
 import scipy.io
 
 from .. import evfuncs
 
+# fields that must be present for each syllable that is annotated.
+# these field names are used below by annot_list_to_csv and csv_to_annot_list
+# but defined at top-level of the module, since these fields determine
+# what annotations the library can and cannot interpret.
+# The idea is to use the bare minimum of fields required.
+FIELDNAMES = ['filename', 'onset_Hz', 'offset_Hz', 'onset_s', 'offset_s', 'label']
+
 
 def notmat_to_annotat_dict(notmat):
+    """open .not.mat file and return as annotation dict,
+    the data structure that hybrid-vocal-classifier uses
+    internally to represent annotation for one audio file
+
+    Parameters
+    ----------
+    notmat : str
+        filename of a .not.mat annotation file,
+        created by the evsonganaly GUI for MATLAB
+
+    Returns
+    -------
+    annotation_dict : dict
+        with keys 'filename', 'labels', 'onsets_Hz', 'offsets_Hz', 'onsets_s', 'offsets_s'
+    """
+    if not notmat.endswith('.not.mat'):
+        raise ValueError("notmat filename should end with  '.not.mat',"
+                         "but '{}' does not".format(notmat))
     notmat_dict = evfuncs.load_notmat(notmat)
     # in .not.mat files saved by evsonganaly,
     # onsets and offsets are in units of ms, have to convert to s
@@ -38,6 +64,81 @@ def notmat_to_annotat_dict(notmat):
     }
 
     return annotation_dict
+
+
+def annot_list_to_csv(annot_list, filename):
+    """writes annotations from files to a comma-separated value (csv) file.
+
+    Parameters
+    ----------
+    annot_list : list
+        list of annot_dicts, where each annot_dict has the following keys:
+            filename
+            onsets_Hz
+            offsets_Hz
+            onsets_s
+            offsets_s
+            labels
+    filename : str
+        name to write
+
+    Returns
+    -------
+    None
+    """
+    with open(filename, 'w', newline='') as csvfile:
+
+        # FIELDNAMES is defined above, at the level of the module,
+        # to ensure consistency across all functions in this module
+        # that make use of it
+        writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+
+        writer.writeheader()
+        for annot_dict in annot_list:
+            song_filename = annot_dict['filename']
+            annot_dict_zipped = zip(annot_dict['onsets_Hz'],
+                                    annot_dict['offsets_Hz'],
+                                    annot_dict['onsets_s'],
+                                    annot_dict['offsets_s'],
+                                    annot_dict['labels'],
+                                    )
+            for onset_Hz, offset_Hz, onset_s, offset_s, label in annot_dict_zipped:
+                syl_annot_dict = {'filename': song_filename,
+                                  'onset_Hz': onset_Hz,
+                                  'offset_Hz': offset_Hz,
+                                  'onset_s': onset_s,
+                                  'offset_s': offset_s,
+                                  'label': label} 
+                writer.writerow(syl_annot_dict)
+
+
+def notmat_list_to_csv(notmat_list, csv_fname):
+    """takes a list of .not.mat filenames and saves the
+    annotation from all files in one comma-separated values (csv)
+    file, where each row represents one syllable from one of the
+    .not.mat files.0
+
+    Parameters
+    ----------
+    notmat_list : list
+        list of str, where eachs tr is a .not.mat file
+
+    csv_fname : str
+        name for csv file that is created
+
+    Returns
+    -------
+    None
+    """
+    if not all([notmat.endswith('.not.mat')
+                for notmat in notmat_list]
+               ):
+        raise ValueError("all filenames in .not.mat must end with '.not.mat'")
+
+    annot_list = []
+    for notmat in notmat_list:
+        annot_list.append(notmat_to_annotat_dict(notmat))
+    annot_list_to_csv(annot_list, csv_fname)
 
 
 def make_notmat(filename,
@@ -139,21 +240,37 @@ def make_notmat(filename,
         scipy.io.savemat(notmat_name, notmat_dict)
 
 
-def load_annotation_csv(annotation_file):
-    return annotation_csv
+def load_csv(annotation_file, convert_to_list=True):
+    """loads a comma-separated values (csv) file containing
+    annotations for song files.
+    
+    Parameters
+    ----------
+    annotation_file : str
+        filename
+    convert_to_list : bool
+        if True, converts csv to a list of dicts
+
+    Returns
+    -------
+
+    """
+    annotation_csv = np.loadtxt(annotation_file)
+    if convert_to_list:
+        return csv_to_list(annotation_csv)
+    else:
+        return annotation_csv
 
 
 def csv_to_list(annotation_csv):
     annotation_list = []
-    annotation_dict = {
-
-    }
-    annotation_list.append(annotation_dict)
+    annotation_dict = {}
     for row in annotation_csv[1:]:
         if annotation_csv[0] == annotation_dict['filename']:
             pass
         else:
             annotation_dict = {}
             annotation_list.append(annotation_dict)
+    annotation_list.append(annotation_dict)
 
     return annotation_list
