@@ -11,7 +11,27 @@ from .. import evfuncs
 # but defined at top-level of the module, since these fields determine
 # what annotations the library can and cannot interpret.
 # The idea is to use the bare minimum of fields required.
-FIELDNAMES = ['filename', 'onset_Hz', 'offset_Hz', 'onset_s', 'offset_s', 'label']
+SYL_ANNOT_COLUMN_NAMES = ['filename',
+                          'onset_Hz',
+                          'offset_Hz',
+                          'onset_s',
+                          'offset_s',
+                          'label']
+set_SYL_ANNOT_COLUMN_NAMES = set(SYL_ANNOT_COLUMN_NAMES)
+
+# below maps each column in csv to a key in an annot_dict
+# used when appending to lists that correspond to each key
+SYL_ANNOT_TO_SONG_ANNOT_MAPPING = {'onset_Hz':'onsets_Hz',
+                                   'offset_Hz': 'offsets_Hz',
+                                   'onset_s': 'onsets_s',
+                                   'offset_s': 'offsets_s',
+                                   'label': 'labels'}
+
+SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
+                           'offsets_Hz': int,
+                           'onsets_s': float,
+                           'offsets_s': float,
+                           'labels': str}
 
 
 def notmat_to_annotat_dict(notmat):
@@ -88,10 +108,10 @@ def annot_list_to_csv(annot_list, filename):
     """
     with open(filename, 'w', newline='') as csvfile:
 
-        # FIELDNAMES is defined above, at the level of the module,
+        # SYL_ANNOT_COLUMN_NAMES is defined above, at the level of the module,
         # to ensure consistency across all functions in this module
         # that make use of it
-        writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+        writer = csv.DictWriter(csvfile, fieldnames=SYL_ANNOT_COLUMN_NAMES)
 
         writer.writeheader()
         for annot_dict in annot_list:
@@ -240,37 +260,92 @@ def make_notmat(filename,
         scipy.io.savemat(notmat_name, notmat_dict)
 
 
-def load_csv(annotation_file, convert_to_list=True):
+def csv_to_annot_list(csv_fname):
     """loads a comma-separated values (csv) file containing
-    annotations for song files.
-    
+    annotations for song files and returns an annot_list
+
     Parameters
     ----------
-    annotation_file : str
-        filename
-    convert_to_list : bool
-        if True, converts csv to a list of dicts
+    csv_fname : str
+        filename for comma-separated values file
 
     Returns
     -------
-
+    annot_list : list
+        list of dicts
     """
-    annotation_csv = np.loadtxt(annotation_file)
-    if convert_to_list:
-        return csv_to_list(annotation_csv)
-    else:
-        return annotation_csv
+    annot_list = []
 
+    with open(csv_fname, 'r', newline='') as csv_file:
+        reader = csv.reader(csv_file)
 
-def csv_to_list(annotation_csv):
-    annotation_list = []
-    annotation_dict = {}
-    for row in annotation_csv[1:]:
-        if annotation_csv[0] == annotation_dict['filename']:
-            pass
-        else:
-            annotation_dict = {}
-            annotation_list.append(annotation_dict)
-    annotation_list.append(annotation_dict)
+        header = next(reader)
+        set_header = set(header)
+        if set_header != set_SYL_ANNOT_COLUMN_NAMES:
+            not_in_FIELDNAMES = set_header.difference(set_SYL_ANNOT_COLUMN_NAMES)
+            if not_in_FIELDNAMES:
+                raise ValueError('The following column names in {} are not recognized: {}'
+                                 .format(csv_fname, not_in_FIELDNAMES))
+            not_in_header = set_FIELDNAMES.difference(set_header)
+            if not_in_header:
+                raise ValueError(
+                    'The following column names in {} are required but missing: {}'
+                    .format(csv_fname, not_in_header))
 
-    return annotation_list
+        column_name_index_mapping = {column_name: header.index(column_name)
+                                     for column_name in SYL_ANNOT_COLUMN_NAMES}
+
+        row = next(reader)
+        curr_filename = row[column_name_index_mapping['filename']]
+        annot_dict = {'filename': curr_filename,
+                      'onsets_Hz': [],
+                      'offsets_Hz': [],
+                      'onsets_s': [],
+                      'offsets_s': [],
+                      'labels': []}
+        for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+            annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
+                row[column_name_index_mapping[col_name]])
+
+        for row in reader:
+            row_filename = row[column_name_index_mapping['filename']]
+            if row_filename == curr_filename:
+                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+                    annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
+                        row[column_name_index_mapping[col_name]])
+            else:
+                for key, type_to_convert in SONG_ANNOT_TYPE_MAPPING.items():
+                    list_from_key = annot_dict[key]
+                    if type_to_convert == int:
+                        list_from_key = [int(el) for el in list_from_key]
+                    elif type_to_convert == float:
+                        list_from_key = [float(el) for el in list_from_key]
+                    elif type_to_convert == str:
+                        pass
+                    else:
+                        raise TypeError('Unexpected type {} specified in '
+                                        'hvc.utils.annotation'
+                                        .format(type_to_convert))
+                    annot_dict[key] = list_from_key
+                # convert all lists to ndarray
+                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+                    annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]] = \
+                        np.asarray(annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]])
+                # now append annot_dict to annot_list
+                annot_list.append(annot_dict)
+                # and start a new annot_dict
+                curr_filename = row_filename
+                annot_dict = {'filename': curr_filename,
+                              'onsets_Hz': [],
+                              'offsets_Hz': [],
+                              'onsets_s': [],
+                              'offsets_s': [],
+                              'labels': []}
+                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+                    annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
+                        row[column_name_index_mapping[col_name]])
+        # line below appends annot_dict corresponding to last file
+        # since there won't be another file after it to trigger the 'else' logic above
+        annot_list.append(annot_dict)
+
+    return annot_list
