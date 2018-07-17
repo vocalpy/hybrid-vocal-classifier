@@ -88,7 +88,8 @@ def notmat_to_annot_dict(notmat):
 
 def annot_list_to_csv(annot_list,
                       csv_fname,
-                      convert_audio_filenames_to_absolute_path=False):
+                      abspath=False,
+                      basename=False):
     """writes annotations from files to a comma-separated value (csv) file.
 
     Parameters
@@ -96,10 +97,9 @@ def annot_list_to_csv(annot_list,
     annot_list : list
         list of annot_dicts, where each annot_dict has the following keys:
             filename : str
-                name of audio file with which annotation is associated,
-                if the parameter convert_audio_filenames_to_absolute_path is set to True,
-                will be converted to absolute path (default is False).
-                (Default for discard_filename_path is False)
+                name of audio file with which annotation is associated.
+                See parameter abspath and basename below that allow for specifying how
+                filename is saved.
             onsets_Hz : numpy.ndarray
                 of type int, onset of each annotated syllable in samples/second
             offsets_Hz : numpy.ndarray
@@ -113,17 +113,28 @@ def annot_list_to_csv(annot_list,
     csv_fname : str
         name of csv file to write to, will be created
         (or overwritten if it exists already)
-    convert_audio_filenames_to_absolute_path : bool
-        if True, converts filename for each audio file into absolute path. Useful e.g. if
-        working with multiple versions of audio files. Default is False, in which case
-        the filename is saved as whatever string is passed to this function.
+    
+    The following two parameters specify how file names for audio files are saved. These
+    options are useful for working with multiple copies of files and for reproducibility.
+    Default for both is False, in which case the filename is saved just as it is passed to
+    this function.
+    abspath : bool
+        if True, converts filename for each audio file into absolute path.
+        Default is False.
+    basename : bool
+        if True, discard any information about path and just use file name.
+        Default is False.
 
     Returns
     -------
     None
     """
-    with open(csv_fname, 'w', newline='') as csvfile:
+    if abspath and basename:
+        raise ValueError('abspath and basename arguments cannot both be set to True, '
+                         'unclear whether absolute path should be saved or if no path '
+                         'information (just base filename) should be saved.')
 
+    with open(csv_fname, 'w', newline='') as csvfile:
         # SYL_ANNOT_COLUMN_NAMES is defined above, at the level of the module,
         # to ensure consistency across all functions in this module
         # that make use of it
@@ -132,8 +143,10 @@ def annot_list_to_csv(annot_list,
         writer.writeheader()
         for annot_dict in annot_list:
             song_filename = annot_dict['filename']
-            if convert_audio_filenames_to_absolute_path:
+            if abspath:
                 song_filename = os.path.abspath(song_filename)
+            elif basename:
+                song_filename = os.path.basename(song_filename)
             annot_dict_zipped = zip(annot_dict['onsets_Hz'],
                                     annot_dict['offsets_Hz'],
                                     annot_dict['onsets_s'],
