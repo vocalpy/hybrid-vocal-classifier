@@ -99,7 +99,7 @@ def test_notmat_list_to_csv(tmp_output_dir):
         for row in reader:
             filenames_from_csv.append(row['filename'])
     for fname_from_csv in filenames_from_csv:
-        assert(fname_from_csv + '.not.mat' in notmats)
+        assert(fname_from_csv + '.not.mat' in notmat_list)
 
 
 def test_make_notmat():
