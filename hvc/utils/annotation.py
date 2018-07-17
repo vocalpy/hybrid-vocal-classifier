@@ -34,7 +34,7 @@ SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
                            'labels': str}
 
 
-def notmat_to_annotat_dict(notmat):
+def notmat_to_annot_dict(notmat):
     """open .not.mat file and return as annotation dict,
     the data structure that hybrid-vocal-classifier uses
     internally to represent annotation for one audio file
@@ -86,27 +86,43 @@ def notmat_to_annotat_dict(notmat):
     return annotation_dict
 
 
-def annot_list_to_csv(annot_list, filename):
+def annot_list_to_csv(annot_list,
+                      csv_fname,
+                      convert_audio_filenames_to_absolute_path=False):
     """writes annotations from files to a comma-separated value (csv) file.
 
     Parameters
     ----------
     annot_list : list
         list of annot_dicts, where each annot_dict has the following keys:
-            filename
-            onsets_Hz
-            offsets_Hz
-            onsets_s
-            offsets_s
-            labels
-    filename : str
-        name to write
+            filename : str
+                name of audio file with which annotation is associated,
+                if the parameter convert_audio_filenames_to_absolute_path is set to True,
+                will be converted to absolute path (default is False).
+                (Default for discard_filename_path is False)
+            onsets_Hz : numpy.ndarray
+                of type int, onset of each annotated syllable in samples/second
+            offsets_Hz : numpy.ndarray
+                of type int, offset of each annotated syllable in samples/second
+            onsets_s : numpy.ndarray
+                of type float, onset of each annotated syllable in seconds
+            offsets_s : numpy.ndarray
+                of type float, offset of each annotated syllable in seconds
+            labels : numpy.ndarray
+                of type str, label for each annotated syllable
+    csv_fname : str
+        name of csv file to write to, will be created
+        (or overwritten if it exists already)
+    convert_audio_filenames_to_absolute_path : bool
+        if True, converts filename for each audio file into absolute path. Useful e.g. if
+        working with multiple versions of audio files. Default is False, in which case
+        the filename is saved as whatever string is passed to this function.
 
     Returns
     -------
     None
     """
-    with open(filename, 'w', newline='') as csvfile:
+    with open(csv_fname, 'w', newline='') as csvfile:
 
         # SYL_ANNOT_COLUMN_NAMES is defined above, at the level of the module,
         # to ensure consistency across all functions in this module
@@ -116,6 +132,8 @@ def annot_list_to_csv(annot_list, filename):
         writer.writeheader()
         for annot_dict in annot_list:
             song_filename = annot_dict['filename']
+            if convert_audio_filenames_to_absolute_path:
+                song_filename = os.path.abspath(song_filename)
             annot_dict_zipped = zip(annot_dict['onsets_Hz'],
                                     annot_dict['offsets_Hz'],
                                     annot_dict['onsets_s'],
@@ -157,7 +175,7 @@ def notmat_list_to_csv(notmat_list, csv_fname):
 
     annot_list = []
     for notmat in notmat_list:
-        annot_list.append(notmat_to_annotat_dict(notmat))
+        annot_list.append(notmat_to_annot_dict(notmat))
     annot_list_to_csv(annot_list, csv_fname)
 
 
