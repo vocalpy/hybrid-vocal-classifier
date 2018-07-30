@@ -114,13 +114,31 @@ def test_csv_to_annot_list():
     csv_fname = os.path.join(os.path.dirname(__file__),
                              os.path.normpath(
                                  'test_data/csv/gy6or6_032312.csv'))
-    annot_list = annotation.csv_to_annot_list(csv_fname)
+    # convert csv to annotation list -- this is what we're testing
+    annot_list_from_csv = annotation.csv_to_annot_list(csv_fname)
     cbin_dir = os.path.join(os.path.dirname(__file__),
                             os.path.normpath(
                                 'test_data/cbins/gy6or6/032312/'))
+
+    # get what should be the same annotation list from .not.mat files
+    # to compare with what we got from the csv
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
-    annot_list_to_compare_with = []
+    annot_list_from_notmats = []
     for notmat in notmat_list:
-        annot_list_to_compare_with.append(annotation.notmat_to_annot_dict(notmat))
-    for from_csv, from_notmat in zip(annot_list, annot_list_to_compare_with):
-        assert from_csv == from_notmat
+        annot_list_from_notmats.append(annotation.notmat_to_annot_dict(notmat,
+                                                                       basename=True))
+
+    # make sure everything is the same in the two annotation lists
+    for from_csv, from_notmat in zip(annot_list_from_csv, annot_list_from_notmats):
+        for from_csv_key, from_csv_val in from_csv.items():
+            if type(from_csv_val) == str:
+                assert from_csv_val == from_notmat[from_csv_key]
+            elif type(from_csv_val) == np.ndarray:
+                # hacky platform-agnostic way to say "if integer"
+                if from_csv_val.dtype == np.asarray(int(1)).dtype:
+                    assert np.array_equal(from_csv_val,
+                                          from_notmat[from_csv_key])
+                # hacky platform-agnostic way to say "if float"
+                elif from_csv_val.dtype == np.asarray((1.)).dtype:
+                    assert np.allclose(from_csv[from_csv_key],
+                                       from_notmat[from_csv_key])

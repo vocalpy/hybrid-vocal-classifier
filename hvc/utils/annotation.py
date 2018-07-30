@@ -27,6 +27,7 @@ SYL_ANNOT_TO_SONG_ANNOT_MAPPING = {'onset_Hz':'onsets_Hz',
                                    'offset_s': 'offsets_s',
                                    'label': 'labels'}
 
+# used when mapping inputs **from** csv **to** annotation
 SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
                            'offsets_Hz': int,
                            'onsets_s': float,
@@ -34,7 +35,7 @@ SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
                            'labels': str}
 
 
-def notmat_to_annot_dict(notmat):
+def notmat_to_annot_dict(notmat, abspath=False, basename=False):
     """open .not.mat file and return as annotation dict,
     the data structure that hybrid-vocal-classifier uses
     internally to represent annotation for one audio file
@@ -45,6 +46,17 @@ def notmat_to_annot_dict(notmat):
         filename of a .not.mat annotation file,
         created by the evsonganaly GUI for MATLAB
 
+    The following two parameters specify how file names for audio files are saved. These
+    options are useful for working with multiple copies of files and for reproducibility.
+    Default for both is False, in which case the filename is saved just as it is passed to
+    this function.
+    abspath : bool
+        if True, converts filename for each audio file into absolute path.
+        Default is False.
+    basename : bool
+        if True, discard any information about path and just use file name.
+        Default is False.
+
     Returns
     -------
     annotation_dict : dict
@@ -53,6 +65,12 @@ def notmat_to_annot_dict(notmat):
     if not notmat.endswith('.not.mat'):
         raise ValueError("notmat filename should end with  '.not.mat',"
                          "but '{}' does not".format(notmat))
+
+    if abspath and basename:
+        raise ValueError('abspath and basename arguments cannot both be set to True, '
+                         'unclear whether absolute path should be saved or if no path '
+                         'information (just base filename) should be saved.')
+
     notmat_dict = evfuncs.load_notmat(notmat)
     # in .not.mat files saved by evsonganaly,
     # onsets and offsets are in units of ms, have to convert to s
@@ -74,6 +92,11 @@ def notmat_to_annot_dict(notmat):
     onsets_Hz = np.round(onsets_s * sample_freq).astype(int) - 1
     offsets_Hz = np.round(offsets_s * sample_freq).astype(int)
 
+    if abspath:
+        audio_filename = os.path.abspath(audio_filename)
+    elif basename:
+        audio_filename = os.path.basename(audio_filename)
+
     annotation_dict = {
         'filename': audio_filename,
         'labels': np.asarray(list(notmat_dict['labels'])),
@@ -82,7 +105,6 @@ def notmat_to_annot_dict(notmat):
         'onsets_Hz': onsets_Hz,
         'offsets_Hz': offsets_Hz,
     }
-
     return annotation_dict
 
 
@@ -113,7 +135,7 @@ def annot_list_to_csv(annot_list,
     csv_fname : str
         name of csv file to write to, will be created
         (or overwritten if it exists already)
-    
+
     The following two parameters specify how file names for audio files are saved. These
     options are useful for working with multiple copies of files and for reproducibility.
     Default for both is False, in which case the filename is saved just as it is passed to
@@ -163,7 +185,7 @@ def annot_list_to_csv(annot_list,
                 writer.writerow(syl_annot_dict)
 
 
-def notmat_list_to_csv(notmat_list, csv_fname):
+def notmat_list_to_csv(notmat_list, csv_fname, abspath=False, basename=False):
     """takes a list of .not.mat filenames and saves the
     annotation from all files in one comma-separated values (csv)
     file, where each row represents one syllable from one of the
@@ -173,9 +195,19 @@ def notmat_list_to_csv(notmat_list, csv_fname):
     ----------
     notmat_list : list
         list of str, where eachs tr is a .not.mat file
-
     csv_fname : str
         name for csv file that is created
+
+    The following two parameters specify how file names for audio files are saved. These
+    options are useful for working with multiple copies of files and for reproducibility.
+    Default for both is False, in which case the filename is saved just as it is passed to
+    this function.
+    abspath : bool
+        if True, converts filename for each audio file into absolute path.
+        Default is False.
+    basename : bool
+        if True, discard any information about path and just use file name.
+        Default is False.
 
     Returns
     -------
@@ -186,10 +218,15 @@ def notmat_list_to_csv(notmat_list, csv_fname):
                ):
         raise ValueError("all filenames in .not.mat must end with '.not.mat'")
 
+    if abspath and basename:
+        raise ValueError('abspath and basename arguments cannot both be set to True, '
+                         'unclear whether absolute path should be saved or if no path '
+                         'information (just base filename) should be saved.')
+
     annot_list = []
     for notmat in notmat_list:
         annot_list.append(notmat_to_annot_dict(notmat))
-    annot_list_to_csv(annot_list, csv_fname)
+    annot_list_to_csv(annot_list, csv_fname, abspath=abspath, basename=basename)
 
 
 def make_notmat(filename,
@@ -291,6 +328,29 @@ def make_notmat(filename,
         scipy.io.savemat(notmat_name, notmat_dict)
 
 
+def _fix_annot_dict_types(annot_dict):
+    """helper function that converts items in lists of annot dict
+    from str to correct type, and then converts lists to numpy arrays"""
+    for key, type_to_convert in SONG_ANNOT_TYPE_MAPPING.items():
+        list_from_key = annot_dict[key]
+        if type_to_convert == int:
+            list_from_key = [int(el) for el in list_from_key]
+        elif type_to_convert == float:
+            list_from_key = [float(el) for el in list_from_key]
+        elif type_to_convert == str:
+            pass
+        else:
+            raise TypeError('Unexpected type {} specified in '
+                            'hvc.utils.annotation'
+                            .format(type_to_convert))
+        annot_dict[key] = list_from_key
+    # convert all lists to ndarray
+    for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+        annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]] = \
+            np.asarray(annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]])
+    return annot_dict
+
+
 def csv_to_annot_list(csv_fname):
     """loads a comma-separated values (csv) file containing
     annotations for song files and returns an annot_list
@@ -345,24 +405,7 @@ def csv_to_annot_list(csv_fname):
                     annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
                         row[column_name_index_mapping[col_name]])
             else:
-                for key, type_to_convert in SONG_ANNOT_TYPE_MAPPING.items():
-                    list_from_key = annot_dict[key]
-                    if type_to_convert == int:
-                        list_from_key = [int(el) for el in list_from_key]
-                    elif type_to_convert == float:
-                        list_from_key = [float(el) for el in list_from_key]
-                    elif type_to_convert == str:
-                        pass
-                    else:
-                        raise TypeError('Unexpected type {} specified in '
-                                        'hvc.utils.annotation'
-                                        .format(type_to_convert))
-                    annot_dict[key] = list_from_key
-                # convert all lists to ndarray
-                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
-                    annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]] = \
-                        np.asarray(annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]])
-                # now append annot_dict to annot_list
+                annot_dict = _fix_annot_dict_types(annot_dict)
                 annot_list.append(annot_dict)
                 # and start a new annot_dict
                 curr_filename = row_filename
@@ -375,8 +418,9 @@ def csv_to_annot_list(csv_fname):
                 for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
                     annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
                         row[column_name_index_mapping[col_name]])
-        # line below appends annot_dict corresponding to last file
+        # lines below appends annot_dict corresponding to last file
         # since there won't be another file after it to trigger the 'else' logic above
+        annot_dict = _fix_annot_dict_types(annot_dict)
         annot_list.append(annot_dict)
 
     return annot_list
