@@ -53,7 +53,7 @@ class TestTachibana:
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_song)
 
         first_song_notmat = first_song + '.not.mat'
-        annotation_dict = annotation.notmat_to_annotat_dict(first_song_notmat)
+        annotation_dict = annotation.notmat_to_annot_dict(first_song_notmat)
 
         spect_params = refs_dict['tachibana']
         spect_maker = Spectrogram(**spect_params)

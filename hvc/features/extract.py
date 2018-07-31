@@ -202,7 +202,7 @@ class FeatureExtractor:
                 annotation_list = []  # list of annotation_dicts
                 if notmats:
                     for notmat in notmats:
-                        annotation_dict = annotation.notmat_to_annotat_dict(notmat)
+                        annotation_dict = annotation.notmat_to_annot_dict(notmat)
                         annotation_list.append(annotation_dict)
 
                 if annot_xmls:

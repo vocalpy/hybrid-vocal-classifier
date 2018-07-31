@@ -129,7 +129,7 @@ class TestAudiofileIO:
             'freq_cutoffs': [1000, 8000]}
         labels_to_use = 'iabcdefghjk'
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        annot_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
         syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
                                          spect_maker,
@@ -155,7 +155,7 @@ class TestAudiofileIO:
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
         spect_params = hvc.parse.ref_spect_params.refs_dict['tachibana']
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        annot_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
         labels_to_use = 'iabcdefghjk'
         syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
@@ -182,7 +182,7 @@ class TestAudiofileIO:
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        annot_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
         labels_to_use = 'iabcdefghjk'
         syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
@@ -210,7 +210,7 @@ class TestAudiofileIO:
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
         spect_params = hvc.parse.ref_spect_params.refs_dict['evsonganaly']
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-        annot_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        annot_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
         labels_to_use = 'iabcdefghjk'
         syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
@@ -241,7 +241,7 @@ class TestAudiofileIO:
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(filename)
         spect_params = hvc.parse.ref_spect_params.refs_dict['koumura']
         spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-        annotation_dict = annotation.notmat_to_annotat_dict(filename + '.not.mat')
+        annotation_dict = annotation.notmat_to_annot_dict(filename + '.not.mat')
         syls = hvc.audiofileIO.make_syls(raw_audio,
                                          samp_freq,
                                          spect_maker,

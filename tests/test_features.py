@@ -50,7 +50,7 @@ class TestFromFile:
                                                feature_list=svm_features)
 
         filename, index = has_window_error
-        annotation_dict = annotation.notmat_to_annotat_dict(filename + '.not.mat')
+        annotation_dict = annotation.notmat_to_annot_dict(filename + '.not.mat')
         with pytest.warns(UserWarning):
              extract_dict = fe._from_file(filename=filename,
                                           file_format='evtaf',
@@ -79,7 +79,7 @@ class TestFromFile:
                             os.path.normpath(
                                 'test_data/cbins/gy6or6/032412/'
                                 'gy6or6_baseline_240312_0811.1165.cbin'))
-        annotation_dict = annotation.notmat_to_annotat_dict(cbin + '.not.mat')
+        annotation_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
 
         for feature_list in (ftr_grps['knn'],
                              ftr_grps['svm'],
