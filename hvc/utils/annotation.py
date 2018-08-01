@@ -35,7 +35,11 @@ SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
                            'labels': str}
 
 
-def notmat_to_annot_dict(notmat, abspath=False, basename=False):
+def notmat_to_annot_dict(notmat,
+                         abspath=False, 
+                         basename=False,
+                         round_times=True,
+                         decimals=3):
     """open .not.mat file and return as annotation dict,
     the data structure that hybrid-vocal-classifier uses
     internally to represent annotation for one audio file
@@ -45,23 +49,35 @@ def notmat_to_annot_dict(notmat, abspath=False, basename=False):
     notmat : str
         filename of a .not.mat annotation file,
         created by the evsonganaly GUI for MATLAB
-
-    The following two parameters specify how file names for audio files are saved. These
-    options are useful for working with multiple copies of files and for reproducibility.
-    Default for both is False, in which case the filename is saved just as it is passed to
-    this function.
     abspath : bool
         if True, converts filename for each audio file into absolute path.
         Default is False.
     basename : bool
         if True, discard any information about path and just use file name.
         Default is False.
+    round_times : bool
+        if True, round onsets_s and offsets_s.
+        Default is True.
+    decimals : int
+        number of decimals places to round floating point numbers to.
+        Only meaningful if round_times is True.
+        Default is 3, so that times are rounded to milliseconds.
 
     Returns
     -------
     annotation_dict : dict
         with keys 'filename', 'labels', 'onsets_Hz', 'offsets_Hz', 'onsets_s', 'offsets_s'
+
+    The abspath and basename parameters specify how file names for audio files are saved.
+    These options are useful for working with multiple copies of files and for 
+    reproducibility. Default for both is False, in which case the filename is saved just
+    as it is passed to this function.
+
+    round_times and decimals arguments are provided to reduce differences across platforms
+    due to floating point error, e.g. when loading .not.mat files and then sending them to
+    a csv file, the result should be the same on Windows and Linux
     """
+
     if not notmat.endswith('.not.mat'):
         raise ValueError("notmat filename should end with  '.not.mat',"
                          "but '{}' does not".format(notmat))
@@ -91,6 +107,12 @@ def notmat_to_annot_dict(notmat, abspath=False, basename=False):
     # subtract one because of Python's zero indexing (first sample is sample zero)
     onsets_Hz = np.round(onsets_s * sample_freq).astype(int) - 1
     offsets_Hz = np.round(offsets_s * sample_freq).astype(int)
+
+    # do this *after* converting onsets_s and offsets_s to onsets_Hz and offsets_Hz
+    # probably doesn't matter but why introduce more noise?
+    if round_times:
+        onsets_s = np.around(onsets_s, decimals=decimals)
+        offsets_s = np.around(offsets_s, decimals=decimals)
 
     if abspath:
         audio_filename = os.path.abspath(audio_filename)
@@ -181,7 +203,7 @@ def annot_list_to_csv(annot_list,
                                   'offset_Hz': offset_Hz,
                                   'onset_s': onset_s,
                                   'offset_s': offset_s,
-                                  'label': label} 
+                                  'label': label}
                 writer.writerow(syl_annot_dict)
 
 
