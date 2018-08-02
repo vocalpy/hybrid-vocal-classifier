@@ -46,6 +46,8 @@ def test_annot_list_to_csv(tmp_output_dir):
                             os.path.normpath(
                                 'test_data/cbins/gy6or6/032312/'))
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
+    # below, sorted() so it's the same order on different platforms
+    notmat_list = sorted(notmat_list)
     annot_list = []
     for notmat in notmat_list:
         annot_list.append(annotation.notmat_to_annot_dict(notmat))
@@ -84,6 +86,8 @@ def test_notmat_list_to_csv(tmp_output_dir):
                             os.path.normpath(
                                 'test_data/cbins/gy6or6/032312/'))
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
+    # below, sorted() so it's the same order on different platforms
+    notmat_list = sorted(notmat_list)
     csv_filename = os.path.join(str(tmp_output_dir),
                                 'test.csv')
     annotation.notmat_list_to_csv(notmat_list, csv_filename)
@@ -123,6 +127,8 @@ def test_csv_to_annot_list():
     # get what should be the same annotation list from .not.mat files
     # to compare with what we got from the csv
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
+    # below, sorted() so it's the same order on different platforms
+    notmat_list = sorted(notmat_list)
     annot_list_from_notmats = []
     for notmat in notmat_list:
         annot_list_from_notmats.append(annotation.notmat_to_annot_dict(notmat,
