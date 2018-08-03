@@ -56,6 +56,7 @@ def extract(config_file=None,
     return_features : bool
         if True, returns features and labels
     """
+
     if config_file and (data_dirs or file_format or annotation_file or labels_to_use
                         or feature_group or feature_list or output_dir or spect_params):
         raise ValueError('Cannot specify config_file and other parameters '
