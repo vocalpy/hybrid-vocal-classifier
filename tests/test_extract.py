@@ -30,6 +30,12 @@ class TestExtract:
         data_dirs = [
             'test_data/cbins/gy6or6/032312',
             'test_data/cbins/gy6or6/032412']
+        data_dirs = [
+            os.path.join(os.path.dirname(__file__),
+                         data_dir)
+            for data_dir in data_dirs
+        ]
+
         file_format = 'cbin'
         labels_to_use = 'iabcdefghjk'
         feature_group = 'knn'
