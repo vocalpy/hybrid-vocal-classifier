@@ -4,6 +4,7 @@ YAML parser for extract config files
 
 # from standard library
 import os
+import csv
 import copy
 import warnings
 
@@ -11,6 +12,7 @@ import warnings
 import yaml
 
 from .ref_spect_params import refs_dict
+from .utils import check_for_missing_keys, flatten
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
@@ -27,6 +29,10 @@ with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
 
+REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_extract_todo_list_keys'])
+REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(
+    validate_dict['required_extract_todo_list_keys']))
+OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_extract_todo_list_keys'])
 ################################################################
 # validation functions for individual configuration parameters #
 ################################################################
@@ -323,22 +329,19 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
     validated_todo_list_dict : dictionary
         after validation, may have new keys added if necessary
     """
-
-    required_todo_list_keys = set(validate_dict[
-                                      'required_extract_todo_list_keys'])
-
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
-    if not set(todo_list_dict.keys()) >= required_todo_list_keys:
-        missing_keys = required_todo_list_keys - set(todo_list_dict.keys())
-        raise KeyError('todo_list item #{0} is missing required keys: {1}'
-                       .format(index,missing_keys))
+    missing_keys = check_for_missing_keys(todo_list_dict, REQUIRED_TODO_LIST_KEYS)
+    if missing_keys:
+        raise KeyError('The following required keys '
+                       'were not found in todo_list item #{}: {}'
+                       .format(index, missing_keys))
     else:
-        additional_keys = set(todo_list_dict.keys()) - required_todo_list_keys
+        additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS_FLATTENED
         for extra_key in additional_keys:
-            if extra_key not in validate_dict['optional_extract_todo_list_keys']:
+            if extra_key not in OPTIONAL_TODO_LIST_KEYS:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
-                               .format(extra_key, index))
+                               .format(extra_key,index))
 
     if 'feature_group' not in todo_list_dict and 'feature_list' not in todo_list_dict:
             raise ValueError('todo_list item #{} does not include feature_group or feature_list'
@@ -377,7 +380,14 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
     # okay now that we took care of that we can loop through everything else
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
-        if key == 'bird_ID':
+        if key == 'annotation_file':
+            with open(val, newline='') as f:
+                reader = csv.reader(f, delimiter=',')
+                first_row = next(reader)
+                if first_row != 'filename,index,onset,offset,label'.split(','):
+                    raise ValueError('annotation_file did not have correct header')
+
+        elif key == 'bird_ID':
             if type(val) != str:
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -409,12 +419,12 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
                 if val not in validate_dict['valid_file_formats']:
                     raise ValueError('{} is not a known audio file format'.format(val))
 
-        elif key == 'labelset':
+        elif key == 'labels_to_use':
             if type(val) != str:
-                raise ValueError('Labelset should be a string, e.g., \'iabcde\'.')
+                raise ValueError('labels_to_use should be a string, e.g., \'iabcde\'.')
             else:
                 validated_todo_list_dict[key] = list(val) # convert from string to list of chars
-                validated_todo_list_dict['labelset_int'] = [ord(label) for label in list(val)]
+                validated_todo_list_dict['labels_to_use_int'] = [ord(label) for label in list(val)]
 
         elif key == 'output_dir':
             if type(val) != str:

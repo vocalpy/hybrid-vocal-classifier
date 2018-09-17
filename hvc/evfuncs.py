@@ -123,20 +123,24 @@ def load_cbin(filename,channel=0):
     return data, sample_freq
 
 
-def load_notmat(filename):
+def load_notmat(filename,
+                round_times=True,
+                decimals=3):
     """
-    loads .not.mat files created by evsonganaly.m.
-    wrapper around scipy.io.loadmat.
-    Calls loadmat with squeeze_me=True to remove extra dimensions from arrays
-    that loadmat parser sometimes adds.
-    
+    loads .not.mat files created by evsonganaly (Matlab GUI for labeling song)
+
     Argument
     --------
-    filename : string, name of .not.mat file
-     
+    filename : str
+        name of .not.mat file
+
     Returns
     -------
-    notmat_dict : dictionary of variables from .not.mat files
+    notmat_dict : dict
+        variables from .not.mat files
+
+    Basically a wrapper around scipy.io.loadmat. Calls loadmat with squeeze_me=True
+    to remove extra dimensions from arrays that loadmat parser sometimes adds.
     """
 
     if ".not.mat" in filename:

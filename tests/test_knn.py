@@ -4,13 +4,14 @@ tests knn module
 
 # from standard library
 import os
-import glob
+from glob import glob
 
 # from dependencies
 import yaml
 import pytest
-import hvc.audiofileIO
+import numpy as np
 
+import hvc.audiofileIO
 from hvc.features import knn
 from hvc.parse.ref_spect_params import refs_dict
 
@@ -29,34 +30,16 @@ class TestKNN:
     for getting features for k-Nearest Neighbors
     """
 
-    @pytest.fixture()
-    def song(self):
-        """make a song object
-
-        Should get fancy later and have this return random songs
-        for more thorough testing
-
-        Returns
-        -------
-        song: song object
-            used to text feature extraction functions
-        """
-        segment_params = {'threshold': 1500,
-                          'min_syl_dur': 0.01,
-                          'min_silent_dur': 0.006
-                          }
-
-        songfiles_dir = os.path.join(this_file_just_path,
-                                 os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
-        songfiles_list = glob.glob(songfiles_dir)
-        song = hvc.audiofileIO.Song(songfiles_list[0], 'evtaf', segment_params)
-        song.set_syls_to_use('iabcdefghjk')
-        song.make_syl_spects(spect_params=refs_dict['evsonganaly'])
-        return song
-
-    def test_duration(self, song):
+    def test_duration(self):
         """test duration
         """
-        dur = knn.duration(song.offsets_s,
-                           song.onsets_s,
-                           song.syls_to_use)
+        songfiles_dir = os.path.join(this_file_just_path,
+                                 os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
+        songfiles_list = glob(songfiles_dir)
+        first_song = songfiles_list[0]
+        first_song_notmat = first_song + '.not.mat'
+        notmat_dict = hvc.evfuncs.load_notmat(first_song_notmat)
+
+        dur = knn.duration(notmat_dict['onsets']/1000,
+                           notmat_dict['offsets']/1000,
+                           np.ones(notmat_dict['onsets'].shape).astype(bool))

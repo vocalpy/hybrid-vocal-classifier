@@ -2,9 +2,16 @@
 "feature" extraction for neuralnet models.
 Each function returns inputs for a specific model.
 """
+from .. import audiofileIO
 
 
-def flatwindow(song, spect_params, spect_width=0.3):
+def flatwindow(raw_audio,
+               samp_freq,
+               spectrogram_maker,
+               labels,
+               onsets_Hz,
+               offsets_Hz,
+               spect_width=0.3):
     """returns input for flatwindow neuralnet model.
     input is stack of spectrograms, all of the same width and height
     width is specified by spect_width parameter
@@ -27,8 +34,11 @@ def flatwindow(song, spect_params, spect_width=0.3):
         spectrograms from m syllables,
         all with n rows and p columns
     """
-
-    return song.make_syl_spects(spect_params=spect_params,
-                                syl_spect_width=spect_width,
-                                set_syl_spects=False,
-                                return_spects=True)
+    return audiofileIO.make_syls(raw_audio,
+                                 samp_freq,
+                                 spectrogram_maker,
+                                 labels,
+                                 onsets_Hz,
+                                 offsets_Hz,
+                                 syl_spect_width=spect_width,
+                                 return_as_stack=True)

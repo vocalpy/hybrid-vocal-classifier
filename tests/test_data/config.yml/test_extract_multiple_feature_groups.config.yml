@@ -9,7 +9,7 @@ extract:
   todo_list:
     -
       bird_ID : gy6or6
-      file_format: evtaf
+      file_format: cbin
       feature_group:
         - knn
         - svm
@@ -19,4 +19,4 @@ extract:
 
       output_dir: replace with tmp_output_dir
 
-      labelset: iabcdefghjk
+      labels_to_use: iabcdefghjk

@@ -5,10 +5,13 @@ YAML parser for predict config files
 #from standard library
 import os
 import copy
+import csv
 
 # from dependencies
 import yaml
 from sklearn.externals import joblib
+
+from .utils import check_for_missing_keys, flatten
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
@@ -17,6 +20,8 @@ with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
     validate_dict = yaml.load(val_yaml)
 
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
+REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(
+    validate_dict['required_predict_todo_list_keys']))
 OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_predict_todo_list_keys'])
 VALID_MODELS = validate_dict['valid_models']
 VALID_CONVERT_TYPES = validate_dict['valid_convert_types']
@@ -45,13 +50,13 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
 
     # if required_todo_list_keys is not a subset of todo_list_dict,
     # i.e., if not all required keys are in todo_list_dict
-    if not set(todo_list_dict.keys()) >= REQUIRED_TODO_LIST_KEYS:
-        missing_keys = REQUIRED_TODO_LIST_KEYS - set(todo_list_dict.keys())
+    missing_keys = check_for_missing_keys(todo_list_dict, REQUIRED_TODO_LIST_KEYS)
+    if missing_keys:
         raise KeyError('The following required keys '
                        'were not found in todo_list item #{}: {}'
                        .format(index, missing_keys))
     else:
-        additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS
+        additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS_FLATTENED
         for extra_key in additional_keys:
             if extra_key not in OPTIONAL_TODO_LIST_KEYS:
                 raise KeyError('key {} in todo_list item #{} is not recognized'
@@ -61,7 +66,14 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
 
-        if key == 'bird_ID':
+        if key == 'annotation_file':
+            with open(val, newline='') as f:
+                reader = csv.reader(f, delimiter=',')
+                first_row = next(reader)
+                if first_row != 'filename,index,onset,offset,label'.split(','):
+                    raise ValueError('annotation_file did not have correct header')
+
+        elif key == 'bird_ID':
             if type(val) != str:
                 raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
                                  ' should be a string'.format(val, type(val)))
@@ -156,7 +168,7 @@ def validate_yaml(config_path, predict_config_yaml):
     config_path : str
         absolute path to YAML config file. Used to validate directory names
         in YAML files, which are assumed to be written relative to the
-        location of the file itself.    
+        location of the file itself.
     predict_config_yaml : dict
         dict should be config from YAML file as loaded with pyyaml.
 

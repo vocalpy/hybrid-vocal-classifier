@@ -20,6 +20,7 @@ doi:10.1371/journal.pone.0159188
 import os
 import glob
 import xml.etree.ElementTree as ET
+import csv
 
 #from dependencies
 import numpy as np
@@ -150,13 +151,20 @@ def parse_xml(xml_file,concat_seqs_into_songs=False):
         return seq_list
 
 
-def load_song_annot(songfile):
-    """
+def load_song_annot(filename, annot_file=None):
+    """load annotation for specific song from Koumura dataset
 
     Parameters
     ----------
-    songfile : str
+    filename : str
         filename of .wav file from Koumura dataset
+    annotation_file : str
+        absolute path to 'Annotation.xml' file that
+        contains annotation for 'songfile'.
+        Default is None, in which case the function
+        searchs for Annotation.xml in the parent directory
+        of songfile (if a full path is given) or the
+        parent of the current working directory.
 
     Returns
     -------
@@ -164,33 +172,96 @@ def load_song_annot(songfile):
         with keys onsets, offsets, and labels
     """
 
-    dirname, songfile = os.path.split(songfile)
-    if dirname == '':
-        annot_file = glob.glob('../Annotation.xml')
-    else:
-        annot_file = glob.glob(os.path.join(dirname, '../Annotation.xml'))
-    if len(annot_file) < 1:
-        raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
-                         format(songfile))
-    elif len(annot_file) > 1:
-        raise ValueError('Can\'t open {}, found more than one Annotation.xml file in parent of current directory'.
-                         format(songfile))
-    else:
-        annot_file = annot_file[0]
+    if annot_file is None:
+        dirname, songfile = os.path.split(filename)
+        if dirname == '':
+            annot_file = glob.glob('../Annotation.xml')
+        else:
+            annot_file = glob.glob(os.path.join(dirname, '../Annotation.xml'))
+
+        if len(annot_file) < 1:
+            raise ValueError('Can\'t open {}, Annotation.xml file not found in parent of current directory'.
+                             format(songfile))
+        elif len(annot_file) > 1:
+            raise ValueError('Can\'t open {}, found more than one Annotation.xml file '
+                             'in parent of current directory'.
+                             format(songfile))
+        else:
+            annot_file = annot_file[0]
 
     seq_list = parse_xml(annot_file, concat_seqs_into_songs=True)
     wav_files = [seq.wavFile for seq in seq_list]
     ind = wav_files.index(songfile)
     this_seq = seq_list[ind]
-    onsets = np.asarray([syl.position for syl in this_seq.syls])
-    offsets = np.asarray([syl.position + syl.length for syl in this_seq.syls])
+    onsets_Hz = np.asarray([syl.position for syl in this_seq.syls])
+    offsets_Hz = np.asarray([syl.position + syl.length for syl in this_seq.syls])
     labels = [syl.label for syl in this_seq.syls]
-    songfile_dict = {
-        'onsets' : onsets,
-        'offsets' : offsets,
-        'labels' : labels
+    annotation_dict = {
+        'filename': filename, 
+        'onsets_Hz': onsets_Hz,
+        'offsets_Hz': offsets_Hz,
+        'labels': labels
     }
-    return songfile_dict
+    return annotation_dict
+
+
+def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
+    """converts Annotation.xml file to a csv file
+
+    Parameters
+    ----------
+    annotation_file : str
+        filename of annotation file
+    concat_seqs_into_songs : bool
+        if True, concatenate 'sequences' from annotation file
+        by song (i.e., .wav file that sequences are found in).
+        Default is True.
+    csv_filename : str
+        Optional, name of .csv file to save. Defaults to None,
+         in which case name is name .xml file, but with 
+         extension changed to .csv.
+
+    Returns
+    -------
+    None
+    """
+    if not annotation_file.endswith('.xml'):
+        raise ValueError('Name of annotation file should end with .xml, '
+                         'but name passed was {}'.format(annotation_file))
+    annotation = parse_xml(annotation_file, 
+                           concat_seqs_into_songs=concat_seqs_into_songs)
+    header = ['filename','index','onset_Hz','offset_Hz','label']
+    csv_list = [header]
+    for song in annotation:
+        for ind, syl in enumerate(song.syls):
+            wav_filename = os.path.normpath(
+                os.path.join('.',
+                             'Wave',
+                             song.wavFile))
+            wav_filename = os.path.abspath(wav_filename)
+            csv_list.append(
+                [wav_filename, ind, syl.position, syl.position + syl.length, syl.label])
+
+    if csv_filename is None:
+        csv_filename = annotation_file.replace('.xml','.csv')
+
+    with open(csv_filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(csv_list)
+
+
+def determine_unique_labels(annotation_file):
+    """given an annotation.xml file
+    from a bird in BirdsongRecognition dataset,
+    determine unique set of labels applied to syllables from that bird"""
+    annotation = parse_xml(annotation_file,
+                           concat_seqs_into_songs=True)
+    lbls = [syl.label
+            for seq in annotation
+            for syl in seq.syls]
+    unique_lbls = np.unique(lbls).tolist()
+    unique_lbls = ''.join(unique_lbls)  # convert from list to string
+    return unique_lbls
 
 
 class resequencer():
@@ -321,10 +392,10 @@ class resequencer():
             tmp = current_score
             current_score = next_score
             next_score = tmp
-        
+
         # retrieve best state sequence in reverse using scores directly
         current_state = -1
-        
+
         # initial step to get best state
         for state in self.tail_states:
             if current_state == -1 \

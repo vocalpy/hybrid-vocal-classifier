@@ -1,13 +1,13 @@
 valid_file_formats:
-  - evtaf
-  - koumura
+  - cbin
+  - wav
 
 required_extract_todo_list_keys:
   - bird_ID
   - file_format
-  - data_dirs
+  - !!python/tuple [data_dirs, annotation_file]
   - output_dir
-  - labelset
+  - labels_to_use
 
 optional_extract_todo_list_keys:
   - spect_params
@@ -54,7 +54,7 @@ hyperparameters:
 
 required_predict_todo_list_keys:
   - file_format
-  - data_dirs
+  - !!python/tuple [data_dirs, annotation_file]
   - output_dir
   - model_meta_file
 

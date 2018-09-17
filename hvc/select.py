@@ -260,7 +260,7 @@ def select(config_file):
                         pred_labels_arr[num_samples_ind, replicate, model_ind] = pred_labels
                         acc_by_label, avg_acc = get_acc_by_label(test_labels,
                                                                  pred_labels,
-                                                                 feature_file['labelset'])
+                                                                 feature_file['labels_to_use'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
                         joblib.dump(clf, model_filename)
@@ -319,7 +319,7 @@ def select(config_file):
 
                         num_samples, num_freqbins, num_timebins, num_channels = \
                             train_spects_scaled.shape
-                        num_label_classes = len(feature_file['labelset'])
+                        num_label_classes = len(feature_file['labels_to_use'])
                         input_shape = (num_freqbins, num_timebins, num_channels)
                         flatwin = flatwindow(input_shape=input_shape,
                                              num_label_classes=num_label_classes)
@@ -368,7 +368,7 @@ def select(config_file):
                         
                         acc_by_label, avg_acc = get_acc_by_label(test_labels,
                                                                  pred_labels,
-                                                                 feature_file['labelset'])
+                                                                 feature_file['labels_to_use'])
                         print(', average accuracy on test set: {:05.4f}'.format(avg_acc))
                         avg_acc_arr[num_samples_ind, replicate, model_ind] = avg_acc
 
