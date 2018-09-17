@@ -6,6 +6,7 @@ feature extraction
 from .parseconfig import parse_config
 from . import features
 from .parse.extract import _validate_feature_group_and_convert_to_list
+from .parse.ref_spect_params import refs_dict
 
 
 def extract(config_file=None,
@@ -17,7 +18,7 @@ def extract(config_file=None,
             feature_list=None,
             output_dir=None,
             spect_params=None,
-            return_features=True):
+            return_features=None):
     """high-level function for feature extraction.
     Accepts either a config file or a set of parameters and
     uses them to extract features from audio files 
@@ -32,6 +33,8 @@ def extract(config_file=None,
         of str, directories that contain audio files from which features should be extracted.
         hvc.extract attempts to create an annotation.csv file based on the audio file types in
         the directories.
+    file_format : str
+        format of audio files. One of the following: {'cbin','wav'}
     annotation_file : str
         filename of an annotation.csv file
     labels_to_use : str
@@ -52,9 +55,12 @@ def extract(config_file=None,
         absolute path to directory in which to save extracted features
     spect_params : dict
         parameters to compute spectrograms,
-        i.e., as defined for hvc.audiofileIO.Spectrogram
+        as defined for hvc.audiofileIO.Spectrogram.
+        Please consult docstring for that class to see valid parameters.
     return_features : bool
-        if True, returns features and labels
+        if True, returns features and labels.
+        If a config file is used, defaults to False.
+        Otherwise, default is True.
     """
 
     if config_file and (data_dirs or file_format or annotation_file or labels_to_use
@@ -106,6 +112,12 @@ def extract(config_file=None,
                 'file_format': todo['file_format']
             }
 
+            if 'return_features' not in extract_params:
+                if return_features is None:
+                    extract_params['return_features'] = False
+                else:
+                    extract_params['return_features'] = return_features
+
             if 'data_dirs' in todo:
                 extract_params['data_dirs'] = todo['data_dirs']
                 extract_params['data_dirs_validated'] = True
@@ -127,29 +139,36 @@ def extract(config_file=None,
 
         extract_init_params = {}
         if spect_params is None:
-            spect_params = {'ref': 'default'}
+            spect_params = refs_dict['evsonganaly']
+        extract_init_params['spect_params'] = spect_params
         if feature_group:
             if type(feature_group) != str and type(feature_group) != list:
                 raise TypeError('feature_group must be str or list but instead was {}'
                                 .format(type(feature_group)))
             if type(feature_group) == str:
-                feature_list = _validate_feature_group_and_convert_to_list(feature_group)
+                feature_list, _, _ = _validate_feature_group_and_convert_to_list(feature_group)
             elif type(feature_group) == list:
                 (feature_list,
                  feature_list_group_ID,
                  feature_group_ID_dict) = _validate_feature_group_and_convert_to_list(feature_group)
                 extract_init_params['feature_list_group_ID'] = feature_list_group_ID
                 extract_init_params['feature_group_ID_dict'] = feature_group_ID_dict
-            extract_init_params['feature_list'] == feature_list
+            extract_init_params['feature_list'] = feature_list
 
-        extract_init_params = {
-            'spect_params': spect_params,
-        }
         fe = features.extract.FeatureExtractor(**extract_init_params)
 
-        extract_params = {}
+        extract_params = {
+            'file_format': file_format,
+            'labels_to_use': labels_to_use,
+            'output_dir': output_dir,
+            'return_features': return_features
+        }
         if data_dirs:
             extract_params['data_dirs'] = data_dirs
         elif annotation_file:
             extract_params['annotation_file'] = annotation_file
-        fe.extract(**extract_params)
+        if return_features:
+            ftrs = fe.extract(**extract_params)
+            return ftrs
+        else:
+            fe.extract(**extract_params)

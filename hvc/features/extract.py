@@ -82,6 +82,8 @@ class FeatureExtractor:
         if segment_params:
             self.segment_params = segment_params
             self.segmenter = Segmenter(**self.segment_params)
+        else:
+            self.segment_params = None
         self.feature_list = feature_list
         if feature_list_group_ID:
             self.feature_list_group_ID = feature_list_group_ID
@@ -97,7 +99,7 @@ class FeatureExtractor:
                 output_dir=None,
                 make_output_subdir=True,
                 make_summary_file=True,
-                return_extract_dict=True):
+                return_features=True):
         """extract features and save feature files
 
         Parameters
@@ -116,7 +118,7 @@ class FeatureExtractor:
             The high-level hvc.extract function sets this to True when the user provides a
             config file.
         file_format : str
-            audio file format. Value formats: {'cbin', 'wav'}
+            audio file format. Valid formats: {'cbin', 'wav'}
         annotation_file : str
             filename of csv file with annotations.
             Must be a comma-separated values (csv) file.
@@ -135,8 +137,9 @@ class FeatureExtractor:
             Default is True.
         make_summary_file : bool
             if True, combine feature files from each directory to make a summary file
-        return_extract_dict : bool
-            if True, return dict that contains all extracted features
+        return_features : bool
+            if True, return dict that contains all extracted features.
+            Default is True.
         """
 
         if data_dirs and annotation_file:
@@ -404,10 +407,9 @@ class FeatureExtractor:
                                      'more than one key in dictionary.')
 
             joblib.dump(feature_file_dict,
-                        feature_file,
-                        compress=3)
+                        feature_file)
 
-        if return_extract_dict:
+        if return_features:
             extract_dict = {'labels': all_labels}
             if 'features_from_all_files' in locals():
                 extract_dict['features'] = features_from_all_files
