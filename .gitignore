@@ -9,3 +9,4 @@ dir_names.txt
 .idea/
 docs/_build
 docs_old/
+.pytest_cache/

@@ -47,4 +47,4 @@ class TestExtract:
                            output_dir=str(tmp_output_dir),
                            return_features=return_features)
         assert type(ftrs) == dict
-        assert tuple(ftrs.keys()) == ('labels', 'features')
+        assert sorted(ftrs.keys()) == ['features', 'labels']
