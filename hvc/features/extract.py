@@ -13,7 +13,6 @@ from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
 from .. import evfuncs
-from ..koumura import to_csv
 
 
 class FeatureExtractor:
@@ -278,8 +277,9 @@ class FeatureExtractor:
 
                 if annot_xmls:
                     for annot_xml in annot_xmls:
-                        annotation_csv = to_csv(annot_xml)
-                        annotation_list.extend(annotation.csv_to_annot_list(annotation_csv))
+                        annotation_list.extend(
+                            annotation.xml_to_annot_list(annot_xml)
+                        )
 
         # if user passed argument for annotation_file, not data_dirs
         elif annotation_file:
