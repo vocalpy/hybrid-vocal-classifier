@@ -1,3 +1,5 @@
-===========================================
-writing config files for feature extraction
-===========================================
+.. _writing_extract_YAML:
+
+================================================
+writing YAML config files for feature extraction
+================================================
