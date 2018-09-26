@@ -264,7 +264,7 @@ class FeatureExtractor:
                                                           '..',
                                                           'Annotation.xml'))
                             if annot_xml:
-                                annot_xmls.append(annot_xml)
+                                annot_xmls.extend(annot_xml)
                             else:
                                 raise ValueError('Identified file format as .wav but did not find '
                                                  'files with annotations in data_dir {}.'
@@ -279,7 +279,7 @@ class FeatureExtractor:
                 if annot_xmls:
                     for annot_xml in annot_xmls:
                         annotation_csv = to_csv(annot_xml)
-                        annotation_list.extend(annotation.csv_to_list(annotation_csv))
+                        annotation_list.extend(annotation.csv_to_annot_list(annotation_csv))
 
         # if user passed argument for annotation_file, not data_dirs
         elif annotation_file:
