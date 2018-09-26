@@ -200,54 +200,11 @@ def load_song_annot(filename, annot_file=None):
         'filename': filename, 
         'onsets_Hz': onsets_Hz,
         'offsets_Hz': offsets_Hz,
+        'onsets_s': None,
+        'offsets_s': None,
         'labels': labels
     }
     return annotation_dict
-
-
-def to_csv(annotation_file, concat_seqs_into_songs=True,csv_filename=None):
-    """converts Annotation.xml file to a csv file
-
-    Parameters
-    ----------
-    annotation_file : str
-        filename of annotation file
-    concat_seqs_into_songs : bool
-        if True, concatenate 'sequences' from annotation file
-        by song (i.e., .wav file that sequences are found in).
-        Default is True.
-    csv_filename : str
-        Optional, name of .csv file to save. Defaults to None,
-         in which case name is name .xml file, but with 
-         extension changed to .csv.
-
-    Returns
-    -------
-    None
-    """
-    if not annotation_file.endswith('.xml'):
-        raise ValueError('Name of annotation file should end with .xml, '
-                         'but name passed was {}'.format(annotation_file))
-    annotation = parse_xml(annotation_file, 
-                           concat_seqs_into_songs=concat_seqs_into_songs)
-    header = ['filename','index','onset_Hz','offset_Hz','label']
-    csv_list = [header]
-    for song in annotation:
-        for ind, syl in enumerate(song.syls):
-            wav_filename = os.path.normpath(
-                os.path.join('.',
-                             'Wave',
-                             song.wavFile))
-            wav_filename = os.path.abspath(wav_filename)
-            csv_list.append(
-                [wav_filename, ind, syl.position, syl.position + syl.length, syl.label])
-
-    if csv_filename is None:
-        csv_filename = annotation_file.replace('.xml','.csv')
-
-    with open(csv_filename, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(csv_list)
 
 
 def determine_unique_labels(annotation_file):

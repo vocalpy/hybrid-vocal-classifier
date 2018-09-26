@@ -5,6 +5,7 @@ import numpy as np
 import scipy.io
 
 from .. import evfuncs
+from ..koumura import parse_xml
 
 # fields that must be present for each syllable that is annotated.
 # these field names are used below by annot_list_to_csv and csv_to_annot_list
@@ -211,7 +212,7 @@ def notmat_list_to_csv(notmat_list, csv_fname, abspath=False, basename=False):
     """takes a list of .not.mat filenames and saves the
     annotation from all files in one comma-separated values (csv)
     file, where each row represents one syllable from one of the
-    .not.mat files.0
+    .not.mat files.
 
     Parameters
     ----------
@@ -348,6 +349,81 @@ def make_notmat(filename,
                                   .format(notmat_name))
     else:
         scipy.io.savemat(notmat_name, notmat_dict)
+
+
+def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True):
+    """converts Annotation.xml file to annotation list
+
+    Parameters
+    ----------
+    annotation_file : str
+        filename of annotation file
+    concat_seqs_into_songs : bool
+        if True, concatenate 'sequences' from annotation file
+        by song (i.e., .wav file that sequences are found in).
+        Default is True.
+
+    Returns
+    -------
+    annot_list : list
+        of annotation dicts
+    """
+
+    if not annotation_file.endswith('.xml'):
+        raise ValueError('Name of annotation file should end with .xml, '
+                         'but name passed was {}'.format(annotation_file))
+    annotation = parse_xml(annotation_file,
+                           concat_seqs_into_songs=concat_seqs_into_songs)
+    annot_list = []
+    # loop through 'sequences' defined in xml song
+    # (or entire songs, if concat_seqs_into_songs is True)
+    for sequence in annotation:
+        wav_filename = os.path.normpath(
+            os.path.join('.',
+                         'Wave',
+                         sequence.wavFile))
+        wav_filename = os.path.abspath(wav_filename)
+        onsets_Hz = np.asarray([syl.position for syl in sequence.syls])
+        offsets_Hz = np.asarray([syl.position + syl.length for syl in sequence.syls])
+        labels = np.asarray([syl.label for syl in sequence.syls])
+        annot_dict = {
+            'filename': wav_filename,
+            'onsets_Hz': onsets_Hz,
+            'offsets_Hz': offsets_Hz,
+            'onsets_s': None,
+            'offsets_s': None,
+            'labels': labels
+        }
+        annot_list.append(annot_dict)
+    return annot_list
+
+
+def xml_to_csv(annotation_file, concat_seqs_into_songs=True, csv_filename=None):
+    """takes Annotation.xml file from Koumura dataset into and saves the
+    annotation from all files in one comma-separated values (csv)
+    file, where each row represents one syllable from one of the
+    .wav files.
+
+    Parameters
+    ----------
+    annotation_file : str
+        filename of annotation file
+    concat_seqs_into_songs : bool
+        if True, concatenate 'sequences' from annotation file
+        by song (i.e., .wav file that sequences are found in).
+        Default is True.
+    csv_filename : str
+        Optional, name of .csv file to save. Defaults to None,
+        in which case name is name .xml file, but with 
+        extension changed to .csv.
+    """
+
+    annot_list = xml_to_annot_list(annotation_file,
+                                   concat_seqs_into_songs=concat_seqs_into_songs)
+    if csv_filename is None:
+        csv_filename = os.path.abspath(annotation_file)
+        csv_filename.replace('xml', 'csv')
+    annot_list_to_csv(annot_list, csv_filename)
 
 
 def _fix_annot_dict_types(annot_dict):
