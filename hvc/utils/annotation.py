@@ -422,7 +422,7 @@ def xml_to_csv(annotation_file, concat_seqs_into_songs=True, csv_filename=None):
                                    concat_seqs_into_songs=concat_seqs_into_songs)
     if csv_filename is None:
         csv_filename = os.path.abspath(annotation_file)
-        csv_filename.replace('xml', 'csv')
+        csv_filename = csv_filename.replace('xml', 'csv')
     annot_list_to_csv(annot_list, csv_filename)
 
 
