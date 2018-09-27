@@ -242,7 +242,7 @@ class FeatureExtractor:
             elif segment is False:
                 # if we are not segmenting songs (e.g. for prediction of unlabeled song)
                 # but user passed data_dir instead of annotation_file,
-                # look for annotation files (for now just .not.mat files)
+                # look for annotation files (for now just .not.mat files or Annotation.xml files)
                 notmats = []
                 annot_xmls = []
                 for data_dir in data_dirs:
