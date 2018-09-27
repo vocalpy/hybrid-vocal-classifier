@@ -1,5 +1,6 @@
 import os
 import csv
+import wave
 
 import numpy as np
 import scipy.io
@@ -192,6 +193,7 @@ def annot_list_to_csv(annot_list,
                 song_filename = os.path.abspath(song_filename)
             elif basename:
                 song_filename = os.path.basename(song_filename)
+
             annot_dict_zipped = zip(annot_dict['onsets_Hz'],
                                     annot_dict['offsets_Hz'],
                                     annot_dict['onsets_s'],
@@ -351,23 +353,34 @@ def make_notmat(filename,
         scipy.io.savemat(notmat_name, notmat_dict)
 
 
-def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True):
-    """converts Annotation.xml file to annotation list
+def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True,
+                      wavpath='./Wave'):
+    """converts Annotation.xml files from Koumura dataset to annotation list
 
     Parameters
     ----------
     annotation_file : str
         filename of annotation file
+        (in all cases basename will be 'Annotation.xml', but this allows
+        for passing full path to file)
     concat_seqs_into_songs : bool
         if True, concatenate 'sequences' from annotation file
         by song (i.e., .wav file that sequences are found in).
         Default is True.
+    wavpath : str
+        Path in which .wav files listed in Annotation.xml file are found.
+        By default this is
 
     Returns
     -------
     annot_list : list
         of annotation dicts
     """
+
+    wavpath = os.path.normpath(wavpath)
+    if not os.path.isdir(wavpath):
+        raise NotADirectoryError('Path specified for wavpath, {}, not recognized as an '
+                                 'existing directory'.format(wavpath))
 
     if not annotation_file.endswith('.xml'):
         raise ValueError('Name of annotation file should end with .xml, '
@@ -378,20 +391,26 @@ def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True):
     # loop through 'sequences' defined in xml song
     # (or entire songs, if concat_seqs_into_songs is True)
     for sequence in annotation:
-        wav_filename = os.path.normpath(
-            os.path.join('.',
-                         'Wave',
-                         sequence.wavFile))
+        wav_filename = os.path.join(wavpath, sequence.wavFile)
         wav_filename = os.path.abspath(wav_filename)
+        if not os.path.isfile(wav_filename):
+            raise FileNotFoundError('.wav file {} specified in annotation file {} is not found'
+                                    .format(wav_filename, annotation_file))
+        # found with %%timeit that Python wave module takes about 1/2 the time of
+        # scipy.io.wavfile for just reading sampling frequency from each file
+        with wave.open(wav_filename, 'rb') as wav_file:
+            samp_freq = wav_file.getframerate()
         onsets_Hz = np.asarray([syl.position for syl in sequence.syls])
         offsets_Hz = np.asarray([syl.position + syl.length for syl in sequence.syls])
+        onsets_s = np.round(onsets_Hz / samp_freq, decimals=3)
+        offsets_s = np.round(offsets_Hz / samp_freq, decimals=3)
         labels = np.asarray([syl.label for syl in sequence.syls])
         annot_dict = {
             'filename': wav_filename,
             'onsets_Hz': onsets_Hz,
             'offsets_Hz': offsets_Hz,
-            'onsets_s': None,
-            'offsets_s': None,
+            'onsets_s': onsets_s,
+            'offsets_s': offsets_s,
             'labels': labels
         }
         annot_list.append(annot_dict)
