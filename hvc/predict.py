@@ -136,8 +136,25 @@ def predict(config_file=None,
                 ftr_file_dict = joblib.load(ftr_file)
                 if model_name in valid_models['sklearn']:
                     features = ftr_file_dict['features']
+                    if np.any(np.isnan(features)):  # if any rows have nan values for features
+                        features_has_nan = True
+                        # Initialize predictions vector, to later assign nan values
+                        # to predictions for those rows
+                        pred_labels_nan = np.full((features.shape[0],), 'nan')  # has to be same dtype as predictions
+                        # Need to remove rows with nans before normalization + classification
+                        features_not_nan_rows = np.where(~np.isnan(features).any(axis=1))[0]
+                        features = features[features_not_nan_rows, :]
+                    else:
+                        features_has_nan = False
                     features_scaled = scaler.transform(features)
                     pred_labels = clf.predict(features_scaled)
+                    if features_has_nan:
+                        # index pred_labels into pred_labels_nan
+                        # so that all nan rows will have 'nan' as prediction
+                        pred_labels_nan[features_not_nan_rows] = pred_labels
+                        # now make pred_labels point to ndarray with 'nan' predictions included
+                        pred_labels = pred_labels_nan
+
                 elif model_name in valid_models['keras']:
                     neuralnet_inputs_dict = ftr_file_dict['neuralnet_inputs']
                     inputs_key = model_meta_file['feature_list'][0]
@@ -255,8 +272,24 @@ def predict(config_file=None,
             ftr_file_dict = joblib.load(ftr_file)
             if model_name in valid_models['sklearn']:
                 features = ftr_file_dict['features']
+                if np.any(np.isnan(features)):  # if any rows have nan values for features
+                    features_has_nan = True
+                    # Initialize predictions vector, to later assign nan values
+                    # to predictions for those rows
+                    pred_labels_nan = np.full((features.shape[0],), 'nan')  # has to be same dtype as predictions
+                    # Need to remove rows with nans before normalization + classification
+                    features_not_nan_rows = np.where(~np.isnan(features).any(axis=1))[0]
+                    features = features[features_not_nan_rows, :]
+                else:
+                    features_has_nan = False
                 features_scaled = scaler.transform(features)
                 pred_labels = clf.predict(features_scaled)
+                if features_has_nan:
+                    # index pred_labels into pred_labels_nan
+                    # so that all nan rows will have 'nan' as prediction
+                    pred_labels_nan[features_not_nan_rows] = pred_labels
+                    # now make pred_labels point to ndarray with 'nan' predictions included
+                    pred_labels = pred_labels_nan
             elif model_name in valid_models['keras']:
                 neuralnet_inputs_dict = ftr_file_dict['neuralnet_inputs']
                 inputs_key = model_meta_file['feature_list'][0]
