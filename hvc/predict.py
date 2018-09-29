@@ -309,13 +309,16 @@ def predict(config_file=None,
                     predict_dict['labels_to_use'] = ftrs['labels_to_use']
                     if 'features' in ftrs:
                         predict_dict['features'] = ftrs['features']
-                        predict_dict['feature_group_ID_dict'] = ftrs['feature_group_ID_dict']
                         predict_dict['features_arr_column_IDs'] = ftrs['features_arr_column_IDs']
-                        'feature_group_ID_dict'
-                        'features_arr_column_IDs'
+                    if 'feature_group_ID_dict' in ftrs:
+                        predict_dict['feature_group_ID_dict'] = ftrs['feature_group_ID_dict']
+                        predict_dict['feature_list_group_ID'] = ftrs['feature_list_group_ID']
                     if 'pred_probs' in ftrs:
                         predict_dict['pred_probs'] = ftrs['pred_probs']
-                else:
+                    if 'neuralnet_inputs' in ftrs:
+                        predict_dict['neuralnet_inputs'] = ftrs['neuralnet_inputs']
+                else:  # if we already loaded one feature file and predict_dict is not empty
+                    # then concatenate
                     predict_dict['labels'] = np.concatenate(predict_dict['labels'], ftrs['labels'])
                     predict_dict['pred_labels'] = np.concatenate(predict_dict['pred_labels'], ftrs['pred_labels'])
                     predict_dict['songfile_IDs'] = np.concatenate(predict_dict['songfile_IDs'], ftrs['songfile_IDs'])
@@ -323,6 +326,11 @@ def predict(config_file=None,
                     predict_dict['offsets_Hz'] = np.concatenate(predict_dict['offsets_Hz'], ftrs['offsets_Hz'])
                     if 'features' in predict_dict:
                         predict_dict['features'] = np.concatenate(predict_dict['features'], ftrs['features'])
+                    if 'neuralnet_inputs' in predict_dict:
+                        for key, val in ftrs['neuralnet_input']:
+                            predict_dict['neuralnet_input'][key] = \
+                                np.concatenate((predict_dict['neuralnet_input'][key],
+                                                ftrs['neuralnet_input'][key]))
                     if 'pred_probs' in predict_dict:
                         predict_dict['pred_probs'] = np.concatenate(predict_dict['pred_probs'], ftrs['pred_probs'])
             os.chdir(home_dir)
