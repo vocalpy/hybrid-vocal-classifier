@@ -18,13 +18,17 @@ from hvc.parse.ref_spect_params import refs_dict
 import hvc.evfuncs
 from hvc.utils import annotation
 
-this_file_with_path = __file__
-this_file_just_path = os.path.split(this_file_with_path)[0]
-feature_grps_path = os.path.join(this_file_just_path,
-                                      os.path.normpath(
-                                          '../hvc/parse/feature_groups.yml'))
-with open(feature_grps_path) as ftr_grps_yml:
-    valid_feature_groups_dict = yaml.load(ftr_grps_yml)
+@pytest.fixture
+def feature_grps_path(hvc_source_dir):
+    return os.path.join(hvc_source_dir,
+                        os.path.normpath('parse/feature_groups.yml'))
+
+
+@pytest.fixture
+def valid_feature_groups_dict(feature_grps_path):
+    with open(feature_grps_path) as ftr_grps_yml:
+        valid_feature_groups_dict = yaml.load(ftr_grps_yml)
+    return valid_feature_groups_dict
 
 
 class TestTachibana:
@@ -34,7 +38,7 @@ class TestTachibana:
     """
 
     @pytest.fixture()
-    def a_syl(self):
+    def a_syl(self, test_data_dir):
         """make a syl object
 
         Should get fancy later and have this return random syls
@@ -46,8 +50,8 @@ class TestTachibana:
             used to text feature extraction functions
         """
 
-        songfiles_dir = os.path.join(this_file_just_path,
-                                 os.path.normpath('test_data/cbins/gy6or6/032412/*.cbin'))
+        songfiles_dir = os.path.join(test_data_dir,
+                                 os.path.normpath('cbins/gy6or6/032412/*.cbin'))
         songfiles_list = glob(songfiles_dir)
         first_song = songfiles_list[0]
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_song)
@@ -92,14 +96,14 @@ class TestTachibana:
         """
         assert tachibana.mean_delta_cepstrum(a_syl).shape[0] == 128
 
-    def test_that_deltas_return_zero_instead_of_nan(self):
+    def test_that_deltas_return_zero_instead_of_nan(self, test_data_dir):
         """tests that 'five-point-delta' features return zero instead of NaN
         when there are less than five columns and the five-point delta cannot
         be computed
         """
 
-        a_cbin = os.path.join(this_file_just_path,
-                              os.path.normpath('test_data/cbins/gy6or6/032612/'
+        a_cbin = os.path.join(test_data_dir,
+                              os.path.normpath('cbins/gy6or6/032612/'
                                                'gy6or6_baseline_260312_0810.3440.cbin'))
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(a_cbin)
 

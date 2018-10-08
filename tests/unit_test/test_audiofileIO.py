@@ -17,17 +17,19 @@ from hvc.utils import annotation
 from hvc.parse.ref_spect_params import refs_dict
 
 @pytest.fixture()
-def has_window_error():
-    filename = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath('./test_data/cbins/window_error'
+def has_window_error(test_data_dir):
+    filename = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/window_error'
                             '/gy6or6_baseline_220312_0901.106.cbin'))
     index = 19
     return filename, index
 
 
-def test_segment_song():
+def test_segment_song(test_data_dir):
     cbins = glob(
-        os.path.normpath('./test_data/cbins/gy6or6/032312/*.cbin'))
+        os.path.join(test_data_dir,
+            os.path.normpath('./test_data/cbins/gy6or6/032312/*.cbin'))
+    )
     for cbin in cbins:
         print('loading {}'.format(cbin))
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
@@ -60,12 +62,12 @@ class TestAudiofileIO:
                                                   filter_func='diff',
                                                   spect_func='scipy')
 
-    def test_Spectrogram_make(self, has_window_error):
+    def test_Spectrogram_make(self, has_window_error, test_data_dir):
         """ test whether Spectrogram.make works
         """
         # test whether make works with .cbin
-        cbin = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+        cbin = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/gy6or6/032412/'
                             'gy6or6_baseline_240312_0811.1165.cbin'))
         dat, fs = hvc.evfuncs.load_cbin(cbin)
 
@@ -82,8 +84,8 @@ class TestAudiofileIO:
         assert spect.shape[1] == time_bins.shape[0]
 
         # test whether make works with .wav from Koumura dataset
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
+        wav = os.path.join(test_data_dir,
+                           os.path.normpath('koumura/Bird0/Wave/0.wav'))
         fs, dat = wavfile.read(wav)
         hvc.koumura.load_song_annot(wav)
 
@@ -107,7 +109,7 @@ class TestAudiofileIO:
         with pytest.raises(hvc.audiofileIO.WindowError):
             spect_maker.make(raw_audio, fs)
 
-    def test_make_syls(self):
+    def test_make_syls(self, test_data_dir):
         """test make_syls function
         """
 
@@ -119,8 +121,8 @@ class TestAudiofileIO:
 
         # test that make_syl_spects works
         # with spect params given individually
-        cbin = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath('test_data/cbins/gy6or6/032412/'
+        cbin = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/gy6or6/032412/'
                             'gy6or6_baseline_240312_0811.1165.cbin'))
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(cbin)
         spect_params = {
@@ -138,8 +140,8 @@ class TestAudiofileIO:
                                          annot_dict['offsets_Hz'],
                                          labels_to_use=labels_to_use)
 
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
+        wav = os.path.join(test_data_dir,
+                           os.path.normpath('koumura/Bird0/Wave/0.wav'))
         samp_freq, raw_audio = wavfile.read(wav)
         annot_dict = hvc.koumura.load_song_annot(wav)
         labels_to_use = '0123456'
@@ -165,8 +167,8 @@ class TestAudiofileIO:
                                          annot_dict['offsets_Hz'],
                                          labels_to_use=labels_to_use)
 
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
+        wav = os.path.join(test_data_dir,
+                           os.path.normpath('koumura/Bird0/Wave/0.wav'))
         samp_freq, raw_audio = wavfile.read(wav)
         labels_to_use = '0123456'
         annot_dict = hvc.koumura.load_song_annot(wav)
@@ -192,8 +194,8 @@ class TestAudiofileIO:
                                          annot_dict['offsets_Hz'],
                                          labels_to_use=labels_to_use)
 
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
+        wav = os.path.join(test_data_dir,
+                           os.path.normpath('koumura/Bird0/Wave/0.wav'))
         samp_freq, raw_audio = wavfile.read(wav)
         labels_to_use = '0123456'
         annot_dict = hvc.koumura.load_song_annot(wav)
@@ -220,8 +222,8 @@ class TestAudiofileIO:
                                          annot_dict['offsets_Hz'],
                                          labels_to_use=labels_to_use)
 
-        wav = os.path.join(os.path.dirname(__file__),
-                           os.path.normpath('test_data/koumura/Bird0/Wave/0.wav'))
+        wav = os.path.join(test_data_dir,
+                           os.path.normpath('koumura/Bird0/Wave/0.wav'))
         samp_freq, raw_audio = wavfile.read(wav)
         annot_dict = hvc.koumura.load_song_annot(wav)
         labels_to_use = '0123456'

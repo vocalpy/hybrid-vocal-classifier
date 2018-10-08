@@ -12,44 +12,62 @@ from sklearn.externals import joblib
 import hvc.parse.extract
 import hvc.parse.select
 
-this_file_with_path = __file__
-this_file_just_path = os.path.split(this_file_with_path)[0]
 
-test_yaml_extract_path = os.path.join(this_file_just_path,
-                                      os.path.normpath(
-                                          'test_data/config.yml/'
-                                          'test_parse_extract.config.yml'))
-with open(test_yaml_extract_path, 'r') as yaml_file:
-    test_yaml_extract = yaml.load(yaml_file)
+@pytest.fixture
+def test_yaml_extract_path(test_data_dir):
+    return os.path.join(test_data_dir,
+                        os.path.normpath('config.yml/test_parse_extract.config.yml'))
 
-test_yaml_select_path = os.path.join(this_file_just_path,
-                                      os.path.normpath(
-                                          'test_data/config.yml/'
-                                          'test_parse_select.config.yml'))
-with open(test_yaml_select_path, 'r') as yaml_file:
-    test_yaml_select = yaml.load(yaml_file)
+@pytest.fixture
+def test_yaml_extract(test_yaml_extract_path):
+    with open(test_yaml_extract_path, 'r') as yaml_file:
+        test_yaml_extract = yaml.load(yaml_file)
+    return test_yaml_extract
 
-features_yml_path = os.path.join(this_file_just_path,
-                                      os.path.normpath(
-                                          '../hvc/parse/features.yml'))
-with open(features_yml_path, 'r') as features_yml:
-    VALID_FEATURES = yaml.load(features_yml)['features']
 
-feature_grps_path = os.path.join(this_file_just_path,
-                                      os.path.normpath(
-                                          '../hvc/parse/feature_groups.yml'))
-with open(feature_grps_path) as ftr_grps_yml:
-    FTR_GROUPS = yaml.load(ftr_grps_yml)
+@pytest.fixture
+def test_yaml_select_path(test_data_dir):
+    return os.path.join(test_data_dir,
+                        os.path.normpath('config.yml/test_parse_select.config.yml'))
+
+@pytest.fixture
+def test_yaml_select(test_yaml_select_path):
+    with open(test_yaml_select_path, 'r') as yaml_file:
+        test_yaml_select = yaml.load(yaml_file)
+    return test_yaml_select
+
+@pytest.fixture
+def features_yml_path(hvc_source_dir):
+    return os.path.join(hvc_source_dir,
+                        os.path.normpath('parse/features.yml'))
+
+@pytest.fixture
+def VALID_FEATURES(features_yml_path):
+    with open(features_yml_path, 'r') as features_yml:
+        VALID_FEATURES = yaml.load(features_yml)['features']
+        return VALID_FEATURES
+
+@pytest.fixture
+def feature_grps_path(hvc_source_dir):
+    return os.path.join(hvc_source_dir,
+                        os.path.normpath('parse/feature_groups.yml'))
+
+
+@pytest.fixture
+def FTR_GROUPS(feature_grps_path):
+    with open(feature_grps_path) as ftr_grps_yml:
+        FTR_GROUPS = yaml.load(ftr_grps_yml)
+    return FTR_GROUPS
 
 
 class TestParseExtract:
 
-    def test_features(self):
+    def test_features(self, FTR_GROUPS, VALID_FEATURES):
         # each valid feature group should be a subset of valid features
         for ftr_group in FTR_GROUPS.values():
             assert set(ftr_group) < set(VALID_FEATURES)
 
-    def test_validate_yaml(self):
+    def test_validate_yaml(self, test_yaml_extract, test_yaml_extract_path):
         test_yaml = test_yaml_extract['test_parse']
 
         # test whether valid yaml parses *without* throwing error
@@ -74,7 +92,7 @@ class TestParseExtract:
             hvc.parse.extract.validate_yaml(test_yaml_extract_path,
                                             test_yaml['invalid_missing_segment_params'])
 
-    def test_validate_feature_group_and_convert_to_list(self):
+    def test_validate_feature_group_and_convert_to_list(self, FTR_GROUPS):
 
         # test one feature group as a string
         ftr_tuple = hvc.parse.extract._validate_feature_group_and_convert_to_list('knn')
@@ -118,7 +136,8 @@ class TestParseExtract:
                               np.asarray(([None] * len(a_feature_list) + [0] * 9)))
         assert ftr_tuple[2] == {'knn': 0}
 
-    def test_validate_todo_list_dict(self):
+    def test_validate_todo_list_dict(self, test_yaml_extract, FTR_GROUPS,
+                                     test_yaml_extract_path):
 
         ftr_test_yml = test_yaml_extract['test_validate_todo_list_dict']
 
@@ -146,7 +165,7 @@ class TestParseExtract:
                                                                      test_yaml_extract_path)
         assert actual_ftr_list['feature_list'] == FTR_GROUPS['knn']
 
-    def test_validate_segment_params(self):
+    def test_validate_segment_params(self, test_yaml_extract):
 
         test_yaml = test_yaml_extract['test_segment_params']
 
@@ -169,7 +188,7 @@ class TestParseExtract:
 
 class TestParseSelect:
 
-    def test_validate_model_dict(self):
+    def test_validate_model_dict(self, test_yaml_select):
         test_yaml = test_yaml_select['test_validate_model_dict']
 
         # model dict called with ftr group but without ftr_grp_ID_dict or ftr_grp_ID_arr

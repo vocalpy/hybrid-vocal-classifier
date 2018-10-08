@@ -22,7 +22,7 @@ def test_fetch(tmp_output_dir):
     hvc.utils.fetch(dataset_str='sober.repo1.gy6or6.032612',  # one of the smaller .gz, ~31 MB
                     destination_path=str(tmp_output_dir))
     compare_dir = os.path.join(this_file_just_path,
-                               os.path.normpath('test_data/cbins/gy6or6/032612'))
+                               os.path.normpath('../test_data/cbins/gy6or6/032612'))
     os.chdir(compare_dir)
     test_data_032612 = glob('gy6or6*')
     test_data_fetched = os.listdir(os.path.join(str(tmp_output_dir),

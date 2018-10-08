@@ -11,7 +11,7 @@ class TestEvfuncs:
 
     def test_load_cbin(self):
         cbin = os.path.join(os.path.dirname(__file__),
-                            'test_data/cbins/gy6or6/032412/'
+                            '../test_data/cbins/gy6or6/032412/'
                             'gy6or6_baseline_240312_0811.1165.cbin')
         dat, fs = hvc.evfuncs.load_cbin(cbin)
         assert type(dat) == np.ndarray

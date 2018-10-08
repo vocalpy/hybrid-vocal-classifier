@@ -27,10 +27,10 @@ def tmp_output_dir(tmpdir_factory):
     return fn
 
 
-def test_notmat_to_annot_dict():
-    notmat = os.path.join(os.path.dirname(__file__),
+def test_notmat_to_annot_dict(test_data_dir):
+    notmat = os.path.join(test_data_dir,
                           os.path.normpath(
-                              'test_data/cbins/gy6or6/032412/'
+                              'cbins/gy6or6/032412/'
                               'gy6or6_baseline_240312_0811.1165.cbin.not.mat'))
     annot_dict = annotation.notmat_to_annot_dict(notmat)
     for fieldname, fieldtype in ANNOT_DICT_FIELDNAMES.items():
@@ -38,13 +38,12 @@ def test_notmat_to_annot_dict():
         assert type(annot_dict[fieldname]) == fieldtype
 
 
-def test_annot_list_to_csv(tmp_output_dir):
+def test_annot_list_to_csv(tmp_output_dir, test_data_dir):
     """compares csv created by annot_list_to_csv
     with correctly generated csv saved in hvc/tests/test_data
     """
-    cbin_dir = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath(
-                                'test_data/cbins/gy6or6/032312/'))
+    cbin_dir = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/gy6or6/032312/'))
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
     # below, sorted() so it's the same order on different platforms
     notmat_list = sorted(notmat_list)
@@ -64,10 +63,9 @@ def test_annot_list_to_csv(tmp_output_dir):
         reader = csv.reader(csvfile)
         for row in reader:
             test_rows.append(row)
-    
-    csv_to_compare_with = os.path.join(os.path.dirname(__file__),
-                                       os.path.normpath(
-                                           'test_data/csv/gy6or6_032312.csv'))
+
+    csv_to_compare_with = os.path.join(test_data_dir,
+                                       os.path.normpath('csv/gy6or6_032312.csv'))
     compare_rows = []
     with open(csv_to_compare_with, 'r', newline='') as csvfile:
         reader = csv.reader(csvfile)
@@ -77,14 +75,13 @@ def test_annot_list_to_csv(tmp_output_dir):
         assert test_row == compare_row
 
 
-def test_notmat_list_to_csv(tmp_output_dir):
+def test_notmat_list_to_csv(tmp_output_dir, test_data_dir):
     # since notmat_list_to_csv is basically a wrapper around
     # notmat_to_annot_dict and annot_list_to_csv,
     # and those are tested above,
     # here just need to make sure this function doesn't fail
-    cbin_dir = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath(
-                                'test_data/cbins/gy6or6/032312/'))
+    cbin_dir = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/gy6or6/032312/'))
     notmat_list = glob(os.path.join(cbin_dir, '*.not.mat'))
     # below, sorted() so it's the same order on different platforms
     notmat_list = sorted(notmat_list)
@@ -114,15 +111,13 @@ def test_load_annotation_csv():
     pass
 
 
-def test_csv_to_annot_list():
-    csv_fname = os.path.join(os.path.dirname(__file__),
-                             os.path.normpath(
-                                 'test_data/csv/gy6or6_032312.csv'))
+def test_csv_to_annot_list(test_data_dir):
+    csv_fname = os.path.join(test_data_dir,
+                             os.path.normpath('csv/gy6or6_032312.csv'))
     # convert csv to annotation list -- this is what we're testing
     annot_list_from_csv = annotation.csv_to_annot_list(csv_fname)
-    cbin_dir = os.path.join(os.path.dirname(__file__),
-                            os.path.normpath(
-                                'test_data/cbins/gy6or6/032312/'))
+    cbin_dir = os.path.join(test_data_dir,
+                            os.path.normpath('cbins/gy6or6/032312/'))
 
     # get what should be the same annotation list from .not.mat files
     # to compare with what we got from the csv

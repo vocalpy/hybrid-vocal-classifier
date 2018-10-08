@@ -15,18 +15,16 @@ from hvc.utils import annotation
 from hvc.parse.ref_spect_params import refs_dict
 
 @pytest.fixture()
-def has_window_error():
-    filename = os.path.join(
-        os.path.dirname(__file__),
-        os.path.normpath('test_data/cbins/window_error/'
-                         'gy6or6_baseline_220312_0901.106.cbin'))
+def has_window_error(test_data_dir):
+    filename = os.path.join(test_data_dir,
+        os.path.normpath('cbins/window_error/gy6or6_baseline_220312_0901.106.cbin'))
     index = 19
     return filename, index
 
 
 class TestFromFile:
 
-    def test_song_w_nan(self, has_window_error):
+    def test_song_w_nan(self, has_window_error, hvc_source_dir):
         """tests that features_arr[ind,:] == np.nan
         where ind is the row corresponding to
         a syllable from a song
@@ -34,8 +32,8 @@ class TestFromFile:
         so single-syllable features cannot be extracted from it
         """
 
-        with open(os.path.join(os.path.dirname(__file__),
-                               os.path.normpath('../hvc/parse/feature_groups.yml'))
+        with open(os.path.join(hvc_source_dir,
+                               os.path.normpath('parse/feature_groups.yml'))
                   ) as ftr_grp_yaml:
             valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
         spect_params = refs_dict['koumura']
@@ -61,7 +59,7 @@ class TestFromFile:
         ftr_arr = extract_dict['features_arr']
         assert np.alltrue(np.isnan(ftr_arr[19, :]))
 
-    def test_cbin(self):
+    def test_cbin(self, hvc_source_dir, test_data_dir):
         """tests all features on a single .cbin file"""
 
         spect_params = refs_dict['tachibana']
@@ -71,13 +69,13 @@ class TestFromFile:
             'min_silent_dur': 0.006
         }
         with open(os.path.join(
-                os.path.dirname(__file__),
-                os.path.normpath('../hvc/parse/feature_groups.yml'))) as ftr_grp_yaml:
+                hvc_source_dir,
+                os.path.normpath('parse/feature_groups.yml'))) as ftr_grp_yaml:
             ftr_grps = yaml.load(ftr_grp_yaml)
 
-        cbin = os.path.join(os.path.dirname(__file__),
+        cbin = os.path.join(test_data_dir,
                             os.path.normpath(
-                                'test_data/cbins/gy6or6/032412/'
+                                'cbins/gy6or6/032412/'
                                 'gy6or6_baseline_240312_0811.1165.cbin'))
         annotation_dict = annotation.notmat_to_annot_dict(cbin + '.not.mat')
 
