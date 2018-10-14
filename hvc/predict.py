@@ -4,15 +4,12 @@ using already-trained models specified in config file
 """
 
 import os
-import sys
 from glob import glob
 
-# from dependencies
 import yaml
 import numpy as np
 from sklearn.externals import joblib
 
-# from hvc
 from .parseconfig import parse_config
 from .utils import timestamp, annotation
 
