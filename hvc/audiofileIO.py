@@ -1,11 +1,10 @@
 import warnings
 
 import numpy as np
-from scipy.io import wavfile
 import scipy.signal
 from matplotlib.mlab import specgram
 
-from . import evfuncs, koumura
+from . import evfuncs
 from .parse.ref_spect_params import refs_dict
 
 
