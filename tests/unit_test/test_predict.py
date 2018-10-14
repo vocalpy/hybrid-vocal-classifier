@@ -1,7 +1,7 @@
-"""this file tests **just** the high-level extract function in hvc.predict.
-More specifically it tests running the function **without** config.yml scripts,
-instead using pure Python"""
+"""module to test high-level extract function in hvc.predict"""
 import os
+
+import hvc
 
 
 class TestPredict:
