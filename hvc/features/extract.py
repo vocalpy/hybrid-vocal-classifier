@@ -7,12 +7,13 @@ import numpy as np
 from scipy.io import wavfile
 from sklearn.externals import joblib
 
-from ..utils import timestamp, write_select_config, annotation
-from ..audiofileIO import Spectrogram, Segmenter, make_syls
+import hvc.utils
+import hvc.utils.annotation
+import hvc.audiofileIO
+import hvc.evfuncs
 from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
-from .. import evfuncs
 
 
 class FeatureExtractor:
@@ -77,10 +78,10 @@ class FeatureExtractor:
         """
 
         self.spect_params = spect_params
-        self.spectrogram_maker = Spectrogram(**self.spect_params)
+        self.spectrogram_maker = hvc.audiofileIO.Spectrogram(**self.spect_params)
         if segment_params:
             self.segment_params = segment_params
-            self.segmenter = Segmenter(**self.segment_params)
+            self.segmenter = hvc.audiofileIO.Segmenter(**self.segment_params)
         else:
             self.segment_params = None
         self.feature_list = feature_list
@@ -154,11 +155,11 @@ class FeatureExtractor:
 
         # get absolute path to output
         # **before** we change directories
-        # so we're putting it where user specified, if user wrote a relative path in 
+        # so we're putting it where user specfified, if user wrote a relative path in 
         # config file
         if output_dir:
             if make_output_subdir:
-                output_subdir = 'extract_output_' + timestamp()
+                output_subdir = 'extract_output_' + hvc.utils.timestamp()
                 output_dir_with_path = os.path.join(
                     os.path.abspath(
                         os.path.normpath(output_dir)),
@@ -218,7 +219,7 @@ class FeatureExtractor:
                                                     search_str)))
                 for audio_file in audio_files:
                     if file_format == 'cbin':
-                        raw_audio, samp_freq = evfuncs.load_cbin(audio_file)
+                        raw_audio, samp_freq = hvc.evfuncs.load_cbin(audio_file)
                     elif file_format == 'wav':
                         samp_freq, raw_audio = wavfile.read(audio_file)
                         search_str = '*.wav'
@@ -272,20 +273,20 @@ class FeatureExtractor:
                 annotation_list = []  # list of annotation_dicts
                 if notmats:
                     for notmat in notmats:
-                        annotation_dict = annotation.notmat_to_annot_dict(notmat)
+                        annotation_dict = hvc.utils.annotation.notmat_to_annot_dict(notmat)
                         annotation_list.append(annotation_dict)
 
                 if annot_xmls:
                     for annot_xml in annot_xmls:
                         annotation_list.extend(
-                            annotation.xml_to_annot_list(annot_xml)
+                            hvc.utils.annotation.xml_to_annot_list(annot_xml)
                         )
 
         # if user passed argument for annotation_file, not data_dirs
         elif annotation_file:
             # load annotation file
             # then convert to annotation_list
-            annotation_list = annotation.csv_to_annot_list(annotation_file)
+            annotation_list = hvc.utils.annotation.csv_to_annot_list(annotation_file)
 
         num_songfiles = len(annotation_list)
         all_labels = []
@@ -344,7 +345,7 @@ class FeatureExtractor:
 
         if make_summary_file:
             feature_file = os.path.join(output_dir,
-                                        'features_created_' + timestamp())
+                                        'features_created_' + hvc.utils.timestamp())
             feature_file_dict = {
                 'labels': all_labels,
                 'onsets_Hz': np.asarray(all_onsets_Hz),
@@ -481,7 +482,7 @@ class FeatureExtractor:
                     input for each model, e.g., 2-d array containing spectrogram
         """
         if filename.endswith('.cbin'):
-            raw_audio, samp_freq = evfuncs.load_cbin(filename)
+            raw_audio, samp_freq = hvc.evfuncs.load_cbin(filename)
         elif filename.endswith('.wav'):
             samp_freq, raw_audio = wavfile.read(filename)
 
@@ -516,12 +517,12 @@ class FeatureExtractor:
             # if this feature requires a spectrogram
             if current_feature in single_syl_features_switch_case_dict:
                 if 'syls' not in locals():
-                    syls = make_syls(raw_audio,
-                                     samp_freq,
-                                     self.spectrogram_maker,
-                                     labels[use_these_labels_bool],
-                                     onsets_Hz[use_these_labels_bool],
-                                     offsets_Hz[use_these_labels_bool])
+                    syls = hvc.audiofileIO.make_syls(raw_audio,
+                                                     samp_freq,
+                                                     self.spectrogram_maker,
+                                                     labels[use_these_labels_bool],
+                                                     onsets_Hz[use_these_labels_bool],
+                                                     offsets_Hz[use_these_labels_bool])
                 if 'curr_feature_arr' in locals():
                     del curr_feature_arr
 
