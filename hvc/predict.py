@@ -10,8 +10,9 @@ import yaml
 import numpy as np
 from sklearn.externals import joblib
 
-from .parseconfig import parse_config
-from .utils import timestamp, annotation
+import hvc.utils
+import hvc.utils.annotation as annotation
+import hvc.parseconfig
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
@@ -85,14 +86,15 @@ def predict(config_file=None,
     home_dir = os.getcwd()
 
     if config_file:
-        predict_config = parse_config(config_file, 'predict')
+        predict_config = hvc.parseconfig.parse_config(config_file, 'predict')
         print('parsed predict config')
 
         for todo in predict_config['todo_list']:
             # get absolute path before changing directories
             # in case user specified output as a relative dir
             output_dir = os.path.abspath(todo['output_dir'])
-            output_dir = os.path.join(output_dir, 'predict_output_' + timestamp())
+            output_dir = os.path.join(output_dir, 'predict_output_'
+                                      + hvc.utils.timestamp())
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
 
@@ -227,7 +229,8 @@ def predict(config_file=None,
         if output_dir is None:
             output_dir = os.getcwd()
         output_dir = os.path.abspath(output_dir)
-        output_dir = os.path.join(output_dir, 'predict_output_' + timestamp())
+        output_dir = os.path.join(output_dir, 'predict_output_'
+                                  + hvc.utils.timestamp())
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
 
