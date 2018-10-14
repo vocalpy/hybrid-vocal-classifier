@@ -9,27 +9,13 @@ import os
 from glob import glob
 import copy
 
-import pytest
 from sklearn.externals import joblib
 import yaml
 
 import hvc
 from hvc.select import determine_model_output_folder_name
 
-configs = os.path.join(
-    os.path.dirname(__file__),
-    os.path.normpath('test_data/config.yml/'))
 
-
-@pytest.fixture(scope='session')
-def tmp_output_dir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp('tmp_output_dir')
-    return fn
-
-
-#########################
-#   utility functions   #
-#########################
 def rewrite_config(config_filename,
                    config_output_dir,
                    replace_dict):
@@ -191,13 +177,13 @@ def check_select_output(config_path, output_dir):
     return True
 
 
-def run_main_workflow(tmp_output_dir, script_tuple_dict):
+def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_dir):
     """tests main workflow for hybrid-vocal-classifier
     by iterating through test_main_workflow_dict,
     running the scripts named in each tuple in the dict
     """
 
-    extract_config_filename = os.path.join(configs,
+    extract_config_filename = os.path.join(configs_dir,
                                            script_tuple_dict['extract'])
     replace_dict = {'output_dir':
                         ('replace with tmp_output_dir',
@@ -226,7 +212,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
     for select_and_predict_tuple in select_and_predict_tuples:
         (select_config_filename,
          predict_config_filename) = select_and_predict_tuple
-        select_config_filename = os.path.join(configs,
+        select_config_filename = os.path.join(configs_dir,
                                               select_config_filename)
 
         select_config_rewritten = rewrite_config(select_config_filename,
@@ -260,7 +246,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict):
                             ('replace with tmp_output_dir',
                              str(tmp_output_dir)
                              )}
-        predict_config_filename_with_path = os.path.join(configs,
+        predict_config_filename_with_path = os.path.join(configs_dir,
                                                predict_config_filename)
 
         predict_config_rewritten = rewrite_config(predict_config_filename_with_path,

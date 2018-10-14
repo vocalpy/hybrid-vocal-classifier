@@ -14,7 +14,7 @@ import hvc.evfuncs
 import hvc.koumura
 import hvc.parse.ref_spect_params
 from hvc.utils import annotation
-from hvc.parse.ref_spect_params import refs_dict
+
 
 @pytest.fixture()
 def has_window_error(test_data_dir):

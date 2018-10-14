@@ -1,23 +1,18 @@
 """this file tests **just** the high-level extract function in hvc.predict.
 More specifically it tests running the function **without** config.yml scripts,
 instead using pure Python"""
+import os
 
-import pytest
-
-@pytest.fixture(scope='session')
-def tmp_output_dir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp('tmp_output_dir')
-    return fn
 
 class TestPredict:
-    def test_data_dirs_cbins(self, tmp_output_dir):
+    def test_data_dirs_cbins(self, tmp_output_dir, test_data_dir):
         """test that calling predict doesn't fail when we
         pass a data_dirs list that contain cbin audio files"""
         data_dirs = [
-            'test_data/cbins/gy6or6/032312',
-            'test_data/cbins/gy6or6/032412']
+            'cbins/gy6or6/032312',
+            'cbins/gy6or6/032412']
         data_dirs = [
-            os.path.join(os.path.dirname(__file__),
+            os.path.join(test_data_dir,
                          os.path.normpath(data_dir))
             for data_dir in data_dirs
         ]

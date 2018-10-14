@@ -4,23 +4,9 @@ instead using pure Python"""
 
 import os
 from glob import glob
-import copy
-
-import pytest
-from sklearn.externals import joblib
 
 import hvc
 from hvc.utils import annotation
-
-@pytest.fixture
-def configs_path(test_data_dir):
-    return os.join(test_data_dir, 'config.yml')
-
-
-@pytest.fixture(scope='session')
-def tmp_output_dir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp('tmp_output_dir')
-    return fn
 
 
 class TestExtract:

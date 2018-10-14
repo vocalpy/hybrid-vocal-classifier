@@ -15,3 +15,14 @@ def test_data_dir():
 @pytest.fixture
 def hvc_source_dir():
     return HVC_SOURCE_DIR
+
+
+@pytest.fixture(scope='session')
+def tmp_output_dir(tmpdir_factory):
+    fn = tmpdir_factory.mktemp('tmp_output_dir')
+    return fn
+
+
+@pytest.fixture
+def configs_path(test_data_dir):
+    return join(test_data_dir, 'config.yml')

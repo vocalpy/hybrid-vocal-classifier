@@ -14,9 +14,8 @@ import hvc.parse.select
 
 
 @pytest.fixture
-def test_yaml_extract_path(test_data_dir):
-    return os.path.join(test_data_dir,
-                        os.path.normpath('config.yml/test_parse_extract.config.yml'))
+def test_yaml_extract_path(configs_dir):
+    return os.path.join(configs_dir, 'test_parse_extract.config.yml')
 
 @pytest.fixture
 def test_yaml_extract(test_yaml_extract_path):
@@ -26,9 +25,8 @@ def test_yaml_extract(test_yaml_extract_path):
 
 
 @pytest.fixture
-def test_yaml_select_path(test_data_dir):
-    return os.path.join(test_data_dir,
-                        os.path.normpath('config.yml/test_parse_select.config.yml'))
+def test_yaml_select_path(configs_dir):
+    return os.path.join(configs_dir, 'test_parse_select.config.yml')
 
 @pytest.fixture
 def test_yaml_select(test_yaml_select_path):

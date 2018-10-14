@@ -3,7 +3,6 @@ from glob import glob
 import csv
 
 import numpy as np
-import pytest
 
 from hvc.utils import annotation
 
@@ -20,11 +19,6 @@ SYL_DICT_FIELDNAMES = ['filename',
                        'onset_s', 
                        'offset_s', 
                        'label']
-
-@pytest.fixture(scope='session')
-def tmp_output_dir(tmpdir_factory):
-    fn = tmpdir_factory.mktemp('tmp_output_dir')
-    return fn
 
 
 def test_notmat_to_annot_dict(test_data_dir):

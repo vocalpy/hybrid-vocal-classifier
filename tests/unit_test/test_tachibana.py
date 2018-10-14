@@ -18,6 +18,7 @@ from hvc.parse.ref_spect_params import refs_dict
 import hvc.evfuncs
 from hvc.utils import annotation
 
+
 @pytest.fixture
 def feature_grps_path(hvc_source_dir):
     return os.path.join(hvc_source_dir,
