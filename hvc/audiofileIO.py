@@ -4,7 +4,7 @@ import numpy as np
 import scipy.signal
 from matplotlib.mlab import specgram
 
-from . import evfuncs
+import hvc.evfuncs
 from .parse.ref_spect_params import refs_dict
 
 
@@ -273,9 +273,9 @@ class Spectrogram:
         if self.filterFunc == 'diff':
             raw_audio = np.diff(raw_audio)  # differential filter_func, as applied in Tachibana Okanoya 2014
         elif self.filterFunc == 'bandpass_filtfilt':
-            raw_audio = evfuncs.bandpass_filtfilt(raw_audio,
-                                                  samp_freq,
-                                                  self.freqCutoffs)
+            raw_audio = hvc.evfuncs.bandpass_filtfilt(raw_audio,
+                                                      samp_freq,
+                                                      self.freqCutoffs)
         elif self.filterFunc == 'butter_bandpass':
             raw_audio = butter_bandpass_filter(raw_audio,
                                                samp_freq,
@@ -461,9 +461,9 @@ class Segmenter:
                                  'array_to_segment and time_bins must have same length')
 
         if method=='evsonganaly':
-            amp = evfuncs.smooth_data(array_to_segment,
-                                      samp_freq,
-                                      refs_dict['evsonganaly']['freq_cutoffs'])
+            amp = hvc.evfuncs.smooth_data(array_to_segment,
+                                          samp_freq,
+                                          refs_dict['evsonganaly']['freq_cutoffs'])
         elif method=='psd':
             amp = self.compute_amp(array_to_segment)
 
