@@ -2,7 +2,6 @@
 feature extraction
 """
 
-# from hvc
 from .parseconfig import parse_config
 from . import features
 from .parse.extract import _validate_feature_group_and_convert_to_list
