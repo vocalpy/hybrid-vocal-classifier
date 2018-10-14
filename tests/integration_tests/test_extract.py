@@ -12,9 +12,9 @@ from sklearn.externals import joblib
 import hvc
 from hvc.utils import annotation
 
-configs = os.path.join(
-    os.path.dirname(__file__),
-    os.path.normpath('test_data/config.yml/'))
+@pytest.fixture
+def configs_path(test_data_dir):
+    return os.join(test_data_dir, 'config.yml')
 
 
 @pytest.fixture(scope='session')
@@ -24,14 +24,14 @@ def tmp_output_dir(tmpdir_factory):
 
 
 class TestExtract:
-    def test_data_dirs_cbins(self, tmp_output_dir):
+    def test_data_dirs_cbins(self, test_data_dir, tmp_output_dir):
         """test that calling extract doesn't fail when we
         pass a data_dirs list that contain cbin audio files"""
         data_dirs = [
-            'test_data/cbins/gy6or6/032312',
-            'test_data/cbins/gy6or6/032412']
+            'cbins/gy6or6/032312',
+            'cbins/gy6or6/032412']
         data_dirs = [
-            os.path.join(os.path.dirname(__file__),
+            os.path.join(test_data_dir,
                          os.path.normpath(data_dir))
             for data_dir in data_dirs
         ]
@@ -49,14 +49,14 @@ class TestExtract:
         assert type(ftrs) == dict
         assert sorted(ftrs.keys()) == ['features', 'labels']
 
-    def test_annotation_file_cbins(self, tmp_output_dir):
+    def test_annotation_file_cbins(self, test_data_dir, tmp_output_dir):
         """test that calling extract doesn't fail when we
         pass a data_dirs list that contain cbin audio files"""
         cbin_dirs = [
-            'test_data/cbins/gy6or6/032312',
-            'test_data/cbins/gy6or6/032412']
+            'cbins/gy6or6/032312',
+            'cbins/gy6or6/032412']
         cbin_dirs = [
-            os.path.join(os.path.dirname(__file__),
+            os.path.join(test_data_dir,
                          os.path.normpath(cbin_dir))
             for cbin_dir in cbin_dirs
         ]
