@@ -4,7 +4,6 @@ import random
 from datetime import datetime
 from urllib.error import HTTPError
 
-# from dependencies
 import numpy as np
 import sklearn.preprocessing
 from scipy.io import loadmat
@@ -14,9 +13,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 
-# from hvc
-from hvc.utils.randomdotorg import RandomDotOrg
-
+from .randomdotorg import RandomDotOrg
 
 def timestamp():
     """timestampe for dir + file names
