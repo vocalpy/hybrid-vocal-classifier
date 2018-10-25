@@ -1,6 +1,10 @@
+import sys
+import os
 from os.path import normpath, join, dirname
 
 import pytest
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 this_file_dirname = dirname(__file__)
 TEST_DATA_DIR = join(this_file_dirname, 'test_data')
