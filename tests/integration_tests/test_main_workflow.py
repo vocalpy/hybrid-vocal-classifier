@@ -12,6 +12,7 @@ from sklearn.externals import joblib
 
 import hvc
 from hvc.select import determine_model_output_folder_name
+from config import rewrite_config
 
 
 def check_extract_output(output_dir):
