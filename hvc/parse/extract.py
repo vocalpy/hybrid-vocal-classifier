@@ -430,6 +430,16 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
             if type(val) != str:
                 raise ValueError('output_dirs should be a string but it parsed as a {}'
                                  .format(type(val)))
+            # add 'save_features=True' since this is implied when user
+            # specifies a directory for output
+            if 'save_features' not in todo_list_dict:
+                validated_todo_list_dict['save_features'] = True
+
+        elif key == 'save_features':
+            if ('output_dir' in todo_list_dict and
+               todo_list_dict['save_features'] is False):
+                raise ValueError('output_dir was specified but '
+                                 'save_features was set to False')
 
         elif key == 'segment_params':
             validate_segment_params(val)
