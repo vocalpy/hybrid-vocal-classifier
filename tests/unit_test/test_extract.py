@@ -68,14 +68,12 @@ class TestExtract:
         assert type(ftrs) == dict
         assert sorted(ftrs.keys()) == ['features', 'labels']
 
-    def tests_for_all_extract(self, configs_dir):
+    def tests_for_all_extract(self, configs_path):
         # test running extract with all the YAML config files
         # in the test configs directory
-        search_path = os.path.join(configs_dir, 'test_extract_*.config.yml')
-        extract_config_files = glob.glob(search_path)
+        search_path = os.path.join(configs_path, 'test_extract_*.config.yml')
+        extract_config_files = glob(search_path)
         for extract_config_file in extract_config_files:
-            if os.getcwd() != homedir:
-                os.chdir(homedir)
             hvc.extract(extract_config_file)
             extract_config = hvc.parse_config(extract_config_file, 'extract')
 
@@ -83,13 +81,13 @@ class TestExtract:
                 # switch to test dir
                 os.chdir(todo['output_dir'])
                 extract_outputs = list(
-                    filter(os.path.isdir, glob.glob('*extract_output*')
+                    filter(os.path.isdir, glob('*extract_output*')
                            )
                 )
                 extract_outputs.sort(key=os.path.getmtime)
 
                 os.chdir(extract_outputs[-1])  # most recent
-                ftr_files = glob.glob('features_from*')
+                ftr_files = glob('features_from*')
                 ftr_dicts = []
                 for ftr_file in ftr_files:
                     ftr_dicts.append(joblib.load(ftr_file))
@@ -111,7 +109,7 @@ class TestExtract:
                     assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
 
                 # make sure rows in summary dict features == sum of rows of each ftr file features
-                summary_file = glob.glob('summary_feature_file_*')
+                summary_file = glob('summary_feature_file_*')
                 # (should only be one summary file)
                 assert len(summary_file) == 1
                 summary_dict = joblib.load(summary_file[0])

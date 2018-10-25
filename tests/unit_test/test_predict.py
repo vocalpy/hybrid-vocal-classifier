@@ -33,7 +33,9 @@ class TestPredict:
                               segment=segment,
                               predict_proba=predict_proba,
                               convert_to=convert_to,
-                              return_features=return_features)
-        assert type(ftrs) == dict
-        assert sorted(ftrs.keys()) == ['features', 'labels']
+                              return_predictions=return_predictions)
+        assert type(predict) == dict
+        for key in ['labels', 'pred_labels', 'songfile_IDs', 'onsets_Hz', 'offsets_Hz',
+                    'features',]:
+            assert key in predict
         # check there are cbin files in output_dir!

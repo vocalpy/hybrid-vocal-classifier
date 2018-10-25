@@ -177,13 +177,13 @@ def check_select_output(config_path, output_dir):
     return True
 
 
-def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_dir):
+def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_path):
     """tests main workflow for hybrid-vocal-classifier
     by iterating through test_main_workflow_dict,
     running the scripts named in each tuple in the dict
     """
 
-    extract_config_filename = os.path.join(configs_dir,
+    extract_config_filename = os.path.join(configs_path,
                                            script_tuple_dict['extract'])
     replace_dict = {'output_dir':
                         ('replace with tmp_output_dir',
@@ -212,7 +212,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_dir):
     for select_and_predict_tuple in select_and_predict_tuples:
         (select_config_filename,
          predict_config_filename) = select_and_predict_tuple
-        select_config_filename = os.path.join(configs_dir,
+        select_config_filename = os.path.join(configs_path,
                                               select_config_filename)
 
         select_config_rewritten = rewrite_config(select_config_filename,
@@ -246,7 +246,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_dir):
                             ('replace with tmp_output_dir',
                              str(tmp_output_dir)
                              )}
-        predict_config_filename_with_path = os.path.join(configs_dir,
+        predict_config_filename_with_path = os.path.join(configs_path,
                                                predict_config_filename)
 
         predict_config_rewritten = rewrite_config(predict_config_filename_with_path,
@@ -272,7 +272,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_dir):
                 assert ftr_file['pred_labels'].shape[0] == ftr_file['pred_probs'].shape[0]
 
 
-def test_knn(tmp_output_dir):
+def test_knn(tmp_output_dir, configs_path):
     knn_script_tuple_dict = {
         'extract': 'test_extract_knn.config.yml',
         'select and predict': (
@@ -284,10 +284,10 @@ def test_knn(tmp_output_dir):
              'test_predict_knn_predict_proba_True.config.yml')
         )
     }
-    run_main_workflow(tmp_output_dir, knn_script_tuple_dict)
+    run_main_workflow(tmp_output_dir, knn_script_tuple_dict, configs_path)
 
 
-def test_svm(tmp_output_dir):
+def test_svm(tmp_output_dir, configs_path):
     svm_script_tuple_dict = {
         'extract': 'test_extract_svm.config.yml',
         'select and predict': (
@@ -297,14 +297,14 @@ def test_svm(tmp_output_dir):
              'test_predict_svm_predict_proba_True.config.yml'),
         )
     }
-    run_main_workflow(tmp_output_dir, svm_script_tuple_dict)
+    run_main_workflow(tmp_output_dir, svm_script_tuple_dict, configs_path)
 
 
-def test_flatwindow(tmp_output_dir):
+def test_flatwindow(tmp_output_dir, configs_path):
     flatwindow_script_tuple_dict = {
         'extract': 'test_extract_flatwindow.config.yml',
          'select and predict': (
              ('test_select_flatwindow.config.yml',
               'test_predict_flatwindow.config.yml'),)
     }
-    run_main_workflow(tmp_output_dir, flatwindow_script_tuple_dict)
+    run_main_workflow(tmp_output_dir, flatwindow_script_tuple_dict, configs_path)
