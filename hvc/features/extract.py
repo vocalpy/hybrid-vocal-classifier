@@ -40,20 +40,21 @@ class FeatureExtractor:
     -------
     extract(labels_to_use='all', data_dirs=None, data_dirs_validated=False,
             file_format=None, annotation_file=None, segment=False, output_dir=None,
-            make_output_subdir=True, make_summary_file=True, return_extract_dict=True)
+            make_output_subdir=True, save_features=True, save_prefix='features_created_',
+            return_extract_dict=True)
         extracts features
 
     _from_file
         helper function, extracts features from a single file
     """
-
     def __init__(self,
                  spect_params,
                  feature_list,
                  feature_list_group_ID=None,
                  feature_group_ID_dict=None,
                  segment_params=None):
-        """
+        """__init__ for FeatureExtractor
+
         Parameters
         ----------
         spect_params : dict
@@ -76,7 +77,6 @@ class FeatureExtractor:
             Not required if user supplies segments (i.e. syllable onsets/offsets).
             Default is None.
         """
-
         self.spect_params = spect_params
         self.spectrogram_maker = hvc.audiofileIO.Spectrogram(**self.spect_params)
         if segment_params:
@@ -98,7 +98,8 @@ class FeatureExtractor:
                 segment=False,
                 output_dir=None,
                 make_output_subdir=True,
-                make_summary_file=True,
+                save_features=True,
+                save_prefix='features_created_',
                 return_features=True):
         """extract features and save feature files
 
@@ -135,13 +136,16 @@ class FeatureExtractor:
             if True, make a subdirectory in output_dir (or current directory) and save the
             feature files in that subdirectory.
             Default is True.
-        make_summary_file : bool
-            if True, combine feature files from each directory to make a summary file
+        save_features : bool
+            if True, save extracted features and metadata in a file
+        save_prefix : str
+            string to use as prefix of filename of saved features file.
+            A timestamp will be added to the end of the prefix.
+            Default is 'features_created_'.
         return_features : bool
             if True, return dict that contains all extracted features.
             Default is True.
         """
-
         if data_dirs and annotation_file:
             raise ValueError('received values for both data_dirs and '
                              'annotation_file arguments, unclear which to use. '
@@ -343,9 +347,9 @@ class FeatureExtractor:
                     for input_type, input_arr in extract_dict['neuralnet_inputs_dict'].items():
                         neuralnet_inputs_all_files[input_type] = [input_arr]  # make list so we can append
 
-        if make_summary_file:
+        if save_features:
             feature_file = os.path.join(output_dir,
-                                        'features_created_' + hvc.utils.timestamp())
+                                        save_prefix + hvc.utils.timestamp())
             feature_file_dict = {
                 'labels': all_labels,
                 'onsets_Hz': np.asarray(all_onsets_Hz),
@@ -426,8 +430,8 @@ class FeatureExtractor:
                    labels_to_use,
                    file_format=None,
                    ):
-        """
-        extracts features from an audio file containing birdsong
+        """helper function that extracts features from a single audio file
+        containing birdsong.
 
         Parameters
         ----------

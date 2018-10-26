@@ -4,6 +4,7 @@ from glob import glob
 
 import hvc
 from hvc.utils import annotation
+from config import rewrite_config
 
 
 class TestExtract:
@@ -68,48 +69,71 @@ class TestExtract:
         assert type(ftrs) == dict
         assert sorted(ftrs.keys()) == ['features', 'labels']
 
-    def tests_for_all_extract(self, configs_path):
-        # test running extract with all the YAML config files
-        # in the test configs directory
-        search_path = os.path.join(configs_path, 'test_extract_*.config.yml')
-        extract_config_files = glob(search_path)
-        for extract_config_file in extract_config_files:
-            hvc.extract(extract_config_file)
-            extract_config = hvc.parse_config(extract_config_file, 'extract')
+    def _yaml_config_asserts(self,
+                             extract_yaml_config_file,
+                             tmp_output_dir):
+        replace_dict = {'output_dir':
+                            ('replace with tmp_output_dir',
+                             str(tmp_output_dir))}
+        # have to put tmp_output_dir into yaml file
+        extract_config_rewritten = rewrite_config(extract_yaml_config_file,
+                                                  tmp_output_dir,
+                                                  replace_dict)
 
-            for todo in extract_config['todo_list']:
-                # switch to test dir
-                os.chdir(todo['output_dir'])
-                extract_outputs = list(
-                    filter(os.path.isdir, glob('*extract_output*')
-                           )
-                )
-                extract_outputs.sort(key=os.path.getmtime)
+        # helper function that is called by tests below
+        hvc.extract(extract_config_rewritten)
+        extract_config = hvc.parse_config(extract_config_rewritten,
+                                          'extract')
 
-                os.chdir(extract_outputs[-1])  # most recent
-                ftr_files = glob('features_from*')
-                ftr_dicts = []
-                for ftr_file in ftr_files:
-                    ftr_dicts.append(joblib.load(ftr_file))
+        for todo in extract_config['todo_list']:
+            os.chdir(todo['output_dir'])
+            extract_outputs = list(
+                filter(os.path.isdir, glob('*extract_output*')
+                       )
+            )
+            extract_outputs.sort(key=os.path.getmtime)
 
-                if any(['features' in ftr_dict for ftr_dict in ftr_dicts]):
-                    assert all(['features' in ftr_dict for ftr_dict in ftr_dicts])
-                    for ftr_dict in ftr_dicts:
-                        labels = ftr_dict['labels']
-                        if 'features' in ftr_dict:
-                            features = ftr_dict['features']
-                            assert features.shape[0] == len(labels)
+            os.chdir(extract_outputs[-1])  # most recent
+            ftr_files = glob('features_from*')
+            ftr_dicts = []
+            for ftr_file in ftr_files:
+                ftr_dicts.append(joblib.load(ftr_file))
 
-                    # make sure number of features i.e. columns is constant across feature matrices
-                    ftr_cols = [ftr_dict['features'].shape[1] for ftr_dict in ftr_dicts]
-                    assert np.unique(ftr_cols).shape[-1] == 1
+            if any(['features' in ftr_dict for ftr_dict in ftr_dicts]):
+                assert all(['features' in ftr_dict for ftr_dict in ftr_dicts])
+                for ftr_dict in ftr_dicts:
+                    labels = ftr_dict['labels']
+                    if 'features' in ftr_dict:
+                        features = ftr_dict['features']
+                        assert features.shape[0] == len(labels)
 
+                # make sure number of features i.e. columns is constant across feature matrices
+                ftr_cols = [ftr_dict['features'].shape[1] for ftr_dict in ftr_dicts]
+                assert np.unique(ftr_cols).shape[-1] == 1
 
-                if any(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
-                    assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
+            if any(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts]):
+                assert all(['neuralnets_input_dict' in ftr_dict for ftr_dict in ftr_dicts])
 
-                # make sure rows in summary dict features == sum of rows of each ftr file features
-                summary_file = glob('summary_feature_file_*')
-                # (should only be one summary file)
-                assert len(summary_file) == 1
-                summary_dict = joblib.load(summary_file[0])
+    def test_extract_knn_yaml(self, tmp_output_dir, configs_path):
+        extract_yaml_config_file = os.path.join(configs_path,
+                                                'test_extract_knn.config.yml')
+        self._yaml_config_asserts(extract_yaml_config_file=extract_yaml_config_file,
+                                  tmp_output_dir=tmp_output_dir)
+
+    def test_extract_svm_yaml(self, tmp_output_dir, configs_path):
+        extract_yaml_config_file = os.path.join(configs_path,
+                                                'test_extract_svm.config.yml')
+        self._yaml_config_asserts(extract_yaml_config_file=extract_yaml_config_file,
+                                  tmp_output_dir=tmp_output_dir)
+
+    def test_extract_flatwindow_yaml(self, tmp_output_dir, configs_path):
+        extract_yaml_config_file = os.path.join(configs_path,
+                                                'test_extract_flatwindow.config.yml')
+        self._yaml_config_asserts(extract_yaml_config_file=extract_yaml_config_file,
+                                  tmp_output_dir=tmp_output_dir)
+
+    def test_extract_multiple_feature_groups_yaml(self, tmp_output_dir, configs_path):
+        extract_yaml_config_file = os.path.join(configs_path,
+                                                'test_extract_multiple_feature_groups.config.yml')
+        self._yaml_config_asserts(extract_yaml_config_file=extract_yaml_config_file,
+                                  tmp_output_dir=tmp_output_dir)

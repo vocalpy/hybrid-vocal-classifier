@@ -17,6 +17,8 @@ def extract(config_file=None,
             feature_list=None,
             output_dir=None,
             spect_params=None,
+            save_features=None,
+            save_prefix=None,
             return_features=None):
     """high-level function for feature extraction.
     Accepts either a config file or a set of parameters and
@@ -53,15 +55,19 @@ def extract(config_file=None,
     output_dir : str
         absolute path to directory in which to save extracted features
     spect_params : dict
-        parameters to compute spectrograms,
-        as defined for hvc.audiofileIO.Spectrogram.
+        parameters to compute spectrograms, as defined for hvc.audiofileIO.Spectrogram.
         Please consult docstring for that class to see valid parameters.
+    save_features : bool
+        if True, save features in a file with associated metadata.
+        Defaults to false.
+    save_prefix : str
+        string to use as prefix of filename of saved features file.
+        A timestamp will be added to the end of the prefix.
+        Default is 'features_created_'.
     return_features : bool
         if True, returns features and labels.
-        If a config file is used, defaults to False.
-        Otherwise, default is True.
+        If a config file is used, defaults to False. Otherwise, default is True.
     """
-
     if config_file and (data_dirs or file_format or annotation_file or labels_to_use
                         or feature_group or feature_list or output_dir or spect_params):
         raise ValueError('Cannot specify config_file and other parameters '
@@ -126,6 +132,24 @@ def extract(config_file=None,
             fe.extract(**extract_params)
 
     elif data_dirs or annotation_file:
+        # explicitly set defaults,
+        # because different than those for FeatureExtractor.extract
+        # and because "explicit is better than implicit"
+        if save_features is None and save_prefix is None:
+            save_features = False
+        if save_features is None and save_prefix is not None:
+            raise ValueError('save_features was not specified but an argument '
+                             'was passed for save_prefix, not clear if features '
+                             'should be saved')
+        if save_features is False and save_prefix is not None:
+            raise ValueError('save_features was set to False but an argument '
+                             'was passed for save_prefix, not clear if features '
+                             'should be saved')
+        if save_prefix is True and save_prefix is None:
+            save_prefix = 'features_created_'
+        if return_features is None:
+            return_features = True
+
         if data_dirs and annotation_file:
             raise ValueError('hvc.extract received values for both data_dirs and '
                              'annotation_file arguments, unclear which to use. '
@@ -160,6 +184,8 @@ def extract(config_file=None,
             'file_format': file_format,
             'labels_to_use': labels_to_use,
             'output_dir': output_dir,
+            'save_features': save_features,
+            'save_prefix': save_prefix,
             'return_features': return_features
         }
         if data_dirs:
