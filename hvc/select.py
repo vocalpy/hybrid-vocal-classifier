@@ -50,14 +50,15 @@ def determine_model_output_folder_name(model_dict):
 
 def select(config_file=None,
            feature_file_path=None,
+           feature_list_indices=None,
+           feature_group=None,
+           neuralnet_input=None,
+           model_name=None,
+           hyperparameters=None,
+           models=None,
            train_samples_range=None,
            num_replicates=None,
            num_test_samples=None,
-           feature_list_indices=None,
-           feature_group=None,
-           model_name=None,
-           hyperparams=None,
-           models=None,
            output_dir=None,
            ):
     """high-level function for machine-learning model selection.
@@ -71,6 +72,19 @@ def select(config_file=None,
         filename of YAML file that configures feature extraction
     feature_file_path : str
         path to a feature file created with hvc.extract
+    feature_list_indices : list
+        list of integers. Columns from features matrix in feature file that will
+        be used to train classifier. Can alternatively specify `feature_group`,
+        see Other Parameters below.
+    neuralnet_input : str
+        input for neural network model. Currently just 'flatwindow'.
+    model_name : str
+        one of {'knn', 'svm', 'flatwindow'}, i.e., k-Nearest Neighbors,
+        support vector machine, or convolutional neural net. Type of
+        machine learning model / classifier to train.
+    hyperparameters : dict
+        hyperparameters for model, where each keys is a name of a hyperparameter
+        and the corresponding value is the value for that hyperparameter.
     train_samples_range : range
         A range of training samples to train models with.
          E.g. `range(100,601,100)` (which gives [100, 200, 400, 500, 600]).
@@ -80,16 +94,6 @@ def select(config_file=None,
         randomly from the entire training set.
     num_test_samples : int
         Number of samples to use to test accuracy of the trained classifier.
-    model_name : str
-        one of {'knn', 'svm', 'flatwindow'}, i.e., k-Nearest Neighbors,
-        support vector machine, or convolutional neural net. Type of
-        machine learning model / classifier to train.
-    hyperparams : dict
-        hyperparameters for model, where each keys is a name of a hyperparameter
-        and the corresponding value is the value for that hyperparameter.
-    feature_list_indices : list
-        list of integers. Columns from features matrix in feature file that will
-        be used to train classifier.
     output_dir : str
         directory in which to save output
 
@@ -101,7 +105,7 @@ def select(config_file=None,
         supplying an argument feature_list_indices.
     models : list
         of dicts, where each dict has the following keys:
-        {'model_name', 'hyperparams', 'feature_list_indices' or 'feature_group'}
+        {'model_name', 'hyperparameters', 'feature_list_indices' or 'feature_group'}
         The values should be as defined above. When a list of models is supplied,
         each model will be fit according to the
 
@@ -117,8 +121,8 @@ def select(config_file=None,
                          'not clear which to use when both are specified')
 
     if config_file and (train_samples_range or num_replicates or model_name
-                        or hyperparams or models or feature_list_indices
-                        or feature_group or output_dir):
+                        or hyperparameters or models or feature_list_indices
+                        or feature_group or neuralnet_input or output_dir):
         raise ValueError('Cannot specify config_file and other parameters '
                          'when calling hvc.select, '
                          'please specify either config_file or all other '
@@ -175,11 +179,11 @@ def select(config_file=None,
             _select(**select_config)
 
     else:  # if a config_file was not specified
-        if not os.path.isfile(feature_file):
+        if not os.path.isfile(feature_file_path):
             raise FileNotFoundError("Can not find feature file: {}"
-                                    .format(feature_file))
+                                    .format(feature_file_path))
         else:
-            feature_file = joblib.load(feature_file)
+            feature_file = joblib.load(feature_file_path)
 
         output_dir = os.path.abspath(output_dir)
         if not os.path.isdir(output_dir):
@@ -201,18 +205,29 @@ def select(config_file=None,
         if (type(num_test_samples) is not int) or (num_test_samples < 1):
             raise ValueError('num_test_samples must be an int, greater than 0')
 
-        if feature_list_indices is None and feature_group is None:
-            raise ValueError("Must specify either 'feature_list_indices' "
-                             "or 'feature_group'.")
+        if (feature_list_indices is None and feature_group is None
+           and neuralnet_input is None):
+            raise ValueError("Must specify either `feature_list_indices`, "
+                             "`feature_group`, or `neuralnet_input`.")
 
         if feature_list_indices and feature_group:
             raise ValueError("Cannot call `select` with arguments for both "
-                             "models and model_name and hyperparams, unclear "
+                             "feature_list_indices and feature_group, unclear "
                              "which models to fit.")
 
-        if model_name and hyperparams and models:
+        if feature_list_indices and neuralnet_input:
             raise ValueError("Cannot call `select` with arguments for both "
-                             "models and model_name and hyperparams, unclear "
+                             "feature_list_indices and neuralnet_input, unclear "
+                             "which models to fit.")
+
+        if feature_group and neuralnet_input:
+            raise ValueError("Cannot call `select` with arguments for both "
+                             "feature_group and neuralnet_input, unclear "
+                             "which models to fit.")
+
+        if model_name and hyperparameters and models:
+            raise ValueError("Cannot call `select` with arguments for both "
+                             "models and model_name and hyperparameters, unclear "
                              "which models to fit.")
 
         if models is None:
@@ -222,11 +237,14 @@ def select(config_file=None,
                 models['feature_group'] = feature_group
             elif feature_list_indices is not None:
                 models['feature_list_indices'] = feature_list_indices
+            elif neuralnet_input is not None:
+                models['neuralnet_input'] = neuralnet_input
             # make dict into a single-item list
             # because _select helper function expects to iterate
             # through a list
             models = [models]
 
+        # pass these "just in case" parser needs them for validation
         if (('feature_list_group_ID' in feature_file) and
                 ('feature_group_ID_dict' in feature_file)):
                 ftr_list_group_ID = feature_file['feature_list_group_ID']
@@ -382,9 +400,13 @@ def _select(feature_file,
                             'feature_group' not in model_dict:
                         # if no feature group in model dict, use feature list indices
                         # Note that for neuralnet models, there will be neither
-                        if model_dict['feature_list_indices'] == 'all':
-                            feature_inds = np.ones((
-                                feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                        if type(model_dict['feature_list_indices']) is str:
+                            if model_dict['feature_list_indices'] == 'all':
+                                feature_inds = np.ones((
+                                    feature_file['features_arr_column_IDs'].shape[-1],)).astype(bool)
+                            else:
+                                raise ValueError('received invalid string for feature_list_indices: {}'
+                                                 .format(model_dict['feature_list_indices']))
                         else:
                             # use 'feature_list_indices' from model_dict to get the actual columns
                             # we need from the features array. Again, need to this because multiple
@@ -572,7 +594,8 @@ def _select(feature_file,
             if model_dict['model_name'] in model_types['sklearn']:
                 # to be able to extract features for predictions
                 # on unlabeled data set, need list of features
-                if model_dict['feature_list_indices'] == 'all':
+                if ((type(model_dict['feature_list_indices']) is str) and
+                        (model_dict['feature_list_indices'] == 'all')):
                     model_feature_list = feature_file['feature_list']
                 else:
                     model_feature_list = [feature_file['feature_list'][ind]
