@@ -10,3 +10,4 @@ dir_names.txt
 docs/_build
 docs_old/
 .pytest_cache/
+tests/test_data/feature_files/test_extract*

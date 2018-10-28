@@ -23,7 +23,7 @@ def timestamp():
     (so we don't load the wrong data with joblib because
     both data files have the same name)
     """
-    return datetime.now().strftime('%y%m%d_%H%M%S')
+    return datetime.now().strftime('%y%m%d_%H.%M.%S.%f')
 
 
 def load_from_mat(fname,ftr_file_type,purpose='train'):

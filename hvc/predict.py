@@ -67,6 +67,14 @@ def predict(config_file=None,
         If True, convert predictions to annotation files. Default is False.
     return_predictions : bool
         If True, return feature file with predicted labels. Default is True.
+
+    Returns
+    -------
+    predictions : dict
+        feature file returned as a Python dictionary, with the additional
+        (key, value) pair of 'pred_labels', a Numpy array containing the
+        labels predicted by the classifier.
+        Only returned if return_predictions = True.
     """
 
     if config_file and (file_format or model_meta_file or output_dir or segment):
