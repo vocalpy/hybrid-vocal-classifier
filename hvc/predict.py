@@ -76,8 +76,8 @@ def predict(config_file=None,
         labels predicted by the classifier.
         Only returned if return_predictions = True.
     """
-
-    if config_file and (file_format or model_meta_file or output_dir or segment):
+    if config_file and (file_format or model_meta_file or output_dir or segment
+                        or convert_to):
         raise ValueError('Cannot specify config_file and other parameters '
                          'when calling hvc.predict, '
                          'please specify either config_file or all other '
