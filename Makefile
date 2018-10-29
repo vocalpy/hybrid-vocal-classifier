@@ -1,15 +1,15 @@
-.PHONY: clean-features clean-models
+.PHONY: all clean
 
-clean-features :
-	rm -rf ./tests/test_data/feature_files/test_extract*features*
-	rm -rf ./tests/test_data/feature_files/hide/
+clean :
+	rm -rf ./tests/test_data/feature_files/*features*
+	rm -rf ./tests/test_data/model_files/*.model
+	rm -rf ./tests/test_data/model_files/*.meta
 
-make-features :
+all : models
+
+models : features
+	python ./tests/test_data/model_files/remake_model_files.py
+
+features :
 	python ./tests/test_data/feature_files/remake_feature_files.py
 
-clean-models :
-	rm -rf ./tests/test_data/feature_files/test_extract*features*
-	rm -rf ./tests/test_data/feature_files/hide/
-
-make-models :
-	python ./tests/test_data/model_files/remake_model_files.py
