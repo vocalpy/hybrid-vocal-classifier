@@ -25,7 +25,7 @@ install:
   - conda create -n testenv --yes $DEPS pip pytest setuptools python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - python setup.py install
-  - make make-features
+  - make all
 
 script:
   - pytest
