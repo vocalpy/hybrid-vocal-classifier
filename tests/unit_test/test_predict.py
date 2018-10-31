@@ -12,10 +12,9 @@ class TestPredict:
     def _generic_predict_asserts(self, predict):
         # assertions shared by all unit tests for hvc.predict
         assert type(predict) == dict
-        for key in ['labels', 'pred_labels', 'songfile_IDs', 'onsets_Hz', 'offsets_Hz',
-                    'features',
-                    ]:
+        for key in ['labels', 'pred_labels', 'songfile_IDs', 'onsets_Hz', 'offsets_Hz',]:
             assert key in predict
+        assert (('features' in predict) or ('neuralnet_inputs') in predict)
 
 
     def test_predict_knn_data_dirs_notmat(self, tmp_output_dir, test_data_dir):

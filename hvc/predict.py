@@ -369,9 +369,9 @@ def predict(config_file=None,
                         predict_dict['features'] = np.concatenate(predict_dict['features'], ftrs['features'])
                     if 'neuralnet_inputs' in predict_dict:
                         for key, val in ftrs['neuralnet_input']:
-                            predict_dict['neuralnet_input'][key] = \
-                                np.concatenate((predict_dict['neuralnet_input'][key],
-                                                ftrs['neuralnet_input'][key]))
+                            predict_dict['neuralnet_inputs'][key] = \
+                                np.concatenate((predict_dict['neuralnet_inputs'][key],
+                                                ftrs['neuralnet_inputs'][key]))
                     if 'pred_probs' in predict_dict:
                         predict_dict['pred_probs'] = np.concatenate(predict_dict['pred_probs'], ftrs['pred_probs'])
             os.chdir(home_dir)
