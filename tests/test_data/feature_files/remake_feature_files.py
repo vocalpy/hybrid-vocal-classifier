@@ -5,7 +5,7 @@ import shutil
 
 import hvc
 
-here = os.path.dirname(__file__)
+here = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(here, '../../utils'))
 
 # have to append utils to sys before importing rewrite_config from utils.config
@@ -17,9 +17,19 @@ from config import rewrite_config
 
 
 def main():
-    extract_configs = glob(os.path.join(here,
-                                        '../config.yml/test_extract*'))
-    for extract_config in extract_configs:
+    feature_files_to_create = [
+        'knn',
+        'svm',
+        'multiple_feature_groups',
+        'flatwindow',
+    ]
+    for feature_to_create in feature_files_to_create:
+        extract_config = os.path.join(here,
+                                      '..',
+                                      'config.yml',
+                                      'test_extract_{}.config.yml'
+                                      .format(feature_to_create)
+                                      )
         print('running {} to create feature file'.format(extract_config))
         replace_dict = {'output_dir':
                             ('replace with tmp_output_dir',
@@ -44,9 +54,7 @@ def main():
                              'feature files:\n{}'. format(features_created))
         else:
             features_created = features_created[0]
-        prefix = os.path.basename(extract_config_rewritten)
-        suffix = os.path.basename(features_created)
-        movename = prefix + '.' + suffix
+        movename = feature_to_create + '.' + 'features'
         shutil.move(src=features_created,
                     dst=os.path.join(here, movename))
         os.rmdir(extract_output_dir)

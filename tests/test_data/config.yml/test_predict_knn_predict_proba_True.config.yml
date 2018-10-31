@@ -7,6 +7,6 @@ predict:
       data_dirs:
         - ../cbins/gy6or6/032512
         - ../cbins/gy6or6/032612
-      model_meta_file: replace with model_file
+      model_meta_file: replace with model_meta_file
       output_dir: replace with tmp_output_dir
       predict_proba: True
