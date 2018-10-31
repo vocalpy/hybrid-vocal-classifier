@@ -155,7 +155,7 @@ def run_main_workflow(tmp_output_dir, script_tuple_dict, configs_path):
         model_meta_files = glob(os.path.join(select_output_dir, '*',
                                              '*meta*'))
         replace_dict = {'model_meta_file':
-                            ('replace with model_file',
+                            ('replace with model_meta_file',
                              model_meta_files[-1]),
                         'output_dir':
                             ('replace with tmp_output_dir',

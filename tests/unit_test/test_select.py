@@ -10,9 +10,9 @@ from config import rewrite_config
 class TestSelect:
     def test_select_knn_ftr_list_indices(self, tmp_output_dir, test_data_dir):
         # test select with features for model specified by feature list indices
-        feature_file_path = glob(os.path.join(test_data_dir,
-                                              'feature_files',
-                                              'test_extract_knn*'))[0]
+        feature_file_path = os.path.join(test_data_dir,
+                                         'feature_files',
+                                         'knn.features')
 
         hvc.select(feature_file_path=feature_file_path,
                    feature_list_indices=[0, 1, 2, 3, 4, 5, 6, 7, 8],
@@ -26,9 +26,9 @@ class TestSelect:
 
     def test_select_knn_ftr_grp(self, tmp_output_dir, test_data_dir):
         # test select with features for model specified by feature list indices
-        feature_file_path = glob(os.path.join(test_data_dir,
-                                              'feature_files',
-                                              'test_extract_knn*'))[0]
+        feature_file_path = os.path.join(test_data_dir,
+                                         'feature_files',
+                                         'knn.features')
 
         hvc.select(feature_file_path=feature_file_path,
                    feature_group='knn',
@@ -42,9 +42,9 @@ class TestSelect:
 
     def test_select_svm_ftr_grp(self, tmp_output_dir, test_data_dir):
         # test select with features for model specified by feature list indices
-        feature_file_path = glob(os.path.join(test_data_dir,
-                                              'feature_files',
-                                              'test_extract_svm*'))[0]
+        feature_file_path = os.path.join(test_data_dir,
+                                         'feature_files',
+                                         'svm.features')
 
         hvc.select(feature_file_path=feature_file_path,
                    feature_group='svm',
@@ -59,9 +59,9 @@ class TestSelect:
 
     def test_select_flatwindow_ftr_grp(self, tmp_output_dir, test_data_dir):
         # test select with features for model specified by feature list indices
-        feature_file_path = glob(os.path.join(test_data_dir,
-                                              'feature_files',
-                                              'test_extract_flatwindow*'))[0]
+        feature_file_path = os.path.join(test_data_dir,
+                                         'feature_files',
+                                         'flatwindow.features')
 
         hvc.select(feature_file_path=feature_file_path,
                    model_name='flatwindow',
@@ -117,43 +117,43 @@ class TestSelect:
         # test select with knn classifier and features specified by feature list indices
         knn_select_config = os.path.join(configs_path,
                                          'test_select_knn_ftr_grp.config.yml')
-        feature_file = glob(os.path.join(test_data_dir,
-                                         'feature_files',
-                                         'test_extract_knn*'))[0]
+        feature_file = os.path.join(test_data_dir,
+                                    'feature_files',
+                                    'knn.features')
         self._yaml_config_asserts(knn_select_config, tmp_output_dir, feature_file)
 
     def test_select_knn_ftr_list_inds_yaml(self, tmp_output_dir, configs_path, test_data_dir):
         # test select with knn classifier and features specified by feature group
         knn_select_config = os.path.join(configs_path,
                                          'test_select_knn_ftr_list_inds.config.yml')
-        feature_file = glob(os.path.join(test_data_dir,
-                                         'feature_files',
-                                         'test_extract_knn*'))[0]
+        feature_file = os.path.join(test_data_dir,
+                                    'feature_files',
+                                    'knn.features')
         self._yaml_config_asserts(knn_select_config, tmp_output_dir, feature_file)
 
     def test_select_multiple_ftr_grp_yaml(self, tmp_output_dir, configs_path, test_data_dir):
         # test select with features specified by list of multiple feature groups
         select_config = os.path.join(configs_path,
                                      'test_select_multiple_ftr_grp.config.yml')
-        feature_file = glob(os.path.join(test_data_dir,
-                                         'feature_files',
-                                         'test_extract_multiple_feature*'))[0]
+        feature_file = os.path.join(test_data_dir,
+                                    'feature_files',
+                                    'multiple_feature_groups.features')
         self._yaml_config_asserts(select_config, tmp_output_dir, feature_file)
 
     def test_select_svm_ftr_grp_yaml(self, tmp_output_dir, configs_path, test_data_dir):
         # test select with svm classifier and features specified by feature group
         select_config = os.path.join(configs_path,
                                      'test_select_svm.config.yml')
-        feature_file = glob(os.path.join(test_data_dir,
-                                         'feature_files',
-                                         'test_extract_svm*'))[0]
+        feature_file = os.path.join(test_data_dir,
+                                    'feature_files',
+                                    'svm.features')
         self._yaml_config_asserts(select_config, tmp_output_dir, feature_file)
 
     def test_select_flatwindow_yaml(self, tmp_output_dir, configs_path, test_data_dir):
         # test select with svm classifier and features specified by feature group
         select_config = os.path.join(configs_path,
                                      'test_select_flatwindow.config.yml')
-        feature_file = glob(os.path.join(test_data_dir,
-                                         'feature_files',
-                                         'test_extract_flatwindow*'))[0]
+        feature_file = os.path.join(test_data_dir,
+                                    'feature_files',
+                                    'flatwindow.features')
         self._yaml_config_asserts(select_config, tmp_output_dir, feature_file)
