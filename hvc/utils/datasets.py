@@ -393,6 +393,7 @@ dir_path = os.path.dirname(path)  # but then just take the dir
 with open(os.path.join(dir_path, './repos.yml')) as repo_yaml:
     repodict = yaml.load(repo_yaml)['repodict']
 
+
 def list(dataset=''):
     """Print list of datasets to stdout
 
@@ -438,7 +439,10 @@ def fetch(dataset_str, destination_path='.', remove_compressed_file=True):
     -------
     None
     """
-
+    destination_path = os.path.expanduser(destination_path)
+    if not os.path.isdir(destination_path):
+        raise NotADirectoryError('could not find destination_path: {}'
+                                 .format(destination_path))
     dataset_names = []  # names used to tell user what will be downloaded 
     dataset_dicts = []  # contain file name + url for zip/archive/file to be downloaded
     for repo_key, repo_val in repodict.items():
