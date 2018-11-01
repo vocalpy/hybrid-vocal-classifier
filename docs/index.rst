@@ -17,20 +17,22 @@ The main application is for scientists studying birdsong.
 (You can read more about that on the :doc:`more_about` page.)
 
 Running `hvc` requires almost no coding.
-The user writes configuration files in YAML, a simple language that
-is meant to be easy for humans to read and write.
-Most users will only have to copy the example .yml files and then
+Users write simple Python scripts, and most will have to only
+adapt the examples from the documentation. Large batch jobs can be
+run with configuration files in YAML (a simple language that
+is meant to be easy for humans to read and write). Again, most users
+will only have to copy the example .yml files and then
 change a couple of parameters.
 
-Here's a code sample that gives a high-level view of how you run `hvc`:
+This code sample gives a high-level view of how you run `hvc`:
 
 .. code-block:: python
 
    import hvc
 
    # extract features from audio to train machine learning models
-   hvc.extract('extract_config.yml')
-   # train models and select model with best accuracy
+   hvc.extract('extract_config.yml')  # using .yml config file
+   # train models/classifiers and select model with best accuracy
    hvc.select('select_config.yml')
    # use trained model to predict labels for unlabeled data
    hvc.predict('predict_config.yml')
