@@ -27,7 +27,7 @@ VERSION = '0.1.2b1'
 LICENSE='BSD'
 
 REQUIRED = [
-    'numpy', 'scipy', 'matplotlib', 'scikit-learn', 'keras', 'tensorflow',
+    'numpy<=1.14.5, >=1.13.3', 'scipy', 'matplotlib', 'scikit-learn', 'keras', 'tensorflow',
     'pyyaml', 'h5py',
 ]
 
