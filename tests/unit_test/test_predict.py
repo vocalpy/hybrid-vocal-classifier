@@ -16,7 +16,6 @@ class TestPredict:
             assert key in predict
         assert (('features' in predict) or ('neuralnet_inputs') in predict)
 
-
     def test_predict_knn_data_dirs_notmat(self, tmp_output_dir, test_data_dir):
         # tests predict with knn model, using data dirs, and
         # converting output to notmat files
