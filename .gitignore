@@ -8,7 +8,6 @@ MANIFEST
 dir_names.txt
 .idea/
 docs/_build
-docs_old/
 .pytest_cache/
 tests/test_data/feature_files/*.features
 tests/test_data/model_files/*.model

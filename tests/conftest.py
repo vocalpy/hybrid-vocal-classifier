@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 this_file_dirname = dirname(__file__)
 TEST_DATA_DIR = join(this_file_dirname, 'test_data')
-HVC_SOURCE_DIR = join(this_file_dirname, normpath('../hvc/'))
+HVC_SOURCE_DIR = join(this_file_dirname, normpath('../src/hvc/'))
 
 
 @pytest.fixture
