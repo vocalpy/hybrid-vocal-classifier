@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "hybrid-vocal-classifier"
+version = "0.2.1b1"
+description = "voice-to-text for songbirds"
+authors = ["David Nicholson <nickledave@users.noreply.github.com>"]
+license = "BSD"
+classifiers = [
+    'License :: OSI Approved :: BSD License',
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: Implementation :: CPython',
+]
+packages = [
+    {include = "hvc", from="src"}
+]
+include = [
+    'src/hvc/**/*yml'
+]
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.9"
+numpy = ">=1.19.2"
+scipy = ">=1.6.2"
+matplotlib = ">=3.4.1"
+scikit-learn = ">=0.24.1"
+Keras = ">=2.4.3"
+tensorflow = ">=2.4.1"
+PyYAML = ">=5.4.1"
+joblib = ">=1.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = ">=6.2.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
