@@ -1,6 +1,7 @@
 from keras.models import Sequential
-from keras.layers import AtrousConvolution2D, Convolution2D, MaxPooling2D, ZeroPadding2D
-from keras.layers import Activation, Dropout, Flatten, Dense, Permute, Reshape
+from keras.layers.convolutional import Convolution2D, ZeroPadding2D
+from keras.layers.pooling import MaxPooling2D
+from keras.layers.core import Activation, Dropout, Flatten, Dense, Permute, Reshape
 
 
 def dilated(input_width, input_height):
@@ -57,17 +58,16 @@ def dilated(input_width, input_height):
 
     # "Ablate" the 2 MaxPool layers from VGG16,
     # Begin dilated convolutional layers
-    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2),
+    model.add(AtrousConvolution2D(512, 3, 3, dilation_rate=(2, 2),
                                   activation='relu', name='conv5_1'))
-    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2),
+    model.add(AtrousConvolution2D(512, 3, 3, dilation_rate=(2, 2),
                                   activation='relu', name='conv5_2'))
-    model.add(AtrousConvolution2D(512, 3, 3, atrous_rate=(2, 2),
+    model.add(AtrousConvolution2D(512, 3, 3, dilation_rate=(2, 2),
                                   activation='relu', name='conv5_3'))
-    import pdb;pdb.set_trace()
 
     # Replace the FC layer from VGG16 with a convolution
-    model.add(AtrousConvolution2D(4096, 7, 7, atrous_rate=(4, 4),
-                                  activation='relu', name='fc6'))
+    model.add(Convolution2D(4096, 7, 7, dilation_rate=(4, 4),
+                            activation='relu', name='fc6'))
     #TODO: add dropout here
     model.add(Convolution2D(4096, 1, 1, activation='relu', name='fc7'))
     #TODO: add dropout here
@@ -78,13 +78,13 @@ def dilated(input_width, input_height):
     model.add(ZeroPadding2D(padding=(33, 33)))
     #note these layers have different learning rates in original model
     model.add(Convolution2D(42, 3, 3, activation='relu', name='ct_conv1_2'))
-    model.add(AtrousConvolution2D(84, 3, 3, atrous_rate=(2, 2),
+    model.add(Convolution2D(84, 3, 3, dilation_rate=(2, 2),
                                   activation='relu', name='ct_conv2_1'))
-    model.add(AtrousConvolution2D(168, 3, 3, atrous_rate=(4, 4),
+    model.add(Convolution2D(168, 3, 3, dilation_rate=(4, 4),
                                   activation='relu', name='ct_conv3_1'))
-    model.add(AtrousConvolution2D(336, 3, 3, atrous_rate=(8, 8),
+    model.add(Convolution2D(336, 3, 3, dilation_rate=(8, 8),
                                   activation='relu', name='ct_conv4_1'))
-    model.add(AtrousConvolution2D(672, 3, 3, atrous_rate=(16, 16),
+    model.add(Convolution2D(672, 3, 3, dilation_rate=(16, 16),
                                   activation='relu', name='ct_conv5_1'))
     model.add(Convolution2D(672, 3, 3, activation='relu', name='ct_fc1'))
     model.add(Convolution2D(21, 1, 1, name='ct_final'))
