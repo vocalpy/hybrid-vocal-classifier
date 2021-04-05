@@ -391,7 +391,7 @@ dir_path = os.path.dirname(path)  # but then just take the dir
 
 # load yaml file that lists all repositories, for use by list and fetch
 with open(os.path.join(dir_path, './repos.yml')) as repo_yaml:
-    repodict = yaml.load(repo_yaml)['repodict']
+    repodict = yaml.load(repo_yaml, Loader=yaml.FullLoader)['repodict']
 
 
 def list(dataset=''):

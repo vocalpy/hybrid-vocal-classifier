@@ -28,7 +28,7 @@ def feature_grps_path(hvc_source_dir):
 @pytest.fixture
 def valid_feature_groups_dict(feature_grps_path):
     with open(feature_grps_path) as ftr_grps_yml:
-        valid_feature_groups_dict = yaml.load(ftr_grps_yml)
+        valid_feature_groups_dict = yaml.load(ftr_grps_yml, Loader=yaml.FullLoader)
     return valid_feature_groups_dict
 
 

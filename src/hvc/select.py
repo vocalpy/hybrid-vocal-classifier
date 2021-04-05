@@ -27,7 +27,7 @@ dir_path = os.path.dirname(path)  # but then just take the dir
 with open(os.path.join(dir_path,
                        'parse',
                        'validation.yml')) as val_yaml:
-    validate_dict = yaml.load(val_yaml)
+    validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)
 
 model_types = validate_dict['valid_models']
 

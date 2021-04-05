@@ -35,7 +35,7 @@ class TestFromFile:
         with open(os.path.join(hvc_source_dir,
                                os.path.normpath('parse/feature_groups.yml'))
                   ) as ftr_grp_yaml:
-            valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+            valid_feature_groups_dict = yaml.load(ftr_grp_yaml, Loader=yaml.FullLoader)
         spect_params = refs_dict['koumura']
         segment_params = {
             'threshold': 1500,
@@ -71,7 +71,7 @@ class TestFromFile:
         with open(os.path.join(
                 hvc_source_dir,
                 os.path.normpath('parse/feature_groups.yml'))) as ftr_grp_yaml:
-            ftr_grps = yaml.load(ftr_grp_yaml)
+            ftr_grps = yaml.load(ftr_grp_yaml, Loader=yaml.FullLoader)
 
         cbin = os.path.join(test_data_dir,
                             os.path.normpath(

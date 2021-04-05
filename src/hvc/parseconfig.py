@@ -69,7 +69,7 @@ def parse_config(config_file, config_type=None):
     config_path = os.path.abspath(config_file)
 
     with open(config_path) as yaml_to_parse:
-        config_yaml = yaml.load(yaml_to_parse)
+        config_yaml = yaml.load(yaml_to_parse, Loader=yaml.FullLoader)
 
     if config_type is not None:
         return _parse_helper(config_type, config_path, config_yaml)
