@@ -8,7 +8,7 @@ from glob import glob
 
 import yaml
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 
 import hvc.utils
 import hvc.utils.annotation as annotation

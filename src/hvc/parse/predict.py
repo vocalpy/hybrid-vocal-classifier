@@ -9,7 +9,7 @@ import csv
 
 # from dependencies
 import yaml
-from sklearn.externals import joblib
+import joblib
 
 from .utils import check_for_missing_keys, flatten
 

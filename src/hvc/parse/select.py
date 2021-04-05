@@ -9,7 +9,7 @@ import copy
 # from dependencies
 import yaml
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 
 # from hvc
 from ..features.extract import neural_net_features_switch_case_dict

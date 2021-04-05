@@ -12,7 +12,7 @@ import copy
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.externals import joblib
+import joblib
 import yaml
 
 # from hvc

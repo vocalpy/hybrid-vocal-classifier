@@ -7,7 +7,7 @@ import os
 import pytest
 import yaml
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 
 import hvc.parse.extract
 import hvc.parse.select
