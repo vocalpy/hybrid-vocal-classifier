@@ -520,12 +520,12 @@ def _select(feature_file,
                                            append=True)
 
                     checkpoint = ModelCheckpoint(model_filename,
-                                                 monitor='val_acc',
+                                                 monitor='val_accuracy',
                                                  verbose=1,
                                                  save_best_only=True,
                                                  save_weights_only=False,
                                                  mode='max')
-                    earlystop = EarlyStopping(monitor='val_acc',
+                    earlystop = EarlyStopping(monitor='val_accuracy',
                                               min_delta=0,
                                               patience=20,
                                               verbose=1,
