@@ -14,8 +14,8 @@ Many based on the CUIDADO feature set described in Peeters 2004 [2]_.
 .. [2] Peeters, Geoffroy. "A large set of audio features for sound description (
    and classification) in the CUIDADO project." (2004).
 """
-
 import numpy as np
+import numpy.matlib
 
 
 def duration(syllable):
