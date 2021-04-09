@@ -182,7 +182,7 @@ class Spectrogram:
                     if window == 'Hann':
                         self.window = np.hanning(self.nperseg)
                     elif window == 'dpss':
-                        self.window = scipy.signal.slepian(self.nperseg, 4 / self.nperseg)
+                        self.window = scipy.signal.windows.dpss(self.nperseg, 4 / self.nperseg)
 
         if freq_cutoffs is None:
             self.freqCutoffs = None
