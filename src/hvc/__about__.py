@@ -23,7 +23,7 @@ __title__ = "hybrid-vocal-classifier"
 __summary__ = "a Python machine learning library for animal vocalizations and bioacoustics"
 __uri__ = "https://github.com/NickleDave/hybrid-vocal-classifier"
 
-__version__ = "0.2.1b1"
+__version__ = "0.3.0"
 
 if base_dir is not None and os.path.exists(os.path.join(base_dir, ".commit")):
     with open(os.path.join(base_dir, ".commit")) as fp:

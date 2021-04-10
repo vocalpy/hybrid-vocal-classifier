@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "hybrid-vocal-classifier"
-version = "0.2.1b1"
-description = "voice-to-text for songbirds"
+version = "0.3.0"
+description = "a Python machine learning library for animal vocalizations and bioacoustics"
 authors = ["David Nicholson <nickledave@users.noreply.github.com>"]
 license = "BSD"
 classifiers = [
