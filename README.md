@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/NickleDave/hybrid-vocal-classifier/branch/main/graph/badge.svg?token=9c27qf9WBf)](https://codecov.io/gh/NickleDave/hybrid-vocal-classifier)
 # hybrid-vocal-classifier
 ## a Python machine learning library for animal vocalizations and bioacoustics 
-![finch singing with annotated spectrogram of song](./docs/images/gr41rd41_song.png)
+![Image of finch singing with annotated spectrogram of song](./docs/images/gr41rd41_song.png)
 
 ### Getting Started
 You can install with pip: `$ pip install hybrid-vocal-classifier`  
@@ -23,7 +23,7 @@ animal vocalizations and bioacoustics
 to apply machine learning algorithms to their data. 
 The focus on automating the sort of annotations  
 often used by researchers studying 
-[vocal learning](https://www.sciencedirect.com/science/article/pii/S0896627319308396)  
+[vocal learning](https://www.sciencedirect.com/science/article/pii/S0896627319308396) 
 sets `hvc` apart from more general software tools for bioacoustics.
  
 In addition to automating annotation of data, 
