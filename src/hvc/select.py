@@ -483,7 +483,7 @@ def _select(
                     elif model_dict["model_name"] == "knn":
                         print("training knn. ", end="")
                         clf = neighbors.KNeighborsClassifier(
-                            model_dict["hyperparameters"]["k"], "distance"
+                            model_dict["hyperparameters"]["k"], weights="distance"
                         )
 
                     # use 'advanced indexing' to get only sample rows and only feature models
