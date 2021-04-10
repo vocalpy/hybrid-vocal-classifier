@@ -2,7 +2,7 @@
 import os
 from glob import glob
 
-from sklearn.externals import joblib
+import joblib
 
 import hvc
 from config import rewrite_config

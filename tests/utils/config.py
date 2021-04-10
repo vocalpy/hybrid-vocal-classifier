@@ -58,7 +58,7 @@ def rewrite_config(config_filename,
     # (don't save rewritten config in test dir because that
     # makes annoying extra files every time you run the test))
     with open(save_filename, 'r') as yml:
-        config_yaml = yaml.load(yml)
+        config_yaml = yaml.load(yml, Loader=yaml.FullLoader)
 
     if 'extract' in config_yaml:
         config_type = 'extract'

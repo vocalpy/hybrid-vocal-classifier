@@ -9,7 +9,7 @@ import csv
 
 # from dependencies
 import yaml
-from sklearn.externals import joblib
+import joblib
 
 from .utils import check_for_missing_keys, flatten
 
@@ -17,7 +17,7 @@ path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
-    validate_dict = yaml.load(val_yaml)
+    validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)
 
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_predict_todo_list_keys'])
 REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(

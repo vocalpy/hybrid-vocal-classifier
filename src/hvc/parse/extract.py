@@ -18,16 +18,16 @@ path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
 with open(os.path.join(dir_path, 'features.yml')) as features_yml:
-    VALID_FEATURES = yaml.load(features_yml)['features']
+    VALID_FEATURES = yaml.load(features_yml, Loader=yaml.FullLoader)['features']
 
 with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
-    validate_dict = yaml.load(val_yaml)
+    validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)
 
 # feature groups in separate file from feature list because
 # want to validate feature groups against feature list
 # and some features are not in feature group
 with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
-    valid_feature_groups_dict = yaml.load(ftr_grp_yaml)
+    valid_feature_groups_dict = yaml.load(ftr_grp_yaml, Loader=yaml.FullLoader)
 
 REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_extract_todo_list_keys'])
 REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(

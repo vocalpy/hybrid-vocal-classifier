@@ -8,7 +8,7 @@ and this seemed like the easiest, least fragile way to do that
 import os
 from glob import glob
 
-from sklearn.externals import joblib
+import joblib
 
 import hvc
 from hvc.select import determine_model_output_folder_name

@@ -3,7 +3,7 @@ import os
 from glob import glob
 import shutil
 
-from sklearn.externals import joblib
+import joblib
 
 import hvc
 

@@ -5,7 +5,7 @@ from glob import glob
 # from dependencies
 import numpy as np
 from scipy.io import wavfile
-from sklearn.externals import joblib
+import joblib
 
 import hvc.utils
 import hvc.utils.annotation

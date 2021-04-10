@@ -7,7 +7,7 @@ import os
 import pytest
 import yaml
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 
 import hvc.parse.extract
 import hvc.parse.select
@@ -20,7 +20,7 @@ def test_yaml_extract_path(configs_path):
 @pytest.fixture
 def test_yaml_extract(test_yaml_extract_path):
     with open(test_yaml_extract_path, 'r') as yaml_file:
-        test_yaml_extract = yaml.load(yaml_file)
+        test_yaml_extract = yaml.load(yaml_file, Loader=yaml.FullLoader)
     return test_yaml_extract
 
 
@@ -31,7 +31,7 @@ def test_yaml_select_path(configs_path):
 @pytest.fixture
 def test_yaml_select(test_yaml_select_path):
     with open(test_yaml_select_path, 'r') as yaml_file:
-        test_yaml_select = yaml.load(yaml_file)
+        test_yaml_select = yaml.load(yaml_file, Loader=yaml.FullLoader)
     return test_yaml_select
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def features_yml_path(hvc_source_dir):
 @pytest.fixture
 def VALID_FEATURES(features_yml_path):
     with open(features_yml_path, 'r') as features_yml:
-        VALID_FEATURES = yaml.load(features_yml)['features']
+        VALID_FEATURES = yaml.load(features_yml, Loader=yaml.FullLoader)['features']
         return VALID_FEATURES
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def feature_grps_path(hvc_source_dir):
 @pytest.fixture
 def FTR_GROUPS(feature_grps_path):
     with open(feature_grps_path) as ftr_grps_yml:
-        FTR_GROUPS = yaml.load(ftr_grps_yml)
+        FTR_GROUPS = yaml.load(ftr_grps_yml, Loader=yaml.FullLoader)
     return FTR_GROUPS
 
 

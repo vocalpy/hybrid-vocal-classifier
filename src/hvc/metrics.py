@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.spatial.distance
 import sklearn.metrics
-from sklearn.externals import joblib
+import joblib
 
 
 def confusion_matrix(y_true=None, y_pred=None, model_meta_file=None, normalize=False):

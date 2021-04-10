@@ -1,6 +1,6 @@
 """utility functions for features"""
 
-from sklearn.externals import joblib
+import joblib
 
 
 def load_feature_file(filename):

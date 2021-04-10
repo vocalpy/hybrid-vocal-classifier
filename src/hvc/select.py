@@ -12,7 +12,7 @@ import copy
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.externals import joblib
+import joblib
 import yaml
 
 # from hvc
@@ -27,7 +27,7 @@ dir_path = os.path.dirname(path)  # but then just take the dir
 with open(os.path.join(dir_path,
                        'parse',
                        'validation.yml')) as val_yaml:
-    validate_dict = yaml.load(val_yaml)
+    validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)
 
 model_types = validate_dict['valid_models']
 
@@ -520,12 +520,12 @@ def _select(feature_file,
                                            append=True)
 
                     checkpoint = ModelCheckpoint(model_filename,
-                                                 monitor='val_acc',
+                                                 monitor='val_accuracy',
                                                  verbose=1,
                                                  save_best_only=True,
                                                  save_weights_only=False,
                                                  mode='max')
-                    earlystop = EarlyStopping(monitor='val_acc',
+                    earlystop = EarlyStopping(monitor='val_accuracy',
                                               min_delta=0,
                                               patience=20,
                                               verbose=1,
