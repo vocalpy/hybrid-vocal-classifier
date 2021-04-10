@@ -13,6 +13,8 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: Implementation :: CPython',
 ]
+readme = 'README.md'
+homepage = 'https://github.com/NickleDave/hybrid-vocal-classifier'
 packages = [
     {include = "hvc", from="src"}
 ]
