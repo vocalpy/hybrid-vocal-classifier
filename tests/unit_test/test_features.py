@@ -1,16 +1,15 @@
 """
 test features.extract module
 """
-
 import os
 
+import evfuncs
+import numpy as np
 import pytest
 import yaml
-import numpy as np
 
 import hvc.audiofileIO
 import hvc.features
-import hvc.evfuncs
 from hvc.utils import annotation
 from hvc.parse.ref_spect_params import refs_dict
 

@@ -189,6 +189,18 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "evfuncs"
+version = "0.3.2.post1"
+description = "Functions for working with files created by the EvTAF program and the evsonganaly GUI"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+numpy = ">=1.18.1"
+scipy = ">=1.2.0"
+
+[[package]]
 name = "flatbuffers"
 version = "1.12"
 description = "The FlatBuffers serialization format for Python"
@@ -1099,7 +1111,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.9"
-content-hash = "1eea1ce7bb07c522b57f3a4f423f5c11c119c7bea4e06c66259002fca28dc689"
+content-hash = "87341689a02bfbc10a41bf3069549495201e30efce882ef1028ff04d4c395277"
 
 [metadata.files]
 absl-py = [
@@ -1226,6 +1238,10 @@ decorator = [
 docutils = [
     {file = "docutils-0.17-py2.py3-none-any.whl", hash = "sha256:a71042bb7207c03d5647f280427f14bfbd1a65c9eb84f4b341d85fafb6bb4bdf"},
     {file = "docutils-0.17.tar.gz", hash = "sha256:e2ffeea817964356ba4470efba7c2f42b6b0de0b04e66378507e3e2504bbff4c"},
+]
+evfuncs = [
+    {file = "evfuncs-0.3.2.post1-py3-none-any.whl", hash = "sha256:47cef6c20b297ef6e16b842652ac8bc9985dc95e7990867ffd487a775b2bdab0"},
+    {file = "evfuncs-0.3.2.post1.tar.gz", hash = "sha256:eb526e101e27a16b7ba88771c3c8781579a872534f6d382de2b535eeda26351d"},
 ]
 flatbuffers = [
     {file = "flatbuffers-1.12-py2.py3-none-any.whl", hash = "sha256:9e9ef47fa92625c4721036e7c4124182668dc6021d9e7c73704edd395648deb9"},

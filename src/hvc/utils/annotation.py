@@ -2,10 +2,10 @@ import os
 import csv
 import wave
 
+import evfuncs
 import numpy as np
 import scipy.io
 
-from .. import evfuncs
 from ..koumura import parse_xml
 
 # fields that must be present for each syllable that is annotated.

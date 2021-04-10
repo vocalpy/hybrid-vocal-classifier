@@ -1,15 +1,14 @@
 """
 tests knn module
 """
-
 import os
 from glob import glob
 
-import pytest
+import evfuncs
 import numpy as np
+import pytest
 
 import hvc.audiofileIO
-import hvc.evfuncs
 from hvc.parse.ref_spect_params import refs_dict
 from hvc.features import knn
 
@@ -21,7 +20,7 @@ def notmat_dict(test_data_dir):
     )
     songfiles_list = glob(songfiles_dir)
     first_song = songfiles_list[0]
-    notmat_dict = hvc.evfuncs.load_notmat(first_song)
+    notmat_dict = evfuncs.load_notmat(first_song)
     return notmat_dict
 
 
@@ -38,7 +37,7 @@ def some_syllables(test_data_dir):
 
     spect_params = refs_dict["evsonganaly"]
     spect_maker = hvc.audiofileIO.Spectrogram(**spect_params)
-    raw_song, samp_freq = hvc.evfuncs.load_cbin(first_song)
+    raw_song, samp_freq = evfuncs.load_cbin(first_song)
 
     some_syllables = hvc.audiofileIO.make_syls(
         raw_audio=raw_song,

@@ -2,6 +2,7 @@ import os
 import warnings
 from glob import glob
 
+import evfuncs
 import numpy as np
 from scipy.io import wavfile
 import joblib
@@ -9,7 +10,6 @@ import joblib
 import hvc.utils
 import hvc.utils.annotation
 import hvc.audiofileIO
-import hvc.evfuncs
 from .feature_dicts import single_syl_features_switch_case_dict
 from .feature_dicts import multiple_syl_features_switch_case_dict
 from .feature_dicts import neural_net_features_switch_case_dict
@@ -238,7 +238,7 @@ class FeatureExtractor:
                     audio_files.extend(glob(os.path.join(data_dir, search_str)))
                 for audio_file in audio_files:
                     if file_format == "cbin":
-                        raw_audio, samp_freq = hvc.evfuncs.load_cbin(audio_file)
+                        raw_audio, samp_freq = evfuncs.load_cbin(audio_file)
                     elif file_format == "wav":
                         samp_freq, raw_audio = wavfile.read(audio_file)
                         search_str = "*.wav"
@@ -530,7 +530,7 @@ class FeatureExtractor:
                     input for each model, e.g., 2-d array containing spectrogram
         """
         if filename.endswith(".cbin"):
-            raw_audio, samp_freq = hvc.evfuncs.load_cbin(filename)
+            raw_audio, samp_freq = evfuncs.load_cbin(filename)
         elif filename.endswith(".wav"):
             samp_freq, raw_audio = wavfile.read(filename)
 
