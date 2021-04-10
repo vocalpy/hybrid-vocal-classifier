@@ -27,7 +27,7 @@ often used by researchers studying
 sets `hvc` apart from more general software tools for bioacoustics.
  
 In addition to automating annotation of data, 
-`hvc` aims to make it easy for you to compare different models people have proposed,  
+`hvc` aims to make it easy for you to compare different models people have proposed, 
 using the data you have in your lab,
  so you can see for yourself which one works best for your needs. 
 A related goal is to help you figure out 
