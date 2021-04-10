@@ -18,3 +18,7 @@ docs/_build
 # data for tests
 tests/data_for_tests/feature_files/
 tests/data_for_tests/model_files/
+
+# coverage
+.coverage
+coverage.xml
