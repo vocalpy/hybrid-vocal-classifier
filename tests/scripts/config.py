@@ -5,9 +5,7 @@ import copy
 import yaml
 
 
-def rewrite_config(config_filename,
-                   config_output_dir,
-                   replace_dict):
+def rewrite_config(config_filename, config_output_dir, replace_dict):
     """rewrites config files,
     e.g. to insert name of temporary directories
 
@@ -40,16 +38,15 @@ def rewrite_config(config_filename,
         for ind, line in enumerate(config_as_list):
             if key in line:
                 config_as_list[ind] = config_as_list[ind].replace(
-                    val_tuple[0],
-                    val_tuple[1]
+                    val_tuple[0], val_tuple[1]
                 )
 
-    save_filename = os.path.join(str(config_output_dir),
-                                 os.path.basename(config_filename)[:-3]
-                                 + 'rewrite.yml')
+    save_filename = os.path.join(
+        str(config_output_dir), os.path.basename(config_filename)[:-3] + "rewrite.yml"
+    )
 
     # write to file in temporary configs dir
-    with open(save_filename, 'w') as tmp_config_file:
+    with open(save_filename, "w") as tmp_config_file:
         tmp_config_file.writelines(config_as_list)
 
     # now open yaml and rewrite paths as absolute, if necessary
@@ -57,33 +54,36 @@ def rewrite_config(config_filename,
     # tests directory won't work when config is in tmp_output_dir ...
     # (don't save rewritten config in test dir because that
     # makes annoying extra files every time you run the test))
-    with open(save_filename, 'r') as yml:
+    with open(save_filename, "r") as yml:
         config_yaml = yaml.load(yml, Loader=yaml.FullLoader)
 
-    if 'extract' in config_yaml:
-        config_type = 'extract'
-    elif 'select' in config_yaml:
-        config_type = 'select'
-    elif 'predict' in config_yaml:
-        config_type = 'predict'
+    if "extract" in config_yaml:
+        config_type = "extract"
+    elif "select" in config_yaml:
+        config_type = "select"
+    elif "predict" in config_yaml:
+        config_type = "predict"
 
-    if config_type in ('extract', 'predict'):
+    if config_type in ("extract", "predict"):
         config_copy = copy.deepcopy(config_yaml)
         for key, val in config_yaml[config_type].items():
-            if key == 'todo_list':
+            if key == "todo_list":
                 for todo_ind, todo in enumerate(val):
                     for todo_key, todo_val in todo.items():
-                        if todo_key == 'data_dirs':
+                        if todo_key == "data_dirs":
                             new_data_dirs = []
                             for data_dir in todo_val:
-                                new_data_dirs.append(os.path.join(
-                                    os.path.dirname(config_filename),
-                                    os.path.normpath(data_dir)
-                                ))
-                            config_copy[config_type]['todo_list'
-                            ][todo_ind]['data_dirs'] = new_data_dirs
+                                new_data_dirs.append(
+                                    os.path.join(
+                                        os.path.dirname(config_filename),
+                                        os.path.normpath(data_dir),
+                                    )
+                                )
+                            config_copy[config_type]["todo_list"][todo_ind][
+                                "data_dirs"
+                            ] = new_data_dirs
 
-        with open(save_filename, 'w') as save_again:
+        with open(save_filename, "w") as save_again:
             yaml.dump(config_copy, save_again, default_flow_style=False)
 
     return save_filename

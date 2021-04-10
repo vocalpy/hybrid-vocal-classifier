@@ -47,12 +47,15 @@ class FeatureExtractor:
     _from_file
         helper function, extracts features from a single file
     """
-    def __init__(self,
-                 spect_params,
-                 feature_list,
-                 feature_list_group_ID=None,
-                 feature_group_ID_dict=None,
-                 segment_params=None):
+
+    def __init__(
+        self,
+        spect_params,
+        feature_list,
+        feature_list_group_ID=None,
+        feature_group_ID_dict=None,
+        segment_params=None,
+    ):
         """__init__ for FeatureExtractor
 
         Parameters
@@ -70,7 +73,7 @@ class FeatureExtractor:
             e.g., [0, 0, 0, 1]
         feature_group_ID_dict : dict
             map from ints in feature_list_group_ID to feature group names
-            e.g. {0: 'knn', 1: 'svm'}            
+            e.g. {0: 'knn', 1: 'svm'}
         segment_params : dict
             parameters used to find segments--i.e. syllables--in audio files
             as defined for hvc.audiofileIO.segment_song.
@@ -89,18 +92,20 @@ class FeatureExtractor:
             self.feature_list_group_ID = feature_list_group_ID
             self.feature_group_ID_dict = feature_group_ID_dict
 
-    def extract(self,
-                labels_to_use='all',
-                data_dirs=None,
-                data_dirs_validated=False,
-                file_format=None,
-                annotation_file=None,
-                segment=False,
-                output_dir=None,
-                make_output_subdir=True,
-                save_features=True,
-                save_prefix='features_created_',
-                return_features=True):
+    def extract(
+        self,
+        labels_to_use="all",
+        data_dirs=None,
+        data_dirs_validated=False,
+        file_format=None,
+        annotation_file=None,
+        segment=False,
+        output_dir=None,
+        make_output_subdir=True,
+        save_features=True,
+        save_prefix="features_created_",
+        return_features=True,
+    ):
         """extract features and save feature files
 
         Parameters
@@ -147,30 +152,32 @@ class FeatureExtractor:
             Default is True.
         """
         if data_dirs and annotation_file:
-            raise ValueError('received values for both data_dirs and '
-                             'annotation_file arguments, unclear which to use. '
-                             'Please only specify one or the other.')
+            raise ValueError(
+                "received values for both data_dirs and "
+                "annotation_file arguments, unclear which to use. "
+                "Please only specify one or the other."
+            )
 
         if segment:
-            if not hasattr(self, 'segment_params'):
-                raise ValueError('FeatureExtractor.extract was called with segment=True, '
-                                 'but FeatureExtractor does not have segmenting '
-                                 'parameters set.')
+            if not hasattr(self, "segment_params"):
+                raise ValueError(
+                    "FeatureExtractor.extract was called with segment=True, "
+                    "but FeatureExtractor does not have segmenting "
+                    "parameters set."
+                )
 
         # get absolute path to output
         # **before** we change directories
-        # so we're putting it where user specfified, if user wrote a relative path in 
+        # so we're putting it where user specfified, if user wrote a relative path in
         # config file
         if output_dir:
             if make_output_subdir:
-                output_subdir = 'extract_output_' + hvc.utils.timestamp()
+                output_subdir = "extract_output_" + hvc.utils.timestamp()
                 output_dir_with_path = os.path.join(
-                    os.path.abspath(
-                        os.path.normpath(output_dir)),
-                    output_subdir)
+                    os.path.abspath(os.path.normpath(output_dir)), output_subdir
+                )
             else:
-                output_dir_with_path = os.path.abspath(
-                    os.path.normpath(output_dir))
+                output_dir_with_path = os.path.abspath(os.path.normpath(output_dir))
             if not os.path.isdir(output_dir_with_path):
                 os.makedirs(output_dir_with_path)
             output_dir = output_dir_with_path
@@ -185,63 +192,73 @@ class FeatureExtractor:
                         # try adding item to absolute path to config_file
                         # i.e. assume it is written relative to config file
                         data_dir = os.path.join(
-                            os.path.dirname(cwd),
-                            os.path.normpath(data_dir))
+                            os.path.dirname(cwd), os.path.normpath(data_dir)
+                        )
                         if not os.path.isdir(data_dir):
-                            raise ValueError('directory {} in data_dirs is not a valid '
-                                             'directory.'.format(data_dir))
+                            raise ValueError(
+                                "directory {} in data_dirs is not a valid "
+                                "directory.".format(data_dir)
+                            )
                     validated_data_dirs.append(data_dir)
                 data_dirs = validated_data_dirs
 
             # try to auto-discover file format
             if file_format is None:
                 os.chdir(data_dirs[0])
-                cbins = glob('*.cbin')
-                wavs = glob('*.wav')
+                cbins = glob("*.cbin")
+                wavs = glob("*.wav")
                 if cbins and wavs:
-                    raise ValueError('Could not determine file format for feature extract'
-                                     ' automatically,found more than one valid format '
-                                     'in {}.'.format(data_dirs[0]))
-                elif cbins and wavs==[]:
-                    print('found .cbin files in {}, will use .cbin as file format'
-                          .format(data_dirs[0]))
-                    file_format = 'cbin'
-                elif wavs and cbins==[]:
-                    file_format = 'wav'
-                    print('found .wav files in {}, will use .wav as file format'
-                          .format(data_dirs[0]))
+                    raise ValueError(
+                        "Could not determine file format for feature extract"
+                        " automatically,found more than one valid format "
+                        "in {}.".format(data_dirs[0])
+                    )
+                elif cbins and wavs == []:
+                    print(
+                        "found .cbin files in {}, will use .cbin as file format".format(
+                            data_dirs[0]
+                        )
+                    )
+                    file_format = "cbin"
+                elif wavs and cbins == []:
+                    file_format = "wav"
+                    print(
+                        "found .wav files in {}, will use .wav as file format".format(
+                            data_dirs[0]
+                        )
+                    )
 
             if segment:
                 annotation_list = []
-                if file_format == 'cbin':
-                    search_str = '*.cbin'
-                elif file_format == 'wav':
-                    search_str = '*.wav'
+                if file_format == "cbin":
+                    search_str = "*.cbin"
+                elif file_format == "wav":
+                    search_str = "*.wav"
                 audio_files = []
                 for data_dir in data_dirs:
-                    audio_files.extend(glob(os.path.join(data_dir,
-                                                    search_str)))
+                    audio_files.extend(glob(os.path.join(data_dir, search_str)))
                 for audio_file in audio_files:
-                    if file_format == 'cbin':
+                    if file_format == "cbin":
                         raw_audio, samp_freq = hvc.evfuncs.load_cbin(audio_file)
-                    elif file_format == 'wav':
+                    elif file_format == "wav":
                         samp_freq, raw_audio = wavfile.read(audio_file)
-                        search_str = '*.wav'
-                    segment_dict = self.segmenter.segment(raw_audio,
-                                                          method='evsonganaly',
-                                                          samp_freq=samp_freq)
-                    fake_labels = np.full((segment_dict['onsets_s'].shape),
-                                          '-')
-                    annotation_dict = {'filename': audio_file,
-                                       'labels': fake_labels,
-                                       'onsets_s': segment_dict['onsets_s'],
-                                       'offsets_s': segment_dict['offsets_s']}
-                    if 'onsets_Hz' in segment_dict:
+                        search_str = "*.wav"
+                    segment_dict = self.segmenter.segment(
+                        raw_audio, method="evsonganaly", samp_freq=samp_freq
+                    )
+                    fake_labels = np.full((segment_dict["onsets_s"].shape), "-")
+                    annotation_dict = {
+                        "filename": audio_file,
+                        "labels": fake_labels,
+                        "onsets_s": segment_dict["onsets_s"],
+                        "offsets_s": segment_dict["offsets_s"],
+                    }
+                    if "onsets_Hz" in segment_dict:
                         # onsets_Hz will always be in segment_dict unless someone uses
                         # 'amp' version of segment, but that would make everything else
                         # crash. Neglecting that issue at the moment
-                        annotation_dict['onsets_Hz'] = segment_dict['onsets_Hz']
-                        annotation_dict['offsets_Hz'] = segment_dict['offsets_Hz']
+                        annotation_dict["onsets_Hz"] = segment_dict["onsets_Hz"]
+                        annotation_dict["offsets_Hz"] = segment_dict["offsets_Hz"]
                     annotation_list.append(annotation_dict)
 
             elif segment is False:
@@ -251,33 +268,41 @@ class FeatureExtractor:
                 notmats = []
                 annot_xmls = []
                 for data_dir in data_dirs:
-                    notmat_search_str = os.path.join(data_dir, '*.not.mat')
+                    notmat_search_str = os.path.join(data_dir, "*.not.mat")
                     notmats_this_dir = glob(notmat_search_str)
                     if notmats_this_dir:
                         notmats.extend(notmats_this_dir)
                     else:
-                        if file_format == 'cbin':
+                        if file_format == "cbin":
                             # if audio files are .cbin, we expect .not.mat files, so raise error
-                            raise ValueError('Identified file format as .cbin but did not find '
-                                             'files with annotations in data_dir {}.'
-                                             .format(data_dir))
-                        elif file_format == 'wav':
+                            raise ValueError(
+                                "Identified file format as .cbin but did not find "
+                                "files with annotations in data_dir {}.".format(
+                                    data_dir
+                                )
+                            )
+                        elif file_format == "wav":
                             # if audio files are .wav, annotation could be xml files (from Koumura dataset),
                             # try looking in parent directory
-                            annot_xml = glob(os.path.join(data_dir,
-                                                          '..',
-                                                          'Annotation.xml'))
+                            annot_xml = glob(
+                                os.path.join(data_dir, "..", "Annotation.xml")
+                            )
                             if annot_xml:
                                 annot_xmls.extend(annot_xml)
                             else:
-                                raise ValueError('Identified file format as .wav but did not find '
-                                                 'files with annotations in data_dir {}.'
-                                                 .format(data_dir))
+                                raise ValueError(
+                                    "Identified file format as .wav but did not find "
+                                    "files with annotations in data_dir {}.".format(
+                                        data_dir
+                                    )
+                                )
 
                 annotation_list = []  # list of annotation_dicts
                 if notmats:
                     for notmat in notmats:
-                        annotation_dict = hvc.utils.annotation.notmat_to_annot_dict(notmat)
+                        annotation_dict = hvc.utils.annotation.notmat_to_annot_dict(
+                            notmat
+                        )
                         annotation_list.append(annotation_dict)
 
                 if annot_xmls:
@@ -301,135 +326,155 @@ class FeatureExtractor:
         songfile_IDs = []
         songfile_ID_counter = 0
         for file_num, annotation_dict in enumerate(annotation_list):
-            print('Processing audio file {} of {}.'.format(file_num + 1, num_songfiles))
+            print("Processing audio file {} of {}.".format(file_num + 1, num_songfiles))
             # segment_params defined for todo_list item takes precedence over any default
             # defined for `extract` config
-            extract_dict = self._from_file(annotation_dict['filename'],
-                                           annotation_dict['labels'],
-                                           annotation_dict['onsets_Hz'],
-                                           annotation_dict['offsets_Hz'],
-                                           labels_to_use=labels_to_use)
+            extract_dict = self._from_file(
+                annotation_dict["filename"],
+                annotation_dict["labels"],
+                annotation_dict["onsets_Hz"],
+                annotation_dict["offsets_Hz"],
+                labels_to_use=labels_to_use,
+            )
 
             if extract_dict is None:
                 # because no labels from labels_to_use were found in songfile
                 continue
 
-            if 'feature_inds' in extract_dict:
-                if 'feature_inds' not in locals():
-                    feature_inds = extract_dict['feature_inds']
+            if "feature_inds" in extract_dict:
+                if "feature_inds" not in locals():
+                    feature_inds = extract_dict["feature_inds"]
                 else:
                     ftr_inds_err_msg = "feature indices changed between files"
-                    assert np.array_equal(feature_inds, extract_dict['feature_inds']), ftr_inds_err_msg
+                    assert np.array_equal(
+                        feature_inds, extract_dict["feature_inds"]
+                    ), ftr_inds_err_msg
 
-            all_labels.extend(extract_dict['labels'])
-            all_onsets_Hz.extend(extract_dict['onsets_Hz'])
-            all_offsets_Hz.extend(extract_dict['offsets_Hz'])
-            all_sampfreqs.append(extract_dict['samp_freq'])
-            songfiles.append(annotation_dict['filename'])
+            all_labels.extend(extract_dict["labels"])
+            all_onsets_Hz.extend(extract_dict["onsets_Hz"])
+            all_offsets_Hz.extend(extract_dict["offsets_Hz"])
+            all_sampfreqs.append(extract_dict["samp_freq"])
+            songfiles.append(annotation_dict["filename"])
             songfile_IDs.extend(
-                [songfile_ID_counter] * extract_dict['onsets_Hz'].shape[0])
+                [songfile_ID_counter] * extract_dict["onsets_Hz"].shape[0]
+            )
             songfile_ID_counter += 1
 
-            if 'features_arr' in extract_dict:
-                if 'features_from_all_files' in locals():
-                    features_from_all_files = np.concatenate((features_from_all_files,
-                                                              extract_dict['features_arr']),
-                                                             axis=0)
+            if "features_arr" in extract_dict:
+                if "features_from_all_files" in locals():
+                    features_from_all_files = np.concatenate(
+                        (features_from_all_files, extract_dict["features_arr"]), axis=0
+                    )
                 else:
-                    features_from_all_files = extract_dict['features_arr']
+                    features_from_all_files = extract_dict["features_arr"]
 
-            if 'neuralnet_inputs_dict' in extract_dict:
-                if 'neuralnet_inputs_all_files' in locals():
-                    for input_type, list_of_input_arr in neuralnet_inputs_all_files.items():
-                        list_of_input_arr.append(extract_dict['neuralnet_inputs_dict'][input_type])
+            if "neuralnet_inputs_dict" in extract_dict:
+                if "neuralnet_inputs_all_files" in locals():
+                    for (
+                        input_type,
+                        list_of_input_arr,
+                    ) in neuralnet_inputs_all_files.items():
+                        list_of_input_arr.append(
+                            extract_dict["neuralnet_inputs_dict"][input_type]
+                        )
                 else:
                     neuralnet_inputs_all_files = {}
-                    for input_type, input_arr in extract_dict['neuralnet_inputs_dict'].items():
-                        neuralnet_inputs_all_files[input_type] = [input_arr]  # make list so we can append
+                    for input_type, input_arr in extract_dict[
+                        "neuralnet_inputs_dict"
+                    ].items():
+                        neuralnet_inputs_all_files[input_type] = [
+                            input_arr
+                        ]  # make list so we can append
 
         if save_features:
-            feature_file = os.path.join(output_dir,
-                                        save_prefix + hvc.utils.timestamp())
+            feature_file = os.path.join(output_dir, save_prefix + hvc.utils.timestamp())
             feature_file_dict = {
-                'labels': all_labels,
-                'onsets_Hz': np.asarray(all_onsets_Hz),
-                'offsets_Hz': np.asarray(all_offsets_Hz),
-                'feature_list': self.feature_list,
-                'spect_params': self.spect_params,
-                'segment_params': self.segment_params,
-                'labels_to_use': labels_to_use,
-                'file_format': file_format,
-                'songfiles': songfiles,
-                'songfile_IDs': songfile_IDs,
-                'all_sampfreqs': all_sampfreqs,
-                'annotation_list': annotation_list,
-                'feature_extractor': self,
+                "labels": all_labels,
+                "onsets_Hz": np.asarray(all_onsets_Hz),
+                "offsets_Hz": np.asarray(all_offsets_Hz),
+                "feature_list": self.feature_list,
+                "spect_params": self.spect_params,
+                "segment_params": self.segment_params,
+                "labels_to_use": labels_to_use,
+                "file_format": file_format,
+                "songfiles": songfiles,
+                "songfile_IDs": songfile_IDs,
+                "all_sampfreqs": all_sampfreqs,
+                "annotation_list": annotation_list,
+                "feature_extractor": self,
             }
 
-            if 'features_from_all_files' in locals():
-                feature_file_dict['features'] = features_from_all_files
-                feature_file_dict['features_arr_column_IDs'] = feature_inds
-                num_samples = feature_file_dict['features'].shape[0]
-                feature_file_dict['num_samples'] = num_samples
+            if "features_from_all_files" in locals():
+                feature_file_dict["features"] = features_from_all_files
+                feature_file_dict["features_arr_column_IDs"] = feature_inds
+                num_samples = feature_file_dict["features"].shape[0]
+                feature_file_dict["num_samples"] = num_samples
 
-                if hasattr(self, 'feature_list_group_ID'):
-                    feature_file_dict['feature_list_group_ID'] = self.feature_list_group_ID
-                    feature_file_dict['feature_group_ID_dict'] = self.feature_group_ID_dict
+                if hasattr(self, "feature_list_group_ID"):
+                    feature_file_dict[
+                        "feature_list_group_ID"
+                    ] = self.feature_list_group_ID
+                    feature_file_dict[
+                        "feature_group_ID_dict"
+                    ] = self.feature_group_ID_dict
 
-            if 'neuralnet_inputs_all_files' in locals():
+            if "neuralnet_inputs_all_files" in locals():
                 for input_type, input_list in neuralnet_inputs_all_files.items():
                     concatenated = np.concatenate(input_list)
                     neuralnet_inputs_all_files[input_type] = concatenated
-                feature_file_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
-                if 'num_samples' in feature_file_dict:
+                feature_file_dict["neuralnet_inputs"] = neuralnet_inputs_all_files
+                if "num_samples" in feature_file_dict:
                     # because we computed it for non-neural net features already
                     pass
                 else:
-                    if len(feature_file_dict['neuralnet_inputs']) == 1:
-                        key = list(
-                            feature_file_dict['neuralnet_inputs'].keys()
-                        )[0]
-                        num_samples = feature_file_dict['neuralnet_inputs'][key].shape[0]
-                        feature_file_dict['num_samples'] = num_samples
+                    if len(feature_file_dict["neuralnet_inputs"]) == 1:
+                        key = list(feature_file_dict["neuralnet_inputs"].keys())[0]
+                        num_samples = feature_file_dict["neuralnet_inputs"][key].shape[
+                            0
+                        ]
+                        feature_file_dict["num_samples"] = num_samples
                     else:
-                        raise ValueError('can\'t determine number of samples '
-                                         'in neuralnet_inputs because there\'s '
-                                         'more than one key in dictionary.')
+                        raise ValueError(
+                            "can't determine number of samples "
+                            "in neuralnet_inputs because there's "
+                            "more than one key in dictionary."
+                        )
 
-            if 'features' in feature_file_dict:
-                feature_file_dict['num_samples'] = \
-                    feature_file_dict['features'].shape[0]
-            elif 'neuralnet_inputs' in feature_file_dict:
-                if len(feature_file_dict['neuralnet_inputs']) == 1:
-                    key = list(
-                        feature_file_dict['neuralnet_inputs'].keys()
-                    )[0]
-                    num_samples = feature_file_dict['neuralnet_inputs'][key].shape[0]
-                    feature_file_dict['num_samples'] = num_samples
+            if "features" in feature_file_dict:
+                feature_file_dict["num_samples"] = feature_file_dict["features"].shape[
+                    0
+                ]
+            elif "neuralnet_inputs" in feature_file_dict:
+                if len(feature_file_dict["neuralnet_inputs"]) == 1:
+                    key = list(feature_file_dict["neuralnet_inputs"].keys())[0]
+                    num_samples = feature_file_dict["neuralnet_inputs"][key].shape[0]
+                    feature_file_dict["num_samples"] = num_samples
                 else:
-                    raise ValueError('can\'t determine number of samples '
-                                     'in neuralnet_inputs because there\'s '
-                                     'more than one key in dictionary.')
+                    raise ValueError(
+                        "can't determine number of samples "
+                        "in neuralnet_inputs because there's "
+                        "more than one key in dictionary."
+                    )
 
-            joblib.dump(feature_file_dict,
-                        feature_file)
+            joblib.dump(feature_file_dict, feature_file)
 
         if return_features:
-            extract_dict = {'labels': all_labels}
-            if 'features_from_all_files' in locals():
-                extract_dict['features'] = features_from_all_files
-            if 'neuralnet_inputs_all_files' in locals():
-                extract_dict['neuralnet_inputs'] = neuralnet_inputs_all_files
+            extract_dict = {"labels": all_labels}
+            if "features_from_all_files" in locals():
+                extract_dict["features"] = features_from_all_files
+            if "neuralnet_inputs_all_files" in locals():
+                extract_dict["neuralnet_inputs"] = neuralnet_inputs_all_files
             return extract_dict
 
-    def _from_file(self,
-                   filename,
-                   labels,
-                   onsets_Hz,
-                   offsets_Hz,
-                   labels_to_use,
-                   file_format=None,
-                   ):
+    def _from_file(
+        self,
+        filename,
+        labels,
+        onsets_Hz,
+        offsets_Hz,
+        labels_to_use,
+        file_format=None,
+    ):
         """helper function that extracts features from a single audio file
         containing birdsong.
 
@@ -485,29 +530,31 @@ class FeatureExtractor:
                     dict where keys are names of a neuralnet model and value is corresponding
                     input for each model, e.g., 2-d array containing spectrogram
         """
-        if filename.endswith('.cbin'):
+        if filename.endswith(".cbin"):
             raw_audio, samp_freq = hvc.evfuncs.load_cbin(filename)
-        elif filename.endswith('.wav'):
+        elif filename.endswith(".wav"):
             samp_freq, raw_audio = wavfile.read(filename)
 
-        if labels_to_use == 'all':
+        if labels_to_use == "all":
             use_these_labels_bool = np.ones((labels.shape)).astype(bool)
         else:
-            use_these_labels_bool = np.asarray([label in labels_to_use
-                                                for label in labels])
+            use_these_labels_bool = np.asarray(
+                [label in labels_to_use for label in labels]
+            )
         if type(labels) is str:
             labels = np.asarray(list(labels))
 
         if not np.any(use_these_labels_bool):
-            warnings.warn('No labels in {0} matched labels to use: {1}\n'
-                          'Did not extract features from file.'
-                          .format(filename, labels_to_use))
+            warnings.warn(
+                "No labels in {0} matched labels to use: {1}\n"
+                "Did not extract features from file.".format(filename, labels_to_use)
+            )
             return None
 
         # initialize indexing array for features
         # used to split back up into feature groups
         feature_inds = []
-    
+
         # loop through features first instead of syls because
         # some features do not require making spectrogram
         ########################################################################
@@ -520,14 +567,16 @@ class FeatureExtractor:
             # if this is a feature extracted from a single syllable, i.e.,
             # if this feature requires a spectrogram
             if current_feature in single_syl_features_switch_case_dict:
-                if 'syls' not in locals():
-                    syls = hvc.audiofileIO.make_syls(raw_audio,
-                                                     samp_freq,
-                                                     self.spectrogram_maker,
-                                                     labels[use_these_labels_bool],
-                                                     onsets_Hz[use_these_labels_bool],
-                                                     offsets_Hz[use_these_labels_bool])
-                if 'curr_feature_arr' in locals():
+                if "syls" not in locals():
+                    syls = hvc.audiofileIO.make_syls(
+                        raw_audio,
+                        samp_freq,
+                        self.spectrogram_maker,
+                        labels[use_these_labels_bool],
+                        onsets_Hz[use_these_labels_bool],
+                        offsets_Hz[use_these_labels_bool],
+                    )
+                if "curr_feature_arr" in locals():
                     del curr_feature_arr
 
                 for ind, syl in enumerate(syls):
@@ -537,7 +586,7 @@ class FeatureExtractor:
                         continue
                     ftr = single_syl_features_switch_case_dict[current_feature](syl)
 
-                    if 'curr_feature_arr' in locals():
+                    if "curr_feature_arr" in locals():
                         if np.isscalar(ftr):
                             curr_feature_arr[ind] = ftr
                         else:
@@ -559,29 +608,32 @@ class FeatureExtractor:
                             # so need to index into initialized array
                             curr_feature_arr[ind] = ftr
                         else:
-                            curr_feature_arr = np.full((len(syls),
-                                                        ftr.shape[-1]), np.nan)
+                            curr_feature_arr = np.full(
+                                (len(syls), ftr.shape[-1]), np.nan
+                            )
                             # may not be on first syllable if first spectrogram was nan
                             # so need to index into initialized array
-                            curr_feature_arr[ind, :] = ftr[np.newaxis, :]  # make 2-d for concatenate
+                            curr_feature_arr[ind, :] = ftr[
+                                np.newaxis, :
+                            ]  # make 2-d for concatenate
 
                 # after looping through all syllables:
-                if 'features_arr' in locals():
+                if "features_arr" in locals():
                     if np.isscalar(ftr):
                         # if feature is scalar,
                         # then `ftr` from all syllables will be a (row) vector
                         # so transpose to column vector then add to growing end of 2d matrix
                         feature_inds.extend([ftr_ind])
-                        features_arr = np.concatenate((features_arr,
-                                                       curr_feature_arr[np.newaxis, :].T),
-                                                      axis=1)
+                        features_arr = np.concatenate(
+                            (features_arr, curr_feature_arr[np.newaxis, :].T), axis=1
+                        )
                     else:
                         # if feature is not scalar,
                         # `ftr` will be 2-d, so don't transpose before you concatenate
                         feature_inds.extend([ftr_ind] * ftr.shape[-1])
-                        features_arr = np.concatenate((features_arr,
-                                                       curr_feature_arr),
-                                                      axis=1)
+                        features_arr = np.concatenate(
+                            (features_arr, curr_feature_arr), axis=1
+                        )
                 else:  # if 'features_arr' doesn't exist yet
                     if np.isscalar(ftr):
                         feature_inds.extend([ftr_ind])
@@ -590,46 +642,50 @@ class FeatureExtractor:
                     features_arr = curr_feature_arr
 
             elif current_feature in multiple_syl_features_switch_case_dict:
-                curr_feature_arr = multiple_syl_features_switch_case_dict[current_feature](onsets_Hz,
-                                                                                           offsets_Hz,
-                                                                                           use_these_labels_bool)
+                curr_feature_arr = multiple_syl_features_switch_case_dict[
+                    current_feature
+                ](onsets_Hz, offsets_Hz, use_these_labels_bool)
                 feature_inds.extend([ftr_ind])
-                if 'features_arr' in locals():
-                    features_arr = np.concatenate((features_arr,
-                                                   curr_feature_arr[:, np.newaxis]),
-                                                  axis=1)
+                if "features_arr" in locals():
+                    features_arr = np.concatenate(
+                        (features_arr, curr_feature_arr[:, np.newaxis]), axis=1
+                    )
                 else:
                     features_arr = curr_feature_arr[:, np.newaxis]
             elif current_feature in neural_net_features_switch_case_dict:
-                curr_neuralnet_input = neural_net_features_switch_case_dict[current_feature](raw_audio,
-                                                                                             samp_freq,
-                                                                                             self.spectrogram_maker,
-                                                                                             labels[
-                                                                                                 use_these_labels_bool],
-                                                                                             onsets_Hz[
-                                                                                                 use_these_labels_bool],
-                                                                                             offsets_Hz[
-                                                                                                 use_these_labels_bool])
-                if 'neuralnet_inputs_dict' in locals():
+                curr_neuralnet_input = neural_net_features_switch_case_dict[
+                    current_feature
+                ](
+                    raw_audio,
+                    samp_freq,
+                    self.spectrogram_maker,
+                    labels[use_these_labels_bool],
+                    onsets_Hz[use_these_labels_bool],
+                    offsets_Hz[use_these_labels_bool],
+                )
+                if "neuralnet_inputs_dict" in locals():
                     if current_feature in neuralnet_inputs_dict:
                         if type(neuralnet_inputs_dict[current_feature]) is np.ndarray:
-                            neuralnet_inputs_dict[current_feature] = \
-                                np.concatenate((neuralnet_inputs_dict[current_feature],
-                                                curr_neuralnet_input),
-                                               axis=-1)
+                            neuralnet_inputs_dict[current_feature] = np.concatenate(
+                                (
+                                    neuralnet_inputs_dict[current_feature],
+                                    curr_neuralnet_input,
+                                ),
+                                axis=-1,
+                            )
                     else:
                         neuralnet_inputs_dict[current_feature] = curr_neuralnet_input
                 else:
                     neuralnet_inputs_dict = {current_feature: curr_neuralnet_input}
 
         # return extract dict that has labels and features_arr and/or neuralnet_inputs_dict
-        extract_dict = {'labels': labels[use_these_labels_bool]}
-        extract_dict['onsets_Hz'] = onsets_Hz[use_these_labels_bool]
-        extract_dict['offsets_Hz'] = offsets_Hz[use_these_labels_bool]
-        if 'features_arr' in locals():
-            extract_dict['features_arr'] = features_arr
-            extract_dict['feature_inds'] = np.asarray(feature_inds)
-        if 'neuralnet_inputs_dict' in locals():
-            extract_dict['neuralnet_inputs_dict'] = neuralnet_inputs_dict
-        extract_dict['samp_freq'] = samp_freq
+        extract_dict = {"labels": labels[use_these_labels_bool]}
+        extract_dict["onsets_Hz"] = onsets_Hz[use_these_labels_bool]
+        extract_dict["offsets_Hz"] = offsets_Hz[use_these_labels_bool]
+        if "features_arr" in locals():
+            extract_dict["features_arr"] = features_arr
+            extract_dict["feature_inds"] = np.asarray(feature_inds)
+        if "neuralnet_inputs_dict" in locals():
+            extract_dict["neuralnet_inputs_dict"] = neuralnet_inputs_dict
+        extract_dict["samp_freq"] = samp_freq
         return extract_dict

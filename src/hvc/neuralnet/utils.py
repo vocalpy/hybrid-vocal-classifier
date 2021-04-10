@@ -29,7 +29,7 @@ class SpectScaler:
         """
 
         if spects.ndim != 3:
-            raise ValueError('spects should be a 3-d array')
+            raise ValueError("spects should be a 3-d array")
 
         # concatenate all spects then rotate so
         # Hz bins are columns, i.e., 'features'
@@ -38,24 +38,23 @@ class SpectScaler:
         self.columnStds = np.std(one_long_spect_rotated)
 
     def _transform(self, spect):
-        """
-        """
+        """"""
 
         return (spect - self.columnMeans) / self.columnStds
 
     def transform(self, spects):
-        """transform spect
-        """
+        """transform spect"""
 
-        if any([not hasattr(self, attr) for attr in ['columnMeans',
-                                                     'columnStds']]):
-            raise AttributeError('SpectScaler properties are set to None,'
-                                 'must call fit method first to set the'
-                                 'value of these properties before calling'
-                                 'transform')
+        if any([not hasattr(self, attr) for attr in ["columnMeans", "columnStds"]]):
+            raise AttributeError(
+                "SpectScaler properties are set to None,"
+                "must call fit method first to set the"
+                "value of these properties before calling"
+                "transform"
+            )
 
         if spects.ndim != 3:
-            raise ValueError('spects should be a 3-d array')
+            raise ValueError("spects should be a 3-d array")
 
         z_norm_spects = np.empty(spects.shape)
         for i in range(spects.shape[0]):

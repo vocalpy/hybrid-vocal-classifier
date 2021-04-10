@@ -33,7 +33,7 @@ def md5sum(fname, block_size=1048576):  # 2 ** 20
         The hexadecimal digest of the hash.
     """
     md5 = hashlib.md5()
-    with open(fname, 'rb') as fid:
+    with open(fname, "rb") as fid:
         while True:
             data = fid.read(block_size)
             if not data:
@@ -53,19 +53,19 @@ def sizeof_fmt(num):
     size : str
         The size in human-readable format.
     """
-    units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB']
+    units = ["bytes", "kB", "MB", "GB", "TB", "PB"]
     decimals = [0, 0, 1, 2, 2, 2]
     if num > 1:
         exponent = min(int(log(num, 1024)), len(units) - 1)
         quotient = float(num) / 1024 ** exponent
         unit = units[exponent]
         num_decimals = decimals[exponent]
-        format_string = '{0:.%sf} {1}' % (num_decimals)
+        format_string = "{0:.%sf} {1}" % (num_decimals)
         return format_string.format(quotient, unit)
     if num == 0:
-        return '0 bytes'
+        return "0 bytes"
     if num == 1:
-        return '1 byte'
+        return "1 byte"
 
 
 class ProgressBar:
@@ -104,12 +104,19 @@ class ProgressBar:
     [..................                      ] 46.15385 /
     """
 
-    spinner_symbols = ['|', '/', '-', '\\']
-    template = '\r[{0}{1}] {2:.05f} {3} {4}   '
+    spinner_symbols = ["|", "/", "-", "\\"]
+    template = "\r[{0}{1}] {2:.05f} {3} {4}   "
 
-    def __init__(self, max_value, initial_value=0, mesg='', max_chars=40,
-                 progress_character='.', spinner=False,
-                 verbose_bool=True):
+    def __init__(
+        self,
+        max_value,
+        initial_value=0,
+        mesg="",
+        max_chars=40,
+        progress_character=".",
+        spinner=False,
+        verbose_bool=True,
+    ):
         self.cur_value = initial_value
         if isinstance(max_value, Iterable):
             self.max_value = len(max_value)
@@ -141,35 +148,39 @@ class ProgressBar:
             pass a null string, ''.
         """
         cur_time = time.time()
-        cur_rate = ((cur_value - self.cur_value) /
-                    max(float(cur_time - self.cur_time), 1e-6))
+        cur_rate = (cur_value - self.cur_value) / max(
+            float(cur_time - self.cur_time), 1e-6
+        )
         # cur_rate += 0.9 * self.cur_rate
         # Ensure floating-point division so we can get fractions of a percent
         # for the progressbar.
         self.cur_time = cur_time
         self.cur_value = cur_value
         self.cur_rate = cur_rate
-        progress = min(float(self.cur_value) / self.max_value, 1.)
+        progress = min(float(self.cur_value) / self.max_value, 1.0)
         num_chars = int(progress * self.max_chars)
         num_left = self.max_chars - num_chars
 
         # Update the message
         if mesg is not None:
-            if mesg == 'file_sizes':
-                mesg = '(%s / %s, %s/s)' % (
+            if mesg == "file_sizes":
+                mesg = "(%s / %s, %s/s)" % (
                     sizeof_fmt(self.cur_value).rjust(8),
                     sizeof_fmt(self.max_value).rjust(8),
-                    sizeof_fmt(cur_rate).rjust(8))
+                    sizeof_fmt(cur_rate).rjust(8),
+                )
             self.mesg = mesg
 
         # The \r tells the cursor to return to the beginning of the line rather
         # than starting a new line.  This allows us to have a progressbar-style
         # display in the console window.
-        bar = self.template.format(self.progress_character * num_chars,
-                                   ' ' * num_left,
-                                   progress * 100,
-                                   self.spinner_symbols[self.spinner_index],
-                                   self.mesg)
+        bar = self.template.format(
+            self.progress_character * num_chars,
+            " " * num_left,
+            progress * 100,
+            self.spinner_symbols[self.spinner_index],
+            self.mesg,
+        )
         # Force a flush because sometimes when using bash scripts and pipes,
         # the output is not printed until after the program exits.
         if self._do_print:
@@ -231,19 +242,26 @@ def _get_ftp(url, temp_file_name, initial_size, file_size, verbose_bool):
     data.sendcmd("REST " + str(initial_size))
     down_cmd = "RETR " + file_name
     assert file_size == data.size(file_name)
-    progress = ProgressBar(file_size, initial_value=initial_size,
-                           max_chars=40, spinner=True, mesg='file_sizes',
-                           verbose_bool=verbose_bool)
+    progress = ProgressBar(
+        file_size,
+        initial_value=initial_size,
+        max_chars=40,
+        spinner=True,
+        mesg="file_sizes",
+        verbose_bool=verbose_bool,
+    )
 
     # Callback lambda function that will be passed the downloaded data
     # chunk and will write it to file and update the progress bar
-    mode = 'ab' if initial_size > 0 else 'wb'
+    mode = "ab" if initial_size > 0 else "wb"
     with open(temp_file_name, mode) as local_file:
+
         def chunk_write(chunk):
             return _chunk_write(chunk, local_file, progress)
+
         data.retrbinary(down_cmd, chunk_write)
         data.close()
-    sys.stdout.write('\n')
+    sys.stdout.write("\n")
     sys.stdout.flush()
 
 
@@ -252,33 +270,43 @@ def _get_http(url, temp_file_name, initial_size, file_size, verbose_bool):
     # Actually do the reading
     req = urllib.request.Request(url)
     if initial_size > 0:
-        req.headers['Range'] = 'bytes=%s-' % (initial_size,)
+        req.headers["Range"] = "bytes=%s-" % (initial_size,)
     try:
         response = urllib.request.urlopen(req)
     except Exception:
         # There is a problem that may be due to resuming, some
         # servers may not support the "Range" header. Switch
         # back to complete download method
-        logger.info('Resuming download failed (server '
-                    'rejected the request). Attempting to '
-                    'restart downloading the entire file.')
-        del req.headers['Range']
+        logger.info(
+            "Resuming download failed (server "
+            "rejected the request). Attempting to "
+            "restart downloading the entire file."
+        )
+        del req.headers["Range"]
         response = urllib.request.urlopen(req)
-    total_size = int(response.headers.get('Content-Length', '1').strip())
+    total_size = int(response.headers.get("Content-Length", "1").strip())
     if initial_size > 0 and file_size == total_size:
-        logger.info('Resuming download failed (resume file size '
-                    'mismatch). Attempting to restart downloading the '
-                    'entire file.')
+        logger.info(
+            "Resuming download failed (resume file size "
+            "mismatch). Attempting to restart downloading the "
+            "entire file."
+        )
         initial_size = 0
     total_size += initial_size
     if total_size != file_size:
-        raise RuntimeError('URL could not be parsed properly '
-                           '(total size %s != file size %s)'
-                           % (total_size, file_size))
-    mode = 'ab' if initial_size > 0 else 'wb'
-    progress = ProgressBar(total_size, initial_value=initial_size,
-                           max_chars=40, spinner=True, mesg='file_sizes',
-                           verbose_bool=verbose_bool)
+        raise RuntimeError(
+            "URL could not be parsed properly "
+            "(total size %s != file size %s)" % (total_size, file_size)
+        )
+    mode = "ab" if initial_size > 0 else "wb"
+    progress = ProgressBar(
+        total_size,
+        initial_value=initial_size,
+        max_chars=40,
+        spinner=True,
+        mesg="file_sizes",
+        verbose_bool=verbose_bool,
+    )
     chunk_size = 8192  # 2 ** 13
     with open(temp_file_name, mode) as local_file:
         while True:
@@ -291,16 +319,22 @@ def _get_http(url, temp_file_name, initial_size, file_size, verbose_bool):
                 chunk_size = chunk_size // 2
             if not chunk:
                 if verbose_bool:
-                    sys.stdout.write('\n')
+                    sys.stdout.write("\n")
                     sys.stdout.flush()
                 break
             local_file.write(chunk)
-            progress.update_with_increment_value(len(chunk),
-                                                 mesg='file_sizes')
+            progress.update_with_increment_value(len(chunk), mesg="file_sizes")
 
 
-def _fetch_file(url, file_name, print_destination=True, resume=True,
-                hash_=None, timeout=10., verbose_bool=True):
+def _fetch_file(
+    url,
+    file_name,
+    print_destination=True,
+    resume=True,
+    hash_=None,
+    timeout=10.0,
+    verbose_bool=True,
+):
     """Load requested file, downloading it if needed or requested.
     Parameters
     ----------
@@ -324,10 +358,11 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
         Default is True.
     """
 
-    #md5 hash should be 32 characters (hex digits, i.e. 128 bits)
+    # md5 hash should be 32 characters (hex digits, i.e. 128 bits)
     if hash_ is not None and len(hash_) != 32:
-        raise ValueError('Bad hash value given, should be a 32-character '
-                         'string:\n%s' % (hash_,))
+        raise ValueError(
+            "Bad hash value given, should be a 32-character " "string:\n%s" % (hash_,)
+        )
     temp_file_name = file_name + ".part"
     try:
         # Check file size and displaying it alongside the download url
@@ -337,17 +372,17 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
         url = u.geturl()
         u = urllib.request.urlopen(url, timeout=timeout)
         try:
-            file_size = int(u.headers.get('Content-Length', '1').strip())
+            file_size = int(u.headers.get("Content-Length", "1").strip())
         finally:
             u.close()
             del u
-        print('Downloading %s (%s)' % (url, sizeof_fmt(file_size)))
+        print("Downloading %s (%s)" % (url, sizeof_fmt(file_size)))
 
         # Triage resume
         if not os.path.exists(temp_file_name):
             resume = False
         if resume:
-            with open(temp_file_name, 'rb', buffering=0) as local_file:
+            with open(temp_file_name, "rb", buffering=0) as local_file:
                 local_file.seek(0, 2)
                 initial_size = local_file.tell()
             del local_file
@@ -355,46 +390,50 @@ def _fetch_file(url, file_name, print_destination=True, resume=True,
             initial_size = 0
         # This should never happen if our functions work properly
         if initial_size > file_size:
-            raise RuntimeError('Local file (%s) is larger than remote '
-                               'file (%s), cannot resume download'
-                               % (sizeof_fmt(initial_size),
-                                  sizeof_fmt(file_size)))
+            raise RuntimeError(
+                "Local file (%s) is larger than remote "
+                "file (%s), cannot resume download"
+                % (sizeof_fmt(initial_size), sizeof_fmt(file_size))
+            )
         elif initial_size == file_size:
             # This should really only happen when a hash is wrong
             # during dev updating
-            warn('Local file appears to be complete (file_size == '
-                 'initial_size == %s)' % (file_size,))
+            warn(
+                "Local file appears to be complete (file_size == "
+                "initial_size == %s)" % (file_size,)
+            )
         else:
             # Need to resume or start over
             scheme = urllib.parse.urlparse(url).scheme
-            fun = _get_http if scheme in ('http', 'https') else _get_ftp
+            fun = _get_http if scheme in ("http", "https") else _get_ftp
             fun(url, temp_file_name, initial_size, file_size, verbose_bool)
 
         # check md5sum
         if hash_ is not None:
-            print('Verifying hash %s.' % (hash_,))
+            print("Verifying hash %s." % (hash_,))
             md5 = md5sum(temp_file_name)
             if hash_ != md5:
-                raise RuntimeError('Hash mismatch for downloaded file %s, '
-                                   'expected %s but got %s'
-                                   % (temp_file_name, hash_, md5))
+                raise RuntimeError(
+                    "Hash mismatch for downloaded file %s, "
+                    "expected %s but got %s" % (temp_file_name, hash_, md5)
+                )
         shutil.move(temp_file_name, file_name)
         if print_destination is True:
-            print('File saved as %s.\n' % file_name)
+            print("File saved as %s.\n" % file_name)
     except Exception:
-        print('Error while fetching file %s.'
-              ' Dataset fetching aborted.' % url)
+        print("Error while fetching file %s." " Dataset fetching aborted." % url)
         raise
+
 
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
 # load yaml file that lists all repositories, for use by list and fetch
-with open(os.path.join(dir_path, './repos.yml')) as repo_yaml:
-    repodict = yaml.load(repo_yaml, Loader=yaml.FullLoader)['repodict']
+with open(os.path.join(dir_path, "./repos.yml")) as repo_yaml:
+    repodict = yaml.load(repo_yaml, Loader=yaml.FullLoader)["repodict"]
 
 
-def list(dataset=''):
+def list(dataset=""):
     """Print list of datasets to stdout
 
     Parameters
@@ -410,18 +449,16 @@ def list(dataset=''):
     """
 
     if type(dataset) != str:
-        raise TypeError('dataset should be a string, not type {}'.format(type(dataset)))
+        raise TypeError("dataset should be a string, not type {}".format(type(dataset)))
 
-    datasets = [repo_key
-                for repo_key in repodict.keys()
-                if dataset in repo_key]
+    datasets = [repo_key for repo_key in repodict.keys() if dataset in repo_key]
     datasets.sort()
 
     for dataset in datasets:
         print(dataset)
 
 
-def fetch(dataset_str, destination_path='.', remove_compressed_file=True):
+def fetch(dataset_str, destination_path=".", remove_compressed_file=True):
     """fetches data from repositories
 
     Parameters
@@ -441,46 +478,46 @@ def fetch(dataset_str, destination_path='.', remove_compressed_file=True):
     """
     destination_path = os.path.expanduser(destination_path)
     if not os.path.isdir(destination_path):
-        raise NotADirectoryError('could not find destination_path: {}'
-                                 .format(destination_path))
-    dataset_names = []  # names used to tell user what will be downloaded 
+        raise NotADirectoryError(
+            "could not find destination_path: {}".format(destination_path)
+        )
+    dataset_names = []  # names used to tell user what will be downloaded
     dataset_dicts = []  # contain file name + url for zip/archive/file to be downloaded
     for repo_key, repo_val in repodict.items():
         if dataset_str in repo_key:
             dataset_names.append(repo_key)
             dataset_dicts.append(repo_val)
 
-    if not(dataset_names):  # i.e., if list is empty
-        raise ValueError('no datasets found with \'{}\' in the name'
-                         .format(dataset_name))
+    if not (dataset_names):  # i.e., if list is empty
+        raise ValueError("no datasets found with '{}' in the name".format(dataset_name))
     else:
-        print('Will download the following datasets: ')
+        print("Will download the following datasets: ")
         for dataset_name in dataset_names:
             print(dataset_name)
 
     for dataset_dict in dataset_dicts:
-        url = dataset_dict['url']
+        url = dataset_dict["url"]
 
-        file_name = dataset_dict['file_name']
+        file_name = dataset_dict["file_name"]
         file_name = os.path.join(destination_path, file_name)
 
-        if 'md5_hash' in dataset_dict:
-            md5_hash = dataset_dict['md5_hash']
+        if "md5_hash" in dataset_dict:
+            md5_hash = dataset_dict["md5_hash"]
         else:
             md5_hash = None
 
         # helpers from MNE-Python that do actual downloading
         _fetch_file(url, file_name, hash_=md5_hash)
 
-        if file_name.endswith('.tar.gz') or file_name.endswith('.zip'):
-            print('extracting {}'.format(file_name))
+        if file_name.endswith(".tar.gz") or file_name.endswith(".zip"):
+            print("extracting {}".format(file_name))
 
-            if file_name.endswith('.tar.gz'):
+            if file_name.endswith(".tar.gz"):
                 with tarfile.open(file_name) as tar:
                     tar.extractall(path=destination_path)
 
-            elif file_name.endswith('.zip'):
-                with ZipFile(file_name, 'r') as zipfile:
+            elif file_name.endswith(".zip"):
+                with ZipFile(file_name, "r") as zipfile:
                     zipfile.extractall(path=destination_path)
 
             if remove_compressed_file:

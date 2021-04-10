@@ -21,8 +21,7 @@ from hvc.utils import annotation
 
 @pytest.fixture
 def feature_grps_path(hvc_source_dir):
-    return os.path.join(hvc_source_dir,
-                        os.path.normpath('parse/feature_groups.yml'))
+    return os.path.join(hvc_source_dir, os.path.normpath("parse/feature_groups.yml"))
 
 
 @pytest.fixture
@@ -51,30 +50,32 @@ class TestTachibana:
             used to text feature extraction functions
         """
 
-        songfiles_dir = os.path.join(test_data_dir,
-                                 os.path.normpath('cbins/gy6or6/032412/*.cbin'))
+        songfiles_dir = os.path.join(
+            test_data_dir, os.path.normpath("cbins/gy6or6/032412/*.cbin")
+        )
         songfiles_list = glob(songfiles_dir)
         first_song = songfiles_list[0]
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_song)
 
-        first_song_notmat = first_song + '.not.mat'
+        first_song_notmat = first_song + ".not.mat"
         annotation_dict = annotation.notmat_to_annot_dict(first_song_notmat)
 
-        spect_params = refs_dict['tachibana']
+        spect_params = refs_dict["tachibana"]
         spect_maker = Spectrogram(**spect_params)
 
-        syls = make_syls(raw_audio,
-                         samp_freq,
-                         spect_maker,
-                         annotation_dict['labels'],
-                         annotation_dict['onsets_Hz'],
-                         annotation_dict['offsets_Hz'])
+        syls = make_syls(
+            raw_audio,
+            samp_freq,
+            spect_maker,
+            annotation_dict["labels"],
+            annotation_dict["onsets_Hz"],
+            annotation_dict["offsets_Hz"],
+        )
 
         return syls[0]
 
     def test_mean_spect(self, a_syl):
-        """test mean spectrum
-        """
+        """test mean spectrum"""
         # if using `tachibana` reference to make syllable spectra
         # (with 32 kHz sampling rate)
         # length of vector returned by mean_spectrum should be 128.
@@ -83,18 +84,15 @@ class TestTachibana:
         assert tachibana.mean_spectrum(a_syl).shape[0] == 128
 
     def test_delta_mean_spect(self, a_syl):
-        """test delta spectrum
-        """
+        """test delta spectrum"""
         assert tachibana.mean_delta_spectrum(a_syl).shape[0] == 128
 
     def test_mean_cepst(self, a_syl):
-        """test mean cepstrum
-        """
+        """test mean cepstrum"""
         assert tachibana.mean_cepstrum(a_syl).shape[0] == 128
 
     def test_delta_mean_cepstrum(self, a_syl):
-        """test delta cepstrum
-        """
+        """test delta cepstrum"""
         assert tachibana.mean_delta_cepstrum(a_syl).shape[0] == 128
 
     def test_that_deltas_return_zero_instead_of_nan(self, test_data_dir):
@@ -103,41 +101,47 @@ class TestTachibana:
         be computed
         """
 
-        a_cbin = os.path.join(test_data_dir,
-                              os.path.normpath('cbins/gy6or6/032612/'
-                                               'gy6or6_baseline_260312_0810.3440.cbin'))
+        a_cbin = os.path.join(
+            test_data_dir,
+            os.path.normpath(
+                "cbins/gy6or6/032612/" "gy6or6_baseline_260312_0810.3440.cbin"
+            ),
+        )
         raw_audio, samp_freq = hvc.evfuncs.load_cbin(a_cbin)
 
-        spect_params = refs_dict['evsonganaly']
+        spect_params = refs_dict["evsonganaly"]
         spect_maker = Spectrogram(**spect_params)
 
-        segment_params = {'threshold': 1500,
-                          'min_syl_dur': 0.01,
-                          'min_silent_dur': 0.006
-                          }
+        segment_params = {
+            "threshold": 1500,
+            "min_syl_dur": 0.01,
+            "min_silent_dur": 0.006,
+        }
         segmenter = Segmenter(**segment_params)
-        segment_dict = segmenter.segment(raw_audio,
-                                                samp_freq=samp_freq,
-                                                method='evsonganaly')
-        syls = make_syls(raw_audio,
-                         samp_freq,
-                         spect_maker,
-                         np.ones(segment_dict['onsets_Hz'].shape),
-                         segment_dict['onsets_Hz'],
-                         segment_dict['offsets_Hz'])
+        segment_dict = segmenter.segment(
+            raw_audio, samp_freq=samp_freq, method="evsonganaly"
+        )
+        syls = make_syls(
+            raw_audio,
+            samp_freq,
+            spect_maker,
+            np.ones(segment_dict["onsets_Hz"].shape),
+            segment_dict["onsets_Hz"],
+            segment_dict["offsets_Hz"],
+        )
 
         syl = syls[6]  # spect has shape (153,1) so can't take 5-point delta
 
         for feature_to_test in [
-            'mean delta spectral centroid',
-            'mean delta spectral spread',
-            'mean delta spectral skewness',
-            'mean delta spectral kurtosis',
-            'mean delta spectral flatness',
-            'mean delta spectral slope',
-            'mean delta pitch',
-            'mean delta pitch goodness',
-            'mean delta amplitude',
+            "mean delta spectral centroid",
+            "mean delta spectral spread",
+            "mean delta spectral skewness",
+            "mean delta spectral kurtosis",
+            "mean delta spectral flatness",
+            "mean delta spectral slope",
+            "mean delta pitch",
+            "mean delta pitch goodness",
+            "mean delta amplitude",
         ]:
             assert single_syl_features_switch_case_dict[feature_to_test](syl) == 0
 
