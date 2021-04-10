@@ -1,14 +1,20 @@
-.cache/
+# IDE
+.idea/
+
+# python
+.pytest_cache/
 *.egg-info/
 build/*
 dist/*
 MANIFEST
 *.pyc
+
+# jupyter
 .ipynb_checkpoints
-dir_names.txt
-.idea/
+
+# docs
 docs/_build
-.pytest_cache/
-tests/test_data/feature_files/*.features
-tests/test_data/model_files/*.model
-tests/test_data/model_files/*.meta
+
+# data for tests
+tests/data_for_tests/feature_files/
+tests/data_for_tests/model_files/

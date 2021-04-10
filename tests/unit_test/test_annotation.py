@@ -34,7 +34,7 @@ def test_notmat_to_annot_dict(test_data_dir):
 
 def test_annot_list_to_csv(tmp_output_dir, test_data_dir):
     """compares csv created by annot_list_to_csv
-    with correctly generated csv saved in hvc/tests/test_data
+    with correctly generated csv saved in hvc/tests/data_for_tests
     """
     cbin_dir = os.path.join(test_data_dir,
                             os.path.normpath('cbins/gy6or6/032312/'))

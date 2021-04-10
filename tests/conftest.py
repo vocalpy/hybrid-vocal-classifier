@@ -1,14 +1,13 @@
+from pathlib import Path
 import sys
-import os
-from os.path import normpath, join, dirname
 
 import pytest
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+TESTS_ROOT = Path(__file__).parent
+sys.path.append(str(TESTS_ROOT / 'scripts'))
 
-this_file_dirname = dirname(__file__)
-TEST_DATA_DIR = join(this_file_dirname, 'test_data')
-HVC_SOURCE_DIR = join(this_file_dirname, normpath('../src/hvc/'))
+TEST_DATA_DIR = TESTS_ROOT / 'data_for_tests'
+HVC_SOURCE_DIR = TESTS_ROOT / '..' / 'src' / 'hvc'
 
 
 @pytest.fixture
@@ -29,4 +28,4 @@ def tmp_output_dir(tmpdir_factory):
 
 @pytest.fixture
 def configs_path(test_data_dir):
-    return join(test_data_dir, 'config.yml')
+    return str(test_data_dir / 'config.yml')

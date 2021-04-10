@@ -28,7 +28,7 @@ def has_window_error(test_data_dir):
 def test_segment_song(test_data_dir):
     cbins = glob(
         os.path.join(test_data_dir,
-            os.path.normpath('./test_data/cbins/gy6or6/032312/*.cbin'))
+            os.path.normpath('./data_for_tests/cbins/gy6or6/032312/*.cbin'))
     )
     for cbin in cbins:
         print('loading {}'.format(cbin))

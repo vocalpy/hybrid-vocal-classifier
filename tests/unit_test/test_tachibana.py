@@ -157,7 +157,7 @@ class TestTachibana:
     #                       'min_silent_dur': 0.006
     #                       }
     #
-    #     a_sylfiles_list = glob.glob('./test_data/cbins*.cbin')
+    #     a_sylfiles_list = glob.glob('./data_for_tests/cbins*.cbin')
     #
     #     # note that I'm only testing first 10 a_syls!!!
     #     for a_sylfile in a_sylfiles_list[:10]:
@@ -191,7 +191,7 @@ class TestTachibana:
     #             features_arr = curr_feature_arr
     #         del curr_feature_arr
     #
-    #     ftrs_dict = joblib.load('./test_data/cbins/features_from_MakeAllFeatures_a_syls1through10')
+    #     ftrs_dict = joblib.load('./data_for_tests/cbins/features_from_MakeAllFeatures_a_syls1through10')
     #     # features_mat is has 536 columns
     #     # because in my wrapper script around MakeAllFeatures.mat,
     #     # I added duration features on top of original 532-feature set
