@@ -5,8 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-- refactor repository with `./src` folder
-- use Kenneth Reitz style `setup.py`
+### fixed
+- make various fixes so that `hvc` works with current versions of dependencies
+  [#101](https://github.com/NickleDave/hybrid-vocal-classifier/pull/101)
 
 ## 0.2.1b1
 ### added
