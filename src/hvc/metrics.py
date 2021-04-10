@@ -29,15 +29,15 @@ def confusion_matrix(y_true=None, y_pred=None, model_meta_file=None, normalize=F
         confusion matrix
     """
 
-    if (y_true is not None 
-        and y_pred is not None) and model_meta_file is not None:
-        raise ValueError('arguments must be either y_true and y_pred, '
-                         'or meta_file, but not both')
+    if (y_true is not None and y_pred is not None) and model_meta_file is not None:
+        raise ValueError(
+            "arguments must be either y_true and y_pred, " "or meta_file, but not both"
+        )
 
     if model_meta_file:
         meta = joblib.load(model_meta_file)
-        y_true = meta['test_labels']
-        y_pred = meta['pred_labels']
+        y_true = meta["test_labels"]
+        y_pred = meta["pred_labels"]
 
     cm = sklearn.metrics.confusion_matrix(y_true, y_pred)
 
@@ -49,7 +49,7 @@ def confusion_matrix(y_true=None, y_pred=None, model_meta_file=None, normalize=F
 
 def lev_np(source, target):
     """
-    Levenshtein distance measured using numpy  
+    Levenshtein distance measured using numpy
     from:
     https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/
     Levenshtein_distance#Python
@@ -89,13 +89,11 @@ def lev_np(source, target):
         # Target and source items are aligned, and either
         # are different (cost of 1), or are the same (cost of 0).
         current_row[1:] = np.minimum(
-                current_row[1:],
-                np.add(previous_row[:-1], target != s))
+            current_row[1:], np.add(previous_row[:-1], target != s)
+        )
 
         # Deletion (target grows shorter than source):
-        current_row[1:] = np.minimum(
-                current_row[1:],
-                current_row[0:-1] + 1)
+        current_row[1:] = np.minimum(current_row[1:], current_row[0:-1] + 1)
 
         previous_row = current_row
 
@@ -110,10 +108,10 @@ def average_accuracy(true_labels, pred_labels, labelset):
     ----------
     true_labels : list of strings
         ground truth, correct labels used to calculate error
-    
+
     pred_labels : list of strings
         vector of predicted labels returned by algorithm given samples from test data set
-    
+
     labelset : list of chars
         set of unique labels from data set, i.e., numpy.unique(true_labels)
 
@@ -126,18 +124,20 @@ def average_accuracy(true_labels, pred_labels, labelset):
     """
 
     acc_by_label = np.zeros((len(labelset)))
-    for ind,label in enumerate(labelset):
-        label_ids = np.in1d(true_labels,label) #find all occurences of label in test data
-        if sum(label_ids) == 0: # if there were no instances of label in labels
+    for ind, label in enumerate(labelset):
+        label_ids = np.in1d(
+            true_labels, label
+        )  # find all occurences of label in test data
+        if sum(label_ids) == 0:  # if there were no instances of label in labels
             continue
         pred_for_that_label = pred_labels[label_ids]
-        matches = pred_for_that_label==label
-        #sum(matches) is equal to number of true positives
-        #len(matches) is equal to number of true positives and false negatives
+        matches = pred_for_that_label == label
+        # sum(matches) is equal to number of true positives
+        # len(matches) is equal to number of true positives and false negatives
         acc = sum(matches) / len(matches)
         acc_by_label[ind] = acc
     avg_acc = np.mean(acc_by_label)
-    return acc_by_label,avg_acc
+    return acc_by_label, avg_acc
 
 
 def frame_error(y_true, y_pred):
@@ -159,17 +159,24 @@ def frame_error(y_true, y_pred):
     """
 
     if y_true.ndim > 1:
-        raise ValueError('frame_error only defined for 1-dimensional inputs'
-                         ' but y_true.ndim is {}'.format(y_true.ndim))
+        raise ValueError(
+            "frame_error only defined for 1-dimensional inputs"
+            " but y_true.ndim is {}".format(y_true.ndim)
+        )
 
     if y_pred.ndim > 1:
-        raise ValueError('frame_error only defined for 1-dimensional inputs'
-                         ' but y_pred.ndim is {}'.format(y_pred.ndim))
+        raise ValueError(
+            "frame_error only defined for 1-dimensional inputs"
+            " but y_pred.ndim is {}".format(y_pred.ndim)
+        )
 
     if y_true.shape[-1] != y_pred.shape[-1]:
-        raise ValueError('y_true and y_pred should have the same length.'
-                         'y_true.shape is {} and y_pred.shape is {}'
-                         .format(y_true.shape,y_pred.shape))
+        raise ValueError(
+            "y_true and y_pred should have the same length."
+            "y_true.shape is {} and y_pred.shape is {}".format(
+                y_true.shape, y_pred.shape
+            )
+        )
 
     return 1 - sum(y_true == y_pred) / y_true.shape[-1]
 
@@ -193,16 +200,23 @@ def hamming_dist(y_true, y_pred):
     # redundant code copied and pasted from frame error rate
     # better than overhead of having some error-checking function / making these classes?
     if y_true.ndim > 1:
-        raise ValueError('hamming_dist only defined for 1-dimensional inputs'
-                         ' but y_true.ndim is {}'.format(y_true.ndim))
+        raise ValueError(
+            "hamming_dist only defined for 1-dimensional inputs"
+            " but y_true.ndim is {}".format(y_true.ndim)
+        )
 
     if y_pred.ndim > 1:
-        raise ValueError('hamming_dist only defined for 1-dimensional inputs'
-                         ' but y_pred.ndim is {}'.format(y_pred.ndim))
+        raise ValueError(
+            "hamming_dist only defined for 1-dimensional inputs"
+            " but y_pred.ndim is {}".format(y_pred.ndim)
+        )
 
     if y_true.shape[-1] != y_pred.shape[-1]:
-        raise ValueError('y_true and y_pred should have the same length.'
-                         'y_true.shape is {} and y_pred.shape is {}'
-                         .format(y_true.shape,y_pred.shape))
+        raise ValueError(
+            "y_true and y_pred should have the same length."
+            "y_true.shape is {} and y_pred.shape is {}".format(
+                y_true.shape, y_pred.shape
+            )
+        )
 
     return scipy.spatial.distance.hamming(y_true, y_pred)

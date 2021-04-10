@@ -144,8 +144,10 @@ def _five_point_delta(x):
             return -2 * x[:-4] - 1 * x[1:-3] + 1 * x[3:-1] + 2 * x[4:]
 
     else:
-        raise ValueError('x passed to hvc.featuers.tachibana._five_point_delta has '
-                         'invalid number of dimensions: {}'.format(x.ndim))
+        raise ValueError(
+            "x passed to hvc.featuers.tachibana._five_point_delta has "
+            "invalid number of dimensions: {}".format(x.ndim)
+        )
 
 
 def mean_delta_spectrum(syllable):
@@ -167,7 +169,7 @@ def mean_delta_spectrum(syllable):
         # Return vector of length = number of frequency bins - 1
         # Originally done to remove "DC component", first coefficient
         # of FFT.
-        return np.zeros((syllable.spect.shape[0]-1,))
+        return np.zeros((syllable.spect.shape[0] - 1,))
     else:
         spect = _spectrum(syllable.spect)
         delta_spectrum = _five_point_delta(spect)
@@ -188,19 +190,19 @@ def mean_delta_cepstrum(syllable):
     """
 
     if syllable.spect.shape[-1] < 5:
-        #can't take five point delta if less than five time bins
+        # can't take five point delta if less than five time bins
         # so return zeros instead, as original code did.
         # Return vector of length = number of frequency bins - 1
         # Originally done to remove "DC component", first coefficient
         # of FFT.
-        return np.zeros((syllable.spect.shape[0]-1,))
+        return np.zeros((syllable.spect.shape[0] - 1,))
     else:
         cepst = _cepstrum_for_mean(syllable.spect, syllable.freqBins.shape[0])
         delta_cepstrum = _five_point_delta(cepst)
         return np.mean(np.abs(delta_cepstrum), axis=1)
 
 
-def _convert_spect_to_probability(spect,freqs):
+def _convert_spect_to_probability(spect, freqs):
     """
     Helper function to compute features as computed in Tachibana et al. 2014.
     Converts spectrogram to "probability distribution" by taking sum of power for each column
@@ -224,11 +226,13 @@ def _convert_spect_to_probability(spect,freqs):
     # amplitude spectrum
     amplitude_spectrum = np.abs(spect)
     # probability
-    prob = amplitude_spectrum / np.matlib.repmat(np.sum(amplitude_spectrum, 0), num_rows, 1)
+    prob = amplitude_spectrum / np.matlib.repmat(
+        np.sum(amplitude_spectrum, 0), num_rows, 1
+    )
     return prob, freqs_mat, num_rows, num_cols
 
 
-def spectral_centroid(prob,freqs_mat):
+def spectral_centroid(prob, freqs_mat):
     """
     spectral centroid, mean of normalized amplitude spectrum
 
@@ -248,7 +252,7 @@ def spectral_centroid(prob,freqs_mat):
     return np.sum(freqs_mat * prob, 0)  # mean
 
 
-def _variance(freqs_mat,spect_centroid,num_rows,prob):
+def _variance(freqs_mat, spect_centroid, num_rows, prob):
     """
     Helper function to compute variance.
 
@@ -264,7 +268,10 @@ def _variance(freqs_mat,spect_centroid,num_rows,prob):
 
     """
 
-    return np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 2)) * prob, 0)
+    return np.sum(
+        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 2)) * prob,
+        0,
+    )
 
 
 def mean_spectral_centroid(syllable):
@@ -280,8 +287,10 @@ def mean_spectral_centroid(syllable):
     -------
     mean_spectral_centroid : scalar, mean of spectral centroid across syllable
     """
-    prob, freqs_mat = _convert_spect_to_probability(syllable.spect,syllable.freqBins)[:2]
-    spect_centroid = spectral_centroid(prob,freqs_mat)
+    prob, freqs_mat = _convert_spect_to_probability(syllable.spect, syllable.freqBins)[
+        :2
+    ]
+    spect_centroid = spectral_centroid(prob, freqs_mat)
     return np.mean(spect_centroid)
 
 
@@ -298,13 +307,15 @@ def mean_delta_spectral_centroid(syllable):
     mean_delta_spectral_centroid : scalar
     """
 
-    prob, freqs_mat = _convert_spect_to_probability(syllable.spect, syllable.freqBins)[:2]
+    prob, freqs_mat = _convert_spect_to_probability(syllable.spect, syllable.freqBins)[
+        :2
+    ]
     spect_centroid = spectral_centroid(prob, freqs_mat)
     delta_spect_centroid = _five_point_delta(spect_centroid)
     return np.mean(delta_spect_centroid)
 
 
-def spectral_spread(spect,freqBins):
+def spectral_spread(spect, freqBins):
     """
     spectral spread, variance of normalized amplitude spectrum
 
@@ -316,9 +327,9 @@ def spectral_spread(spect,freqBins):
     -------
     spectral spread
     """
-    prob, freqs_mat, num_rows = _convert_spect_to_probability(spect,freqBins)[:3]
-    spect_centroid = spectral_centroid(prob,freqs_mat)
-    variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
+    prob, freqs_mat, num_rows = _convert_spect_to_probability(spect, freqBins)[:3]
+    spect_centroid = spectral_centroid(prob, freqs_mat)
+    variance = _variance(freqs_mat, spect_centroid, num_rows, prob)
     return np.power(variance, 1 / 2)
 
 
@@ -335,7 +346,7 @@ def mean_spectral_spread(syllable):
     -------
     mean_spectral_spread : scalar, mean of spectral spread across syllable
     """
-    return np.mean(spectral_spread(syllable.spect,syllable.freqBins))
+    return np.mean(spectral_spread(syllable.spect, syllable.freqBins))
 
 
 def mean_delta_spectral_spread(syllable):
@@ -351,7 +362,9 @@ def mean_delta_spectral_spread(syllable):
     mean_delta_spectral_spread : scalar
     """
 
-    return np.mean(_five_point_delta(spectral_spread(syllable.spect, syllable.freqBins)))
+    return np.mean(
+        _five_point_delta(spectral_spread(syllable.spect, syllable.freqBins))
+    )
 
 
 def spectral_skewness(spect, freqBins):
@@ -368,9 +381,12 @@ def spectral_skewness(spect, freqBins):
     """
 
     prob, freqs_mat, num_rows = _convert_spect_to_probability(spect, freqBins)[:3]
-    spect_centroid = spectral_centroid(prob,freqs_mat)
-    variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
-    skewness = np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob, 0)
+    spect_centroid = spectral_centroid(prob, freqs_mat)
+    variance = _variance(freqs_mat, spect_centroid, num_rows, prob)
+    skewness = np.sum(
+        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob,
+        0,
+    )
     return skewness / np.power(variance, 3 / 2)
 
 
@@ -404,7 +420,9 @@ def mean_delta_spectral_skewness(syllable):
     mean_delta_spectral_skewness : scalar
     """
 
-    return np.mean(_five_point_delta(spectral_skewness(syllable.spect, syllable.freqBins)))
+    return np.mean(
+        _five_point_delta(spectral_skewness(syllable.spect, syllable.freqBins))
+    )
 
 
 def spectral_kurtosis(spect, freqBins):
@@ -420,10 +438,13 @@ def spectral_kurtosis(spect, freqBins):
     spectral kurtosis
     """
 
-    prob, freqs_mat, num_rows = _convert_spect_to_probability(spect,freqBins)[:3]
-    spect_centroid = spectral_centroid(prob,freqs_mat)
-    variance = _variance(freqs_mat,spect_centroid,num_rows,prob)
-    kurtosis = np.sum((np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob, 0)
+    prob, freqs_mat, num_rows = _convert_spect_to_probability(spect, freqBins)[:3]
+    spect_centroid = spectral_centroid(prob, freqs_mat)
+    variance = _variance(freqs_mat, spect_centroid, num_rows, prob)
+    kurtosis = np.sum(
+        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob,
+        0,
+    )
     return kurtosis / np.power(variance, 2)
 
 
@@ -457,7 +478,9 @@ def mean_delta_spectral_kurtosis(syllable):
     mean_delta_spectral_kurtosis
     """
 
-    return np.mean(_five_point_delta(spectral_kurtosis(syllable.spect, syllable.freqBins)))
+    return np.mean(
+        _five_point_delta(spectral_kurtosis(syllable.spect, syllable.freqBins))
+    )
 
 
 def spectral_flatness(spect):
@@ -473,7 +496,9 @@ def spectral_flatness(spect):
     spectral flatness
     """
     amplitude_spectrum = np.abs(spect)
-    return np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(amplitude_spectrum, 0)
+    return np.exp(np.mean(np.log(amplitude_spectrum), 0)) / np.mean(
+        amplitude_spectrum, 0
+    )
 
 
 def mean_spectral_flatness(syllable):
@@ -506,7 +531,7 @@ def mean_delta_spectral_flatness(syllable):
     return np.mean(_five_point_delta(spectral_flatness(syllable.spect)))
 
 
-def spectral_slope(spect,freq_bins):
+def spectral_slope(spect, freq_bins):
     """
     spectral slope, slope from linear regression of normalized amplitude spectrum
 
@@ -523,10 +548,11 @@ def spectral_slope(spect,freq_bins):
     amplitude_spectrum = np.abs(spect)
     num_rows, num_cols = amplitude_spectrum.shape
     spect_slope = np.zeros((num_cols,))
-    mat2 = np.stack((freq_bins, np.ones((num_rows,))),axis=-1)
+    mat2 = np.stack((freq_bins, np.ones((num_rows,))), axis=-1)
     for n in range(num_cols):
-        beta = np.linalg.solve(np.dot(mat2.T,mat2),
-                               np.dot(mat2.T,amplitude_spectrum[:, n]))
+        beta = np.linalg.solve(
+            np.dot(mat2.T, mat2), np.dot(mat2.T, amplitude_spectrum[:, n])
+        )
         spect_slope[n] = beta[0]
     return spect_slope
 
@@ -534,7 +560,7 @@ def spectral_slope(spect,freq_bins):
 def mean_spectral_slope(syllable):
     """
     mean of spectral slope across syllable
-   
+
     Parameters
     ----------
     syllable : syllable object
@@ -575,7 +601,7 @@ def _cepstrum_for_pitch(spect, nfft, samp_freq, min_freq, max_freq):
     samp_freq
     min_freq
     max_freq
-    
+
     Returns
     -------
     mv
@@ -587,9 +613,13 @@ def _cepstrum_for_pitch(spect, nfft, samp_freq, min_freq, max_freq):
     max_quef = np.round(samp_freq / min_freq).astype(int) * 2
     min_quef = np.round(samp_freq / max_freq).astype(int) * 2
 
-    exs = np.vstack((amplitude_spectrum,
-                     np.matlib.repmat(amplitude_spectrum[-1, :], nfft, 1),
-                     np.flipud(amplitude_spectrum[1:-1, :])))
+    exs = np.vstack(
+        (
+            amplitude_spectrum,
+            np.matlib.repmat(amplitude_spectrum[-1, :], nfft, 1),
+            np.flipud(amplitude_spectrum[1:-1, :]),
+        )
+    )
     cepstrum = np.real(np.fft.fft(np.log10(exs)))
     max_val = np.max(cepstrum[min_quef:max_quef, :], axis=0)
     max_id = np.argmax(cepstrum[min_quef:max_quef, :], axis=0)
@@ -612,11 +642,9 @@ def pitch(syllable, min_freq=500, max_freq=6000):
     pitch : scalar
     """
 
-    max_val, max_id, min_quef = _cepstrum_for_pitch(syllable.spect,
-                                                    syllable.nfft,
-                                                    syllable.sampFreq,
-                                                    min_freq,
-                                                    max_freq)
+    max_val, max_id, min_quef = _cepstrum_for_pitch(
+        syllable.spect, syllable.nfft, syllable.sampFreq, min_freq, max_freq
+    )
     return syllable.sampFreq / (max_id + min_quef - 1)
 
 
@@ -651,7 +679,7 @@ def mean_delta_pitch(syllable):
     return np.mean(_five_point_delta(pitch(syllable)))
 
 
-def pitch_goodness(syllable,min_freq=500,max_freq=6000):
+def pitch_goodness(syllable, min_freq=500, max_freq=6000):
     """
     pitch goodness, as calculated in Tachibana et al. 2014
 
@@ -671,11 +699,9 @@ def pitch_goodness(syllable,min_freq=500,max_freq=6000):
     affect results.
     """
 
-    return _cepstrum_for_pitch(syllable.spect,
-                               syllable.nfft,
-                               syllable.sampFreq,
-                               min_freq,
-                               max_freq)[0]
+    return _cepstrum_for_pitch(
+        syllable.spect, syllable.nfft, syllable.sampFreq, min_freq, max_freq
+    )[0]
 
 
 def mean_pitch_goodness(syllable):
@@ -722,13 +748,13 @@ def amplitude(syllable):
     """
 
     amplitude_spectrum = np.abs(syllable.spect)
-    return 20 * np.log10(np.sum(amplitude_spectrum,0) / syllable.nfft)
+    return 20 * np.log10(np.sum(amplitude_spectrum, 0) / syllable.nfft)
 
 
 def mean_amplitude(syllable):
     """
     mean of amplitude across syllable
-    
+
     Parameters
     ----------
     syllable
@@ -744,11 +770,11 @@ def mean_amplitude(syllable):
 def mean_delta_amplitude(syllable):
     """
     mean of 5-point delta of amplitude
-    
+
     Parameters
     ----------
     syllable
-    
+
     Returns
     -------
     mean_delta_amplitude
@@ -760,7 +786,7 @@ def mean_delta_amplitude(syllable):
 def zero_crossings(syllable):
     """
     zero crossings, in units of Hertz
-    
+
     Parameters
     ----------
     syllable
@@ -770,7 +796,7 @@ def zero_crossings(syllable):
     zero_crossings : scalar
     """
 
-    #to find zero crossings:
+    # to find zero crossings:
     #   convert raw signal to sign, either +1 or -1
     #   then take difference at each point: [signal[1]-signal[0],signal[2]-signal[1],...]
     #   then find all the points where the difference is not zero

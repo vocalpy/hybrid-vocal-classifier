@@ -17,8 +17,8 @@ def naive_LSTM(input_shape, num_syllable_classes):
     model.add(TimeDistributed(Dense(num_syllable_classes)))
     model.add(Activation("softmax"))
 
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
+    model.compile(
+        loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"]
+    )
 
     return model

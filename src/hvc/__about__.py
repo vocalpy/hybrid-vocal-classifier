@@ -20,7 +20,9 @@ except NameError:
 
 
 __title__ = "hybrid-vocal-classifier"
-__summary__ = "a Python machine learning library for animal vocalizations and bioacoustics"
+__summary__ = (
+    "a Python machine learning library for animal vocalizations and bioacoustics"
+)
 __uri__ = "https://github.com/NickleDave/hybrid-vocal-classifier"
 
 __version__ = "0.3.0"

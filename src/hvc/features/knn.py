@@ -7,7 +7,7 @@ import numpy as np
 import hvc.evfuncs
 
 # helper function that calculates syllable durations
-_duration = lambda onsets, offsets: offsets-onsets
+_duration = lambda onsets, offsets: offsets - onsets
 
 # helper function that calculates duration of silent gaps between syllables
 _gapdurs = lambda onsets, offsets: onsets[1:] - offsets[:-1]
@@ -23,7 +23,7 @@ def duration(onsets, offsets, syls_to_use):
     offsets : 1d numpy array
         syllable offset times as determined by a segmentation algorithm
     syls_to_use : 1d numpy Boolean array
-        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use)
 
     Returns
     -------
@@ -42,7 +42,7 @@ def pre_duration(onsets, offsets, syls_to_use):
     offsets : 1d numpy array
         syllable offset times as determined by a segmentation algorithm
     syls_to_use : 1d numpy Boolean array
-        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use)
 
     Returns
     -------
@@ -65,7 +65,7 @@ def foll_duration(onsets, offsets, syls_to_use):
     offsets : 1d numpy array
         syllable offset times as determined by a segmentation algorithm
     syls_to_use : 1d numpy Boolean array
-        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use)
 
     Returns
     -------
@@ -88,7 +88,7 @@ def pre_gapdur(onsets, offsets, syls_to_use):
     offsets : 1d numpy array
         syllable offset times as determined by a segmentation algorithm
     syls_to_use : 1d numpy Boolean array
-        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use)
 
     Returns
     -------
@@ -111,7 +111,7 @@ def foll_gapdur(onsets, offsets, syls_to_use):
     offsets : 1d numpy array
         syllable offset times as determined by a segmentation algorithm
     syls_to_use : 1d numpy Boolean array
-        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use) 
+        property of audiofileIO.song object, as set by set_syls_to_use(labels_to_use)
 
     Returns
     -------
@@ -135,12 +135,12 @@ def _smooth_rect_amp(syllable):
     -------
     smoothed : 1-d numpy array
         raw audio waveform amplitude,
-        after bandpass filtering, squaring, and  
+        after bandpass filtering, squaring, and
         and smoothing with evfuncs.smooth_data
     """
-    return hvc.evfuncs.smooth_data(syllable.sylAudio,
-                                   syllable.sampFreq,
-                                   syllable.freqCutoffs)
+    return hvc.evfuncs.smooth_data(
+        syllable.sylAudio, syllable.sampFreq, syllable.freqCutoffs
+    )
 
 
 def mn_amp_smooth_rect(syllable):
@@ -231,8 +231,7 @@ def _hi_lo_ratio(syllable, middle=5000):
     psd = np.power(np.abs(syllable.spect), 2)
     hi_ids = syllable.freqBins > middle
     lo_ids = syllable.freqBins < middle
-    return np.log10(np.sum(psd[hi_ids, :], axis=0) /
-                    np.sum(psd[lo_ids, :], axis=0))
+    return np.log10(np.sum(psd[hi_ids, :], axis=0) / np.sum(psd[lo_ids, :], axis=0))
 
 
 def mean_hi_lo_ratio(syllable):
@@ -271,8 +270,11 @@ def _delta_inds(syllable, delta_times):
     dur = syllable.sylAudio.shape[-1] / syllable.sampFreq
     t_early = dur * delta_times[0]
     t_late = dur * delta_times[1]
-    return [np.argmin(np.abs(syllable.timeBins - t_early)),
-            np.argmin(np.abs(syllable.timeBins - t_late))]
+    return [
+        np.argmin(np.abs(syllable.timeBins - t_early)),
+        np.argmin(np.abs(syllable.timeBins - t_late)),
+    ]
+
 
 _delta = lambda vec, inds: vec[inds[0]] - vec[inds[1]]
 
@@ -294,7 +296,7 @@ def delta_amp_smooth_rect(syllable, delta_times=[0.2, 0.8]):
     """
     inds = _delta_inds(syllable, delta_times)
     amp = _smooth_rect_amp(syllable)
-    return _delta(amp,inds)
+    return _delta(amp, inds)
 
 
 def delta_entropy(syllable, delta_times=[0.2, 0.8]):
@@ -315,7 +317,7 @@ def delta_entropy(syllable, delta_times=[0.2, 0.8]):
 
     inds = _delta_inds(syllable, delta_times)
     entropy = _spect_entropy(syllable)
-    return _delta(entropy,inds)
+    return _delta(entropy, inds)
 
 
 def delta_hi_lo_ratio(syllable, delta_times=[0.2, 0.8]):

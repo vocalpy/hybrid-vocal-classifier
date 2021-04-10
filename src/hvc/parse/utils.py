@@ -33,13 +33,14 @@ def check_for_missing_keys(a_dict, a_list_of_keys):
             if str_or_tuple_key not in a_dict:
                 keys_not_found.append(str_or_tuple_key)
         elif type(str_or_tuple_key) == tuple:
-            if not any([key_from_tuple in a_dict
-                       for key_from_tuple in str_or_tuple_key]):
-                keys_str_rep = ' or '.join(str_or_tuple_key)
+            if not any(
+                [key_from_tuple in a_dict for key_from_tuple in str_or_tuple_key]
+            ):
+                keys_str_rep = " or ".join(str_or_tuple_key)
                 keys_not_found.append(keys_str_rep)
     # below, if keys_not_found is empty list, returns ''
     # which evaluates as False
-    keys_not_found = ', '.join(keys_not_found)
+    keys_not_found = ", ".join(keys_not_found)
     return keys_not_found
 
 

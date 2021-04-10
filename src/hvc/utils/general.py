@@ -1,4 +1,4 @@
-#from standard library
+# from standard library
 import copy
 import random
 from datetime import datetime
@@ -23,10 +23,10 @@ def timestamp():
     (so we don't load the wrong data with joblib because
     both data files have the same name)
     """
-    return datetime.now().strftime('%y%m%d_%H.%M.%S.%f')
+    return datetime.now().strftime("%y%m%d_%H.%M.%S.%f")
 
 
-def load_from_mat(fname,ftr_file_type,purpose='train'):
+def load_from_mat(fname, ftr_file_type, purpose="train"):
     """
     Loads feature files created in matlab
 
@@ -53,96 +53,103 @@ def load_from_mat(fname,ftr_file_type,purpose='train'):
         vector of length m, where each element denotes which song that
         sample m(sub i) belongs to in the samples array. E.g., if elements 15-37
         have the value "3", then all those samples belong to the third song.
-        Used to relate number of songs to number of samples.  
+        Used to relate number of songs to number of samples.
     """
 
-    if ftr_file_type == 'knn':
-        FEATURES_TO_USE = np.r_[0:6,7:10,11] # using np._r to build index array 
-        #load 'cell array' from .mat file. ftr_file is a dictionary of numpy 
-        #record arrays
-        #the 'feature_cell' record array has two columns: col 1 = actual vals,
-        #col 0 is just ftr names
-        ftr_file = loadmat(fname,chars_as_strings=True)
+    if ftr_file_type == "knn":
+        FEATURES_TO_USE = np.r_[0:6, 7:10, 11]  # using np._r to build index array
+        # load 'cell array' from .mat file. ftr_file is a dictionary of numpy
+        # record arrays
+        # the 'feature_cell' record array has two columns: col 1 = actual vals,
+        # col 0 is just ftr names
+        ftr_file = loadmat(fname, chars_as_strings=True)
         # concatenate features horizontally (each row is a sample)
-        samples = np.hstack(ftr_file['feature_cell'][1,:])
-        samples = samples[:,FEATURES_TO_USE] #discard unused features
+        samples = np.hstack(ftr_file["feature_cell"][1, :])
+        samples = samples[:, FEATURES_TO_USE]  # discard unused features
 
-    elif ftr_file_type == 'svm':
+    elif ftr_file_type == "svm":
         ftr_file = loadmat(fname)
-        samples = ftr_file['features_mat']
+        samples = ftr_file["features_mat"]
 
-    if purpose == 'classify':
+    if purpose == "classify":
         return samples
 
-    elif purpose == 'train':
+    elif purpose == "train":
         # flatten because matlab vectors are imported as 2d numpy arrays with one row
-        labels = ftr_file['label_vec'].flatten()
-        labels = labels.view(np.uint32) # convert from unicode to long 
-        song_IDs_vec = ftr_file['song_IDs_vec'].flatten()
+        labels = ftr_file["label_vec"].flatten()
+        labels = labels.view(np.uint32)  # convert from unicode to long
+        song_IDs_vec = ftr_file["song_IDs_vec"].flatten()
         return samples, labels, song_IDs_vec
 
 
 def filter_samples(samples, labels, labels_to_filter, song_ID_vec=None, remove=False):
-    """filter samples by their labels.  
-    Either removes or keeps the samples with the specified labels.
-    
-    Parameters
-    ----------
-    samples : ndarray
-        m-by-n numpy array with m rows of samples, each having n
-        columns of features
-    labels : ndarray
-        1d numpy array of m elements where each is a label that
-        corresponds to a row in samples. Expects an integer value
-    song_ID_vec : ndarray
-        vector of length m, where each element denotes which song
-        that sample m(sub i) belongs to in the samples array.
-        "None" by default. If provided, is filtered just like labels
-        and samples.
-    labels_to_filter : ndarray
-        like labels, 1d numpy array of integers like
-        labels, but filter_samples finds all indices of
-        a label that occurs in 'labels *and* in 'labels_to_filter',
-        and keeps only those, filtering out every other label
-        and filtering out the corresponding rows from samples
-        and the corresponding elements from song_ID_vec.
-        ***unless*** 'remove'=True, in which case it *removes*
-        _only_ the labels in labels_to_filter, and leaves
-        everything else. 
-   remove : bool
-        set remove=True when you want to remove only the labels in
-        labels to filter instead of keeping only those labels
+    """filter samples by their labels.
+     Either removes or keeps the samples with the specified labels.
 
-    Returns
-    -------
-    filtered_samples,filtered_labels,filtered_song_IDs
+     Parameters
+     ----------
+     samples : ndarray
+         m-by-n numpy array with m rows of samples, each having n
+         columns of features
+     labels : ndarray
+         1d numpy array of m elements where each is a label that
+         corresponds to a row in samples. Expects an integer value
+     song_ID_vec : ndarray
+         vector of length m, where each element denotes which song
+         that sample m(sub i) belongs to in the samples array.
+         "None" by default. If provided, is filtered just like labels
+         and samples.
+     labels_to_filter : ndarray
+         like labels, 1d numpy array of integers like
+         labels, but filter_samples finds all indices of
+         a label that occurs in 'labels *and* in 'labels_to_filter',
+         and keeps only those, filtering out every other label
+         and filtering out the corresponding rows from samples
+         and the corresponding elements from song_ID_vec.
+         ***unless*** 'remove'=True, in which case it *removes*
+         _only_ the labels in labels_to_filter, and leaves
+         everything else.
+    remove : bool
+         set remove=True when you want to remove only the labels in
+         labels to filter instead of keeping only those labels
+
+     Returns
+     -------
+     filtered_samples,filtered_labels,filtered_song_IDs
     """
 
     if remove is True:
-        indices = np.in1d(labels,labels_to_filter,invert=True)
+        indices = np.in1d(labels, labels_to_filter, invert=True)
     elif remove is False:
-        indices = np.in1d(labels,labels_to_filter)
+        indices = np.in1d(labels, labels_to_filter)
     filtered_labels = labels[indices]
-    filtered_samples = samples[indices,:]
+    filtered_samples = samples[indices, :]
     if song_ID_vec is None:
         return filtered_samples, filtered_labels
     else:
         filtered_song_IDs = song_ID_vec[indices]
-        return filtered_samples, filtered_labels,filtered_song_IDs
+        return filtered_samples, filtered_labels, filtered_song_IDs
 
 
-def filter_labels(labels,labelset):
+def filter_labels(labels, labelset):
     """
     filter_labels(labels,labelset)
     returns labels with any elements removed that are not in labelset
     """
-    labels_to_keep = np.in1d(labels, labelset) #returns boolean vector, True where label is in labelset
+    labels_to_keep = np.in1d(
+        labels, labelset
+    )  # returns boolean vector, True where label is in labelset
     labels = labels[labels_to_keep]
     return labels
 
 
-def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6), gamma_range=np.logspace(-6, -1, 6),
-                        return_cv_results=False):
+def grid_search_svm_rbf(
+    X,
+    y,
+    C_range=np.logspace(-1, 4, 6),
+    gamma_range=np.logspace(-6, -1, 6),
+    return_cv_results=False,
+):
     """carries out a grid search of C and gamma parameters for an RBF kernel to
     use with a support vector machine.
 
@@ -181,19 +188,18 @@ def grid_search_svm_rbf(X, y, C_range=np.logspace(-1, 4, 6), gamma_range=np.logs
     # "run parallel if possible"
     grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv, n_jobs=-1)
     grid.fit(X, y)
-    print("The best parameters are {0} with a score of {1:0.2f}"
-          .format(grid.best_params_, grid.best_score_))
+    print(
+        "The best parameters are {0} with a score of {1:0.2f}".format(
+            grid.best_params_, grid.best_score_
+        )
+    )
     return_tuple = (grid.best_params_, grid.best_score_)
     if return_cv_results:
         return_tuple += (grid.cv_results_,)
     return return_tuple
 
 
-def find_best_k(samples,
-                labels,
-                k_range=range(1, 11),
-                cv=10,
-                standardize=True):
+def find_best_k(samples, labels, k_range=range(1, 11), cv=10, standardize=True):
     """find best k to use with k-Nearest Neighbors algorithm
     using 10-fold cross validation.
 
@@ -225,49 +231,50 @@ def find_best_k(samples,
     """
 
     if type(samples) != np.ndarray:
-        raise TypeError('samples should be ndarray')
+        raise TypeError("samples should be ndarray")
 
     if type(labels) == list:
         labels = np.asarray(labels)
 
     if type(labels) != np.ndarray:
-        raise TypeError('labels should be ndarray')
+        raise TypeError("labels should be ndarray")
 
     if samples.ndim != 2:
-        raise ValueError('samples.ndim does not equal 2.'
-                         'should be m-ny-n array'
-                         ' of m samples with n features')
+        raise ValueError(
+            "samples.ndim does not equal 2."
+            "should be m-ny-n array"
+            " of m samples with n features"
+        )
 
     if labels.ndim != 1:
-        raise ValueError('labels.ndim does not equal 1.'
-                         'should be array of length m'
-                         'where m is number of rows in samples matrix.')
+        raise ValueError(
+            "labels.ndim does not equal 1."
+            "should be array of length m"
+            "where m is number of rows in samples matrix."
+        )
 
     if standardize:
         samples = sklearn.preprocessing.scale(samples)
 
     cv_scores = np.empty((len(k_range),))
     for ind, k in enumerate(k_range):
-        clf = neighbors.KNeighborsClassifier(n_neighbors=k,
-                                              weights='distance')
-        scores = cross_val_score(clf,
-                                 samples,
-                                 labels,
-                                 cv=cv,
-                                 scoring='accuracy')
+        clf = neighbors.KNeighborsClassifier(n_neighbors=k, weights="distance")
+        scores = cross_val_score(clf, samples, labels, cv=cv, scoring="accuracy")
         cv_scores[ind] = scores.mean()
-    best_k = k_range[cv_scores.argmax()] #argmax returns index of max val
+    best_k = k_range[cv_scores.argmax()]  # argmax returns index of max val
     print("best k was {} with accuracy of {}".format(best_k, np.max(cv_scores)))
     return cv_scores, best_k
 
 
-def grab_n_samples_by_song(song_IDs,
-                           labels,
-                           num_samples,
-                           song_ID_list = None,
-                           seed=None,
-                           return_popped_songlist=False,
-                           use_random_dot_org=False):
+def grab_n_samples_by_song(
+    song_IDs,
+    labels,
+    num_samples,
+    song_ID_list=None,
+    seed=None,
+    return_popped_songlist=False,
+    use_random_dot_org=False,
+):
     """Creates list of sample IDs for training or test set.
     Grabs samples by song ID from shuffled list of IDs. Keeps drawing IDs until
     we have more than num_samples, then truncate list at that number of samples.
@@ -317,14 +324,18 @@ def grab_n_samples_by_song(song_IDs,
     song_IDs_arr = np.asarray(song_IDs)
     if song_ID_list is None:
         song_ID_list = np.unique(song_IDs).tolist()
-    #make copy of list in case we need it back in loop below after popping off items
+    # make copy of list in case we need it back in loop below after popping off items
     song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
-    interwebz_random = RandomDotOrg() # access site that gives truly random #s from radio noise
+    interwebz_random = (
+        RandomDotOrg()
+    )  # access site that gives truly random #s from radio noise
     if use_random_dot_org:
         try:
-            interwebz_random.shuffle(song_ID_list_copy_to_pop) # initial shuffle, happens in place
+            interwebz_random.shuffle(
+                song_ID_list_copy_to_pop
+            )  # initial shuffle, happens in place
         except (HTTPError, URLError):  # i.e., if random service not available
-            print('random.org service not working. Defaulting to Python random module')
+            print("random.org service not working. Defaulting to Python random module")
             random.seed(seed)
             random.shuffle(song_ID_list_copy_to_pop)
     else:
@@ -332,36 +343,40 @@ def grab_n_samples_by_song(song_IDs,
             random.seed(seed)
         random.shuffle(song_ID_list_copy_to_pop)
 
-    #outer while loop to make sure there's more than one sample for each class
-    while 1: 
+    # outer while loop to make sure there's more than one sample for each class
+    while 1:
         sample_IDs = []
         while 1:
             curr_song_ID = song_ID_list_copy_to_pop.pop()
-            curr_sample_IDs = np.argwhere(song_IDs_arr==curr_song_ID).ravel().tolist()
+            curr_sample_IDs = np.argwhere(song_IDs_arr == curr_song_ID).ravel().tolist()
             sample_IDs.extend(curr_sample_IDs)
             if len(sample_IDs) > num_samples:
                 sample_IDs = np.asarray(sample_IDs[:num_samples])
                 break
-        #if training set only contains one example of any syllable, get new set
-        #(can't do c.v. stratified shuffle split with only one sample of a class
-        #The sk-learn stratified shuffle split method is used by grid search for
+        # if training set only contains one example of any syllable, get new set
+        # (can't do c.v. stratified shuffle split with only one sample of a class
+        # The sk-learn stratified shuffle split method is used by grid search for
         # the SVC.)
         temp_labels = np.asarray(labels)[sample_IDs]
-        #in line below, just keep [1] cuz just want the counts
-        uniq_label_counts = np.unique(temp_labels,return_counts=True)[1]
+        # in line below, just keep [1] cuz just want the counts
+        uniq_label_counts = np.unique(temp_labels, return_counts=True)[1]
         if np.min(uniq_label_counts) > 1:
-            break # but if not, break out of loop and keep current sample set
+            break  # but if not, break out of loop and keep current sample set
         else:
-            print('training set only contains one example of any syllable')
-            #get original list
+            print("training set only contains one example of any syllable")
+            # get original list
             song_ID_list_copy_to_pop = copy.deepcopy(song_ID_list)
             # shuffle again so this time we hopefully get a set
             # where there's >1 sample of each syllable class
             if use_random_dot_org:
                 try:
-                    interwebz_random.shuffle(song_ID_list_copy_to_pop)  # initial shuffle, happens in place
+                    interwebz_random.shuffle(
+                        song_ID_list_copy_to_pop
+                    )  # initial shuffle, happens in place
                 except (HTTPError, URLError):  # i.e., if random service not available
-                    print('random.org service not working. Defaulting to Python random module')
+                    print(
+                        "random.org service not working. Defaulting to Python random module"
+                    )
                     random.seed(seed)
                     random.shuffle(song_ID_list_copy_to_pop)
             else:
@@ -393,18 +408,18 @@ def get_acc_by_label(labels, pred_labels, labelset):
     """
 
     acc_by_label = np.zeros((len(labelset)))
-    for ind,label in enumerate(labelset):
-        label_ids = np.in1d(labels,label) #find all occurrences of label in test data
-        if sum(label_ids) == 0: # if there were no instances of label in labels
+    for ind, label in enumerate(labelset):
+        label_ids = np.in1d(labels, label)  # find all occurrences of label in test data
+        if sum(label_ids) == 0:  # if there were no instances of label in labels
             continue
         pred_for_that_label = pred_labels[label_ids]
-        matches = pred_for_that_label==label
-        #sum(matches) is equal to number of true positives
-        #len(matches) is equal to number of true positives and false negatives
+        matches = pred_for_that_label == label
+        # sum(matches) is equal to number of true positives
+        # len(matches) is equal to number of true positives and false negatives
         acc = sum(matches) / len(matches)
         acc_by_label[ind] = acc
     avg_acc = np.mean(acc_by_label)
-    return acc_by_label,avg_acc
+    return acc_by_label, avg_acc
 
 
 SELECT_TEMPLATE = """select:
@@ -438,9 +453,7 @@ TODO_TEMPLATE = """  todo_list:
       output_dir: {1}"""
 
 
-def write_select_config(summary_ftr_file_dict,
-                       summary_filename,
-                       output_dir):
+def write_select_config(summary_ftr_file_dict, summary_filename, output_dir):
     """writes summary output dict from extract to a config file for select
     Only called when feature_group is a list, to save user from figuring
     out manually which features belong to which group.
@@ -461,19 +474,22 @@ def write_select_config(summary_ftr_file_dict,
     Doesn't return anything, just saves .yml file
     """
 
-    select_config_filename = 'select.config.from_' + summary_filename + '.yml'
-    with open(select_config_filename, 'w') as yml_outfile:
+    select_config_filename = "select.config.from_" + summary_filename + ".yml"
+    with open(select_config_filename, "w") as yml_outfile:
         yml_outfile.write(SELECT_TEMPLATE)
-        for model_name, model_ID in summary_ftr_file_dict['feature_group_ID_dict'].items():
-            inds = [ftr_list_ind for ftr_list_ind, grp_ID in
-                    enumerate(summary_ftr_file_dict['feature_list_group_ID'])
-                    if grp_ID == model_ID]
-            if model_name == 'svm':
+        for model_name, model_ID in summary_ftr_file_dict[
+            "feature_group_ID_dict"
+        ].items():
+            inds = [
+                ftr_list_ind
+                for ftr_list_ind, grp_ID in enumerate(
+                    summary_ftr_file_dict["feature_list_group_ID"]
+                )
+                if grp_ID == model_ID
+            ]
+            if model_name == "svm":
                 hyperparams = SVM_HYPERPARAMS
-            elif model_name == 'knn':
+            elif model_name == "knn":
                 hyperparams = KNN_HYPERPARAMS
-            yml_outfile.write(MODELS_TEMPLATE.format(model_name,
-                                                     inds,
-                                                     hyperparams))
-        yml_outfile.write(TODO_TEMPLATE.format(summary_filename,
-                                               output_dir))
+            yml_outfile.write(MODELS_TEMPLATE.format(model_name, inds, hyperparams))
+        yml_outfile.write(TODO_TEMPLATE.format(summary_filename, output_dir))

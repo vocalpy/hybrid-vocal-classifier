@@ -17,35 +17,37 @@ from .utils import check_for_missing_keys, flatten
 path = os.path.abspath(__file__)  # get the path of this file
 dir_path = os.path.dirname(path)  # but then just take the dir
 
-with open(os.path.join(dir_path, 'features.yml')) as features_yml:
-    VALID_FEATURES = yaml.load(features_yml, Loader=yaml.FullLoader)['features']
+with open(os.path.join(dir_path, "features.yml")) as features_yml:
+    VALID_FEATURES = yaml.load(features_yml, Loader=yaml.FullLoader)["features"]
 
-with open(os.path.join(dir_path, 'validation.yml')) as val_yaml:
+with open(os.path.join(dir_path, "validation.yml")) as val_yaml:
     validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)
 
 # feature groups in separate file from feature list because
 # want to validate feature groups against feature list
 # and some features are not in feature group
-with open(os.path.join(dir_path, 'feature_groups.yml')) as ftr_grp_yaml:
+with open(os.path.join(dir_path, "feature_groups.yml")) as ftr_grp_yaml:
     valid_feature_groups_dict = yaml.load(ftr_grp_yaml, Loader=yaml.FullLoader)
 
-REQUIRED_TODO_LIST_KEYS = set(validate_dict['required_extract_todo_list_keys'])
-REQUIRED_TODO_LIST_KEYS_FLATTENED = set(flatten(
-    validate_dict['required_extract_todo_list_keys']))
-OPTIONAL_TODO_LIST_KEYS = set(validate_dict['optional_extract_todo_list_keys'])
+REQUIRED_TODO_LIST_KEYS = set(validate_dict["required_extract_todo_list_keys"])
+REQUIRED_TODO_LIST_KEYS_FLATTENED = set(
+    flatten(validate_dict["required_extract_todo_list_keys"])
+)
+OPTIONAL_TODO_LIST_KEYS = set(validate_dict["optional_extract_todo_list_keys"])
 ################################################################
 # validation functions for individual configuration parameters #
 ################################################################
 
-valid_spect_param_keys = {'nperseg',
-                          'noverlap',
-                          'freq_cutoffs',
-                          'window',
-                          'filter_func',
-                          'spect_func',
-                          'ref',
-                          'log_transform_spect'
-                          }
+valid_spect_param_keys = {
+    "nperseg",
+    "noverlap",
+    "freq_cutoffs",
+    "window",
+    "filter_func",
+    "spect_func",
+    "ref",
+    "log_transform_spect",
+}
 
 
 def validate_spect_params(spect_params):
@@ -97,66 +99,76 @@ def validate_spect_params(spect_params):
     """
 
     if type(spect_params) != dict:
-        raise TypeError('value for key \'spect_params\' in config file did '
-                         'not parse as a dictionary of parameters, '
-                         'it parsed as {}. Check file formatting.'
-                         .format(spect_params))
+        raise TypeError(
+            "value for key 'spect_params' in config file did "
+            "not parse as a dictionary of parameters, "
+            "it parsed as {}. Check file formatting.".format(spect_params)
+        )
 
     if not set(spect_params.keys()) <= valid_spect_param_keys:
         invalid_keys = set(spect_params.keys()) - valid_spect_param_keys
-        raise KeyError('unrecognized keys in spect_params dictionary: {}'
-                       .format(invalid_keys))
+        raise KeyError(
+            "unrecognized keys in spect_params dictionary: {}".format(invalid_keys)
+        )
 
-    if 'ref' in spect_params:
-        if spect_params['ref'] not in refs_dict:
-            raise ValueError('Value {} for \'ref\' not recognized.'
-                             'Valid values are: {}.'
-                             .format(spect_params['ref'],
-                                     list(refs_dict.keys())
-                                     )
-                             )
+    if "ref" in spect_params:
+        if spect_params["ref"] not in refs_dict:
+            raise ValueError(
+                "Value {} for 'ref' not recognized."
+                "Valid values are: {}.".format(
+                    spect_params["ref"], list(refs_dict.keys())
+                )
+            )
         if len(spect_params.keys()) > 1:
-            warnings.warn('spect_params contains \'ref\' parameter '
-                          'but also contains other parameters. Defaults '
-                          'for \'ref\' will override other parameters.')
-            return {'ref': spect_params['ref']}
+            warnings.warn(
+                "spect_params contains 'ref' parameter "
+                "but also contains other parameters. Defaults "
+                "for 'ref' will override other parameters."
+            )
+            return {"ref": spect_params["ref"]}
         else:
-            return refs_dict[spect_params['ref']]
+            return refs_dict[spect_params["ref"]]
 
-    if 'nperseg' not in spect_params.keys() and 'noverlap' not in spect_params.keys():
-        raise KeyError('keys nperseg and noverlap are required in'
-                       'spect_params but were not found.')
+    if "nperseg" not in spect_params.keys() and "noverlap" not in spect_params.keys():
+        raise KeyError(
+            "keys nperseg and noverlap are required in"
+            "spect_params but were not found."
+        )
     for sp_key, sp_val in spect_params.items():
-        if sp_key == 'nperseg' or sp_key == 'noverlap':
+        if sp_key == "nperseg" or sp_key == "noverlap":
             if type(sp_val) != int:
-                raise ValueError('{} in spect_params should be an integer'.format(sp_key))
-        elif sp_key == 'freq_cutoffs':
+                raise ValueError(
+                    "{} in spect_params should be an integer".format(sp_key)
+                )
+        elif sp_key == "freq_cutoffs":
             if len(sp_val) != 2:
-                raise ValueError('freq_cutoffs should be a 2 item list')
+                raise ValueError("freq_cutoffs should be a 2 item list")
             for freq_cutoff in sp_val:
                 if type(freq_cutoff) != int:
-                    raise ValueError('freq_cutoff {} should be an int'.format(sp_val))
-        elif sp_key == 'window':
-            if sp_val not in {'Hann', 'dspp', None}:
-                raise ValueError('{} is invalid value for window in spect params.'
-                                 'Valid values are: {\'Hann\', \'dspp\', None}'
-                                 .format(sp_val))
-        elif sp_key == 'filter_func':
-            if sp_val not in {'diff', 'bandpass_filtfilt', 'butter_bandpass', None}:
-                raise ValueError('{} is invalid value for filter_func in spect params.'
-                                 'Valid values are: {\'diff\', \'bandpass_filtfilt\','
-                                 '\'butter_andpass\', None}'
-                                 .format(sp_val))
-        elif sp_key == 'log_transform_spect':
+                    raise ValueError("freq_cutoff {} should be an int".format(sp_val))
+        elif sp_key == "window":
+            if sp_val not in {"Hann", "dspp", None}:
+                raise ValueError(
+                    "{} is invalid value for window in spect params."
+                    "Valid values are: {'Hann', 'dspp', None}".format(sp_val)
+                )
+        elif sp_key == "filter_func":
+            if sp_val not in {"diff", "bandpass_filtfilt", "butter_bandpass", None}:
+                raise ValueError(
+                    "{} is invalid value for filter_func in spect params."
+                    "Valid values are: {'diff', 'bandpass_filtfilt',"
+                    "'butter_andpass', None}".format(sp_val)
+                )
+        elif sp_key == "log_transform_spect":
             if type(sp_val) != bool:
-                raise TypeError('log_transform_spect parsed as type {}, '
-                                'but should be bool.'
-                                .format(type(sp_val)))
+                raise TypeError(
+                    "log_transform_spect parsed as type {}, "
+                    "but should be bool.".format(type(sp_val))
+                )
     return spect_params
 
-valid_segment_param_keys = {'threshold',
-                            'min_syl_dur',
-                            'min_silent_dur'}
+
+valid_segment_param_keys = {"threshold", "min_syl_dur", "min_silent_dur"}
 
 
 def validate_segment_params(segment_params):
@@ -180,53 +192,59 @@ def validate_segment_params(segment_params):
     """
 
     if type(segment_params) != dict:
-        raise TypeError('segment_params did not parse as a dictionary, '
-                        'instead it parsed as {}.'
-                        ' Please check config file formatting.'.format(type(val)))
+        raise TypeError(
+            "segment_params did not parse as a dictionary, "
+            "instead it parsed as {}."
+            " Please check config file formatting.".format(type(val))
+        )
 
     elif set(segment_params.keys()) != valid_segment_param_keys:
         if set(segment_params.keys()) < valid_segment_param_keys:
             missing_keys = valid_segment_param_keys - set(segment_params.keys())
-            raise KeyError('segment_params is missing keys: {}'
-                           .format(missing_keys))
+            raise KeyError("segment_params is missing keys: {}".format(missing_keys))
         elif valid_segment_param_keys < set(segment_params.keys()):
             extra_keys = set(segment_params.keys()) - segment_param_keys
-            raise KeyError('segment_params has extra keys:'
-                           .format(extra_keys))
+            raise KeyError("segment_params has extra keys:".format(extra_keys))
         else:
             invalid_keys = set(segment_params.keys()) - valid_segment_param_keys
-            raise KeyError('segment_params has invalid keys:'
-                           .format(invalid_keys))
+            raise KeyError("segment_params has invalid keys:".format(invalid_keys))
     else:
         for key, val in segment_params.items():
-            if key == 'threshold':
+            if key == "threshold":
                 if type(val) != int:
-                    raise ValueError('threshold should be int but parsed as {}'
-                                     .format(type(val)))
-            elif key == 'min_syl_dur':
+                    raise ValueError(
+                        "threshold should be int but parsed as {}".format(type(val))
+                    )
+            elif key == "min_syl_dur":
                 if type(val) != float:
-                    raise ValueError('min_syl_dur should be float but parsed as {}'
-                                     .format(type(val)))
-            elif key == 'min_silent_dur':
+                    raise ValueError(
+                        "min_syl_dur should be float but parsed as {}".format(type(val))
+                    )
+            elif key == "min_silent_dur":
                 if type(val) != float:
-                    raise ValueError('min_silent_dur should be float but parsed as {}'
-                                     .format(type(val)))
+                    raise ValueError(
+                        "min_silent_dur should be float but parsed as {}".format(
+                            type(val)
+                        )
+                    )
 
 
 def _validate_feature_list(feature_list):
-    """helper function to validate feature_list
-    """
+    """helper function to validate feature_list"""
 
     if type(feature_list) != list:
-        raise ValueError('feature_list should be a list but parsed as a {}'.format(type(val)))
+        raise ValueError(
+            "feature_list should be a list but parsed as a {}".format(type(val))
+        )
     else:
         for feature in feature_list:
             if feature not in VALID_FEATURES:
-                raise ValueError('feature {} not found in valid features'.format(feature))
+                raise ValueError(
+                    "feature {} not found in valid features".format(feature)
+                )
 
 
-def _validate_feature_group_and_convert_to_list(feature_group,
-                                                feature_list=None):
+def _validate_feature_group_and_convert_to_list(feature_group, feature_list=None):
     """validates feature_group value from todo_list dicts, then converts
     to feature_list.
     Since todo_list dicts can include both feature_group and feature_list,
@@ -262,9 +280,11 @@ def _validate_feature_group_and_convert_to_list(feature_group,
     """
 
     if type(feature_group) != str and type(feature_group) != list:
-        raise TypeError('feature_group parsed as {} but it should be'
-                        ' either a string or a list. Please check config'
-                        ' file formatting.'.format(type(feature_group)))
+        raise TypeError(
+            "feature_group parsed as {} but it should be"
+            " either a string or a list. Please check config"
+            " file formatting.".format(type(feature_group))
+        )
 
     # if user entered list with just one element
     if type(feature_group) == list and len(feature_group) == 1:
@@ -274,7 +294,9 @@ def _validate_feature_group_and_convert_to_list(feature_group,
 
     if type(feature_group) == str:
         if feature_group not in valid_feature_groups_dict:
-            raise ValueError('{} not found in valid feature groups'.format(feature_group))
+            raise ValueError(
+                "{} not found in valid feature groups".format(feature_group)
+            )
         else:
             ftr_grp_list = valid_feature_groups_dict[feature_group]
             _validate_feature_list(ftr_grp_list)  # sanity check
@@ -290,24 +312,22 @@ def _validate_feature_group_and_convert_to_list(feature_group,
         ftr_grp_ID_dict = {}
         for grp_ind, ftr_grp in enumerate(feature_group):
             if ftr_grp not in valid_feature_groups_dict:
-                raise ValueError('{} not found in valid feature groups'.format(ftr_grp))
+                raise ValueError("{} not found in valid feature groups".format(ftr_grp))
             else:
                 ftr_grp_list.extend(valid_feature_groups_dict[ftr_grp])
-                feature_list_group_ID.extend([grp_ind] * len(valid_feature_groups_dict[ftr_grp]))
+                feature_list_group_ID.extend(
+                    [grp_ind] * len(valid_feature_groups_dict[ftr_grp])
+                )
                 ftr_grp_ID_dict[ftr_grp] = grp_ind
         _validate_feature_list(ftr_grp_list)
 
     if feature_list is not None:
         not_ftr_grp_features = [None] * len(feature_list)
         feature_list_group_ID = not_ftr_grp_features + feature_list_group_ID
-        return (feature_list + ftr_grp_list,
-                feature_list_group_ID,
-                ftr_grp_ID_dict)
+        return (feature_list + ftr_grp_list, feature_list_group_ID, ftr_grp_ID_dict)
     else:
         feature_list_group_ID = feature_list_group_ID
-        return (ftr_grp_list,
-                feature_list_group_ID,
-                ftr_grp_ID_dict)
+        return (ftr_grp_list, feature_list_group_ID, ftr_grp_ID_dict)
 
 
 def _validate_todo_list_dict(todo_list_dict, index, config_path):
@@ -333,68 +353,84 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
     # i.e., if not all required keys are in todo_list_dict
     missing_keys = check_for_missing_keys(todo_list_dict, REQUIRED_TODO_LIST_KEYS)
     if missing_keys:
-        raise KeyError('The following required keys '
-                       'were not found in todo_list item #{}: {}'
-                       .format(index, missing_keys))
+        raise KeyError(
+            "The following required keys "
+            "were not found in todo_list item #{}: {}".format(index, missing_keys)
+        )
     else:
         additional_keys = set(todo_list_dict.keys()) - REQUIRED_TODO_LIST_KEYS_FLATTENED
         for extra_key in additional_keys:
             if extra_key not in OPTIONAL_TODO_LIST_KEYS:
-                raise KeyError('key {} in todo_list item #{} is not recognized'
-                               .format(extra_key,index))
+                raise KeyError(
+                    "key {} in todo_list item #{} is not recognized".format(
+                        extra_key, index
+                    )
+                )
 
-    if 'feature_group' not in todo_list_dict and 'feature_list' not in todo_list_dict:
-            raise ValueError('todo_list item #{} does not include feature_group or feature_list'
-                             .format(index))
+    if "feature_group" not in todo_list_dict and "feature_list" not in todo_list_dict:
+        raise ValueError(
+            "todo_list item #{} does not include feature_group or feature_list".format(
+                index
+            )
+        )
 
     # first make copy of todo_list_dict that can be chanegd
     validated_todo_list_dict = copy.deepcopy(todo_list_dict)
 
-    if 'feature_list' in validated_todo_list_dict and \
-                    'feature_group' not in validated_todo_list_dict:
+    if (
+        "feature_list" in validated_todo_list_dict
+        and "feature_group" not in validated_todo_list_dict
+    ):
         # if just feature_list, just validate it, don't have to
         # do anything else:
-        _validate_feature_list(validated_todo_list_dict['feature_list'])
+        _validate_feature_list(validated_todo_list_dict["feature_list"])
 
-    elif 'feature_group' in validated_todo_list_dict and \
-                    'feature_list' not in validated_todo_list_dict:
+    elif (
+        "feature_group" in validated_todo_list_dict
+        and "feature_list" not in validated_todo_list_dict
+    ):
         # if just feature group, convert to feature list then validate
-        ftr_grp_valid = \
-            _validate_feature_group_and_convert_to_list(
-                validated_todo_list_dict['feature_group'])
-
-        validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
-        validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
-
-    elif 'feature_list' in validated_todo_list_dict and \
-                    'feature_group' in validated_todo_list_dict:
         ftr_grp_valid = _validate_feature_group_and_convert_to_list(
-            validated_todo_list_dict['feature_group'],
-            validated_todo_list_dict['feature_list'])
+            validated_todo_list_dict["feature_group"]
+        )
 
-        validated_todo_list_dict['feature_list'] = ftr_grp_valid[0]
-        validated_todo_list_dict['feature_list_group_ID'] = ftr_grp_valid[1]
-        validated_todo_list_dict['feature_group_ID_dict'] = ftr_grp_valid[2]
+        validated_todo_list_dict["feature_list"] = ftr_grp_valid[0]
+        validated_todo_list_dict["feature_list_group_ID"] = ftr_grp_valid[1]
+        validated_todo_list_dict["feature_group_ID_dict"] = ftr_grp_valid[2]
+
+    elif (
+        "feature_list" in validated_todo_list_dict
+        and "feature_group" in validated_todo_list_dict
+    ):
+        ftr_grp_valid = _validate_feature_group_and_convert_to_list(
+            validated_todo_list_dict["feature_group"],
+            validated_todo_list_dict["feature_list"],
+        )
+
+        validated_todo_list_dict["feature_list"] = ftr_grp_valid[0]
+        validated_todo_list_dict["feature_list_group_ID"] = ftr_grp_valid[1]
+        validated_todo_list_dict["feature_group_ID_dict"] = ftr_grp_valid[2]
 
     # okay now that we took care of that we can loop through everything else
     for key, val in todo_list_dict.items():
         # valid todo_list_dict keys in alphabetical order
-        if key == 'annotation_file':
-            with open(val, newline='') as f:
-                reader = csv.reader(f, delimiter=',')
+        if key == "annotation_file":
+            with open(val, newline="") as f:
+                reader = csv.reader(f, delimiter=",")
                 first_row = next(reader)
-                if first_row != 'filename,index,onset,offset,label'.split(','):
-                    raise ValueError('annotation_file did not have correct header')
+                if first_row != "filename,index,onset,offset,label".split(","):
+                    raise ValueError("annotation_file did not have correct header")
 
-        elif key == 'bird_ID':
+        elif key == "bird_ID":
             if type(val) != str:
-                raise ValueError('Value {} for key \'bird_ID\' is type {} but it'
-                                 ' should be a string'.format(val, type(val)))
+                raise ValueError(
+                    "Value {} for key 'bird_ID' is type {} but it"
+                    " should be a string".format(val, type(val))
+                )
 
-        elif key == 'data_dirs':
+        elif key == "data_dirs":
             if type(val) != list:
-                raise ValueError('data_dirs should be a list')
+                raise ValueError("data_dirs should be a list")
             else:
                 validated_data_dirs = []
                 for item in val:
@@ -403,51 +439,67 @@ def _validate_todo_list_dict(todo_list_dict, index, config_path):
                         # try adding item to absolute path to config_file
                         # i.e. assume it is written relative to config file
                         item = os.path.join(
-                            os.path.dirname(config_path),
-                            os.path.normpath(item))
+                            os.path.dirname(config_path), os.path.normpath(item)
+                        )
                         if not os.path.isdir(item):
-                            raise ValueError('directory {} in {} is not a valid directory.'
-                                             .format(item, key))
+                            raise ValueError(
+                                "directory {} in {} is not a valid directory.".format(
+                                    item, key
+                                )
+                            )
                     validated_data_dirs.append(item)
-                validated_todo_list_dict['data_dirs'] = validated_data_dirs
+                validated_todo_list_dict["data_dirs"] = validated_data_dirs
 
-        elif key == 'file_format':
+        elif key == "file_format":
             if type(val) != str:
-                raise ValueError('Value {} for key \'file_format\' is type {} but it'
-                                 ' should be a string'.format(val, type(val)))
+                raise ValueError(
+                    "Value {} for key 'file_format' is type {} but it"
+                    " should be a string".format(val, type(val))
+                )
             else:
-                if val not in validate_dict['valid_file_formats']:
-                    raise ValueError('{} is not a known audio file format'.format(val))
+                if val not in validate_dict["valid_file_formats"]:
+                    raise ValueError("{} is not a known audio file format".format(val))
 
-        elif key == 'labels_to_use':
+        elif key == "labels_to_use":
             if type(val) != str:
-                raise ValueError('labels_to_use should be a string, e.g., \'iabcde\'.')
+                raise ValueError("labels_to_use should be a string, e.g., 'iabcde'.")
             else:
-                validated_todo_list_dict[key] = list(val) # convert from string to list of chars
-                validated_todo_list_dict['labels_to_use_int'] = [ord(label) for label in list(val)]
+                validated_todo_list_dict[key] = list(
+                    val
+                )  # convert from string to list of chars
+                validated_todo_list_dict["labels_to_use_int"] = [
+                    ord(label) for label in list(val)
+                ]
 
-        elif key == 'output_dir':
+        elif key == "output_dir":
             if type(val) != str:
-                raise ValueError('output_dirs should be a string but it parsed as a {}'
-                                 .format(type(val)))
+                raise ValueError(
+                    "output_dirs should be a string but it parsed as a {}".format(
+                        type(val)
+                    )
+                )
             # add 'save_features=True' since this is implied when user
             # specifies a directory for output
-            if 'save_features' not in todo_list_dict:
-                validated_todo_list_dict['save_features'] = True
+            if "save_features" not in todo_list_dict:
+                validated_todo_list_dict["save_features"] = True
 
-        elif key == 'save_features':
-            if ('output_dir' in todo_list_dict and
-               todo_list_dict['save_features'] is False):
-                raise ValueError('output_dir was specified but '
-                                 'save_features was set to False')
+        elif key == "save_features":
+            if (
+                "output_dir" in todo_list_dict
+                and todo_list_dict["save_features"] is False
+            ):
+                raise ValueError(
+                    "output_dir was specified but " "save_features was set to False"
+                )
 
-        elif key == 'segment_params':
+        elif key == "segment_params":
             validate_segment_params(val)
 
-        elif key == 'spect_params':
+        elif key == "spect_params":
             validate_spect_params(val)
 
     return validated_todo_list_dict
+
 
 ##########################################
 # main function that validates yaml file #
@@ -473,51 +525,63 @@ def validate_yaml(config_path, extract_config_yaml):
     """
 
     if type(extract_config_yaml) is not dict:
-        raise ValueError('extract_config_yaml passed to parse.extract was '
-                         'not recognized as a dict, instead was a {}.'
-                         'Must pass a dict containing config loaded from YAML'
-                         'file or a str that is a YAML filename.'
-                         .format(type(extract_config_yaml)))
+        raise ValueError(
+            "extract_config_yaml passed to parse.extract was "
+            "not recognized as a dict, instead was a {}."
+            "Must pass a dict containing config loaded from YAML"
+            "file or a str that is a YAML filename.".format(type(extract_config_yaml))
+        )
 
-    if 'todo_list' not in extract_config_yaml:
-        raise KeyError('extract config does not have required key \'todo_list\'')
+    if "todo_list" not in extract_config_yaml:
+        raise KeyError("extract config does not have required key 'todo_list'")
 
-    if 'spect_params' not in extract_config_yaml:
-        has_spect_params = ['spect_params' in todo_dict
-                            for todo_dict in extract_config_yaml['todo_list']]
+    if "spect_params" not in extract_config_yaml:
+        has_spect_params = [
+            "spect_params" in todo_dict
+            for todo_dict in extract_config_yaml["todo_list"]
+        ]
         if not all(has_spect_params):
-            raise KeyError('no default `spect_params` specified, but'
-                           'not every todo_list in extract config has spect_params')
+            raise KeyError(
+                "no default `spect_params` specified, but"
+                "not every todo_list in extract config has spect_params"
+            )
 
-    if 'segment_params' not in extract_config_yaml:
-        has_segment_params = ['segment_params' in todo_dict
-                              for todo_dict in extract_config_yaml['todo_list']]
+    if "segment_params" not in extract_config_yaml:
+        has_segment_params = [
+            "segment_params" in todo_dict
+            for todo_dict in extract_config_yaml["todo_list"]
+        ]
         if not all(has_segment_params):
-            raise KeyError('no default `segment_params` specified, but'
-                           'not every todo_list in extract config has segment_params')
+            raise KeyError(
+                "no default `segment_params` specified, but"
+                "not every todo_list in extract config has segment_params"
+            )
 
     validated = copy.deepcopy(extract_config_yaml)
     for key, val in extract_config_yaml.items():
-        if key == 'spect_params':
-            validated['spect_params'] = validate_spect_params(val)
-        elif key == 'segment_params':
+        if key == "spect_params":
+            validated["spect_params"] = validate_spect_params(val)
+        elif key == "segment_params":
             validate_segment_params(val)
-        elif key == 'todo_list':
+        elif key == "todo_list":
             if type(val) != list:
-                raise TypeError('todo_list did not parse as a list, instead it parsed as {}.'
-                                ' Please check config file formatting.'.format(type(val)))
+                raise TypeError(
+                    "todo_list did not parse as a list, instead it parsed as {}."
+                    " Please check config file formatting.".format(type(val))
+                )
             else:
                 for index, item in enumerate(val):
                     if type(item) != dict:
-                        raise TypeError('item {} in todo_list did not parse as a dictionary, '
-                                        'instead it parsed as a {}. Please check config file'
-                                        ' formatting'.format(index, type(item)))
+                        raise TypeError(
+                            "item {} in todo_list did not parse as a dictionary, "
+                            "instead it parsed as a {}. Please check config file"
+                            " formatting".format(index, type(item))
+                        )
                     else:
                         val[index] = _validate_todo_list_dict(item, index, config_path)
-            validated['todo_list'] = val # re-assign because feature list is added
+            validated["todo_list"] = val  # re-assign because feature list is added
 
-        else: # if key is not found in list
-            raise KeyError('key {} in extract is an invalid key'.
-                            format(key))
+        else:  # if key is not found in list
+            raise KeyError("key {} in extract is an invalid key".format(key))
 
     return validated

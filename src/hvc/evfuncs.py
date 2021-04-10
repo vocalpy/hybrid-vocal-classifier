@@ -3,12 +3,12 @@ ev_funcs
 Python implementations of functions used with EvTAF and evsonganaly.m
 """
 
-#from third-party
+# from third-party
 import numpy as np
 from scipy.io import loadmat
 import scipy.signal
 
-#from hvc
+# from hvc
 import hvc.audiofileIO
 
 
@@ -18,7 +18,7 @@ def readrecf(filename):
     """
 
     rec_dict = {}
-    with open(filename,'r') as recfile:
+    with open(filename, "r") as recfile:
         line_tmp = ""
         while 1:
             if line_tmp == "":
@@ -26,35 +26,35 @@ def readrecf(filename):
             else:
                 line = line_tmp
                 line_tmp = ""
-                
+
             if line == "":  # if End Of File
                 break
             elif line == "\n":  # if blank line
                 continue
             elif "Catch" in line:
-                ind = line.find('=')
-                rec_dict['iscatch'] = line[ind+1:]
+                ind = line.find("=")
+                rec_dict["iscatch"] = line[ind + 1 :]
             elif "Chans" in line:
-                ind = line.find('=')
-                rec_dict['num_channels'] = int(line[ind+1:])
+                ind = line.find("=")
+                rec_dict["num_channels"] = int(line[ind + 1 :])
             elif "ADFREQ" in line:
-                ind = line.find('=')
+                ind = line.find("=")
                 try:
-                    rec_dict['sample_freq'] = int(line[ind+1:])
+                    rec_dict["sample_freq"] = int(line[ind + 1 :])
                 except ValueError:
-                    rec_dict['sample_freq'] = float(line[ind+1:])
+                    rec_dict["sample_freq"] = float(line[ind + 1 :])
             elif "Samples" in line:
-                ind = line.find('=')
-                rec_dict['num_samples'] = int(line[ind+1:])
+                ind = line.find("=")
+                rec_dict["num_samples"] = int(line[ind + 1 :])
             elif "T After" in line:
-                ind = line.find('=')
-                rec_dict['time_after'] = float(line[ind+1:])
+                ind = line.find("=")
+                rec_dict["time_after"] = float(line[ind + 1 :])
             elif "T Before" in line:
-                ind = line.find('=')
-                rec_dict['time before'] = float(line[ind+1:])
+                ind = line.find("=")
+                rec_dict["time before"] = float(line[ind + 1 :])
             elif "Output Sound File" in line:
-                ind = line.find('=')
-                rec_dict['outfile'] = line[ind+1:]
+                ind = line.find("=")
+                rec_dict["outfile"] = line[ind + 1 :]
             elif "Thresholds" in line:
                 th_list = []
                 while 1:
@@ -66,7 +66,7 @@ def readrecf(filename):
                     except ValueError:  # because we reached next section
                         line_tmp = line
                         break
-                rec_dict['thresholds'] = th_list
+                rec_dict["thresholds"] = th_list
                 if line == "":
                     break
             elif "Feedback information" in line:
@@ -78,11 +78,11 @@ def readrecf(filename):
                     elif line == "\n":
                         continue
                     ind = line.find("msec")
-                    time = float(line[:ind-1])
+                    time = float(line[: ind - 1])
                     ind = line.find(":")
-                    fb_type = line[ind+2:]
+                    fb_type = line[ind + 2 :]
                     fb_dict[time] = fb_type
-                rec_dict['feedback_info'] = fb_dict
+                rec_dict["feedback_info"] = fb_dict
                 if line == "":
                     break
             elif "File created" in line:
@@ -90,14 +90,14 @@ def readrecf(filename):
                 for counter in range(4):
                     line = recfile.readline()
                     header.append(line)
-                rec_dict['header']=header
+                rec_dict["header"] = header
     return rec_dict
 
 
-def load_cbin(filename,channel=0):
+def load_cbin(filename, channel=0):
     """
-    loads .cbin files output by EvTAF. 
-    
+    loads .cbin files output by EvTAF.
+
     arguments
     ---------
     filename : string
@@ -113,19 +113,17 @@ def load_cbin(filename,channel=0):
     sample_freq : integer
         sampling frequency in Hz. Typically 32000.
     """
-    
+
     # .cbin files are big endian, 16 bit signed int, hence dtype=">i2" below
-    data = np.fromfile(filename,dtype=">i2")
-    recfile = filename[:-5] + '.rec'
+    data = np.fromfile(filename, dtype=">i2")
+    recfile = filename[:-5] + ".rec"
     rec_dict = readrecf(recfile)
-    data = data[channel::rec_dict['num_channels']]  # step by number of channels
-    sample_freq = rec_dict['sample_freq']
+    data = data[channel :: rec_dict["num_channels"]]  # step by number of channels
+    sample_freq = rec_dict["sample_freq"]
     return data, sample_freq
 
 
-def load_notmat(filename,
-                round_times=True,
-                decimals=3):
+def load_notmat(filename, round_times=True, decimals=3):
     """
     loads .not.mat files created by evsonganaly (Matlab GUI for labeling song)
 
@@ -146,15 +144,14 @@ def load_notmat(filename,
     if ".not.mat" in filename:
         pass
     elif filename[-4:] == "cbin":
-            filename += ".not.mat"
+        filename += ".not.mat"
     else:
-        raise ValueError("Filename should have extension .cbin.not.mat or"
-                         " .cbin")
+        raise ValueError("Filename should have extension .cbin.not.mat or" " .cbin")
 
     return loadmat(filename, squeeze_me=True)
 
 
-def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
+def get_syls(cbin, spect_params, labels_to_use="all", syl_spect_width=-1):
     """
     Get birdsong syllables from .cbin files using the associated
     .cbin.not.mat file generated by evsonganaly.m (and the person that
@@ -179,7 +176,7 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
         empty strings for the labels. Default is 'all'.
     syl_spect_duration : int
         Optional parameter to set constant duration for each spectrogram of a
-        syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable. 
+        syllable, in seconds. E.g., 0.05 for an average 50 millisecond syllable.
         Used for creating inputs to neural network where each input
         must be of a fixed size.
         Default value is -1; in this case, the width of the spectrogram will
@@ -197,45 +194,49 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
     all_syl_labels : list of chars
     """
 
-    if labels_to_use != 'all':
-        if type(labels_to_use) !=list and type(labels_to_use) != str:
-            raise ValueError('labels_to_use argument should be a list or string')
+    if labels_to_use != "all":
+        if type(labels_to_use) != list and type(labels_to_use) != str:
+            raise ValueError("labels_to_use argument should be a list or string")
         if type(labels_to_use) == str:
             labels_to_use = list(labels_to_use)
 
     dat, samp_freq = load_cbin(cbin)
-    if samp_freq != spect_params['samp_freq']:
+    if samp_freq != spect_params["samp_freq"]:
         raise ValueError(
-            'Sampling frequency for {}, {}, does not match expected sampling '
-            'frequency of {}'.format(cbin,
-                                     samp_freq,
-                                     spect_params['samp_freq']))
+            "Sampling frequency for {}, {}, does not match expected sampling "
+            "frequency of {}".format(cbin, samp_freq, spect_params["samp_freq"])
+        )
 
     notmat = load_notmat(cbin)
-    onsets_Hz = np.round((notmat['onsets'] / 1000) * samp_freq).astype(int)
-    offsets_Hz = np.round((notmat['offsets'] / 1000) * samp_freq).astype(int)
+    onsets_Hz = np.round((notmat["onsets"] / 1000) * samp_freq).astype(int)
+    offsets_Hz = np.round((notmat["offsets"] / 1000) * samp_freq).astype(int)
     if syl_spect_width > 0:
         syl_spect_width_Hz = np.round(syl_spect_width * samp_freq)
 
     all_labels = []
     all_syls = []
 
-    for ind, (label, onset, offset) in enumerate(zip(notmat['labels'],onsets_Hz,offsets_Hz)):
-        if 'syl_spect_width_Hz' in locals():
+    for ind, (label, onset, offset) in enumerate(
+        zip(notmat["labels"], onsets_Hz, offsets_Hz)
+    ):
+        if "syl_spect_width_Hz" in locals():
             syl_duration_in_samples = offset - onset
             if syl_duration_in_samples < syl_spect_width_Hz:
-                raise ValueError('syllable duration of syllable {} with label {}'
-                                 'in file {} is greater than '
-                                 'width specified for all syllable spectrograms.'
-                                 .format(ind,label,cbin))
+                raise ValueError(
+                    "syllable duration of syllable {} with label {}"
+                    "in file {} is greater than "
+                    "width specified for all syllable spectrograms.".format(
+                        ind, label, cbin
+                    )
+                )
 
-        if labels_to_use == 'all':
+        if labels_to_use == "all":
             label = None
         elif label not in labels_to_use:
             continue
         all_labels.append(label)
 
-        if 'syl_spect_width_Hz' in locals():
+        if "syl_spect_width_Hz" in locals():
             width_diff = syl_spect_width_Hz - syl_duration_in_samples
             # take half of difference between syllable duration and spect width
             # so one half of 'empty' area will be on one side of spect
@@ -243,7 +244,7 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
             # i.e., center the spectrogram
             left_width = int(round(width_diff / 2))
             right_width = width_diff - left_width
-            if left_width > onset: # if duration before onset is less than left_width
+            if left_width > onset:  # if duration before onset is less than left_width
                 # (could happen with first onset)
                 left_width = 0
                 right_width = width_diff - offset
@@ -251,15 +252,16 @@ def get_syls(cbin, spect_params, labels_to_use='all', syl_spect_width=-1):
                 # if right width greater than length of file
                 right_width = dat.shape[-1] - offset
                 left_width = width_diff - right_width
-            syl_audio = dat[:, onset - left_width:
-                             offset + right_width]
+            syl_audio = dat[:, onset - left_width : offset + right_width]
         else:
             syl_audio = dat[onset:offset]
-        syllable = hvc.audiofileIO.make_syl_spect(syl_audio,
-                                                  samp_freq,
-                                                  nfft=spect_params['nperseg'],
-                                                  overlap=spect_params['noverlap'],
-                                                  freq_cutoffs = spect_params['freq_cutoffs'][0])
+        syllable = hvc.audiofileIO.make_syl_spect(
+            syl_audio,
+            samp_freq,
+            nfft=spect_params["nperseg"],
+            overlap=spect_params["noverlap"],
+            freq_cutoffs=spect_params["freq_cutoffs"][0],
+        )
         all_syls.append(syllable)
 
     return all_syls, all_labels
@@ -286,15 +288,17 @@ def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=(500, 10000)):
     filtsong : ndarray
     """
     if freq_cutoffs[0] <= 0:
-        raise ValueError('Low frequency cutoff {} is invalid, '
-                         'must be greater than zero.'
-                         .format(freq_cutoffs[0]))
+        raise ValueError(
+            "Low frequency cutoff {} is invalid, "
+            "must be greater than zero.".format(freq_cutoffs[0])
+        )
 
     Nyquist_rate = samp_freq / 2
     if freq_cutoffs[1] >= Nyquist_rate:
-        raise ValueError('High frequency cutoff {} is invalid, '
-                         'must be less than Nyquist rate, {}.'
-                         .format(freq_cutoffs[1], Nyquist_rate))
+        raise ValueError(
+            "High frequency cutoff {} is invalid, "
+            "must be less than Nyquist rate, {}.".format(freq_cutoffs[1], Nyquist_rate)
+        )
 
     if rawsong.shape[-1] < 387:
         numtaps = 64
@@ -305,8 +309,9 @@ def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=(500, 10000)):
     else:
         numtaps = 512
 
-    cutoffs = np.asarray([freq_cutoffs[0] / Nyquist_rate,
-                          freq_cutoffs[1] / Nyquist_rate])
+    cutoffs = np.asarray(
+        [freq_cutoffs[0] / Nyquist_rate, freq_cutoffs[1] / Nyquist_rate]
+    )
     # code on which this is based, bandpass_filtfilt.m, says it uses Hann(ing)
     # window to design filter, but default for matlab's fir1
     # is actually Hamming
@@ -314,7 +319,7 @@ def bandpass_filtfilt(rawsong, samp_freq, freq_cutoffs=(500, 10000)):
     # whereas argument to matlab's fir1 is filter *order*
     # for linear FIR, filter length is filter order + 1
     b = scipy.signal.firwin(numtaps + 1, cutoffs, pass_zero=False)
-    a = np.zeros((numtaps+1,))
+    a = np.zeros((numtaps + 1,))
     a[0] = 1  # make an "all-zero filter"
     padlen = np.max((b.shape[-1] - 1, a.shape[-1] - 1))
     filtsong = scipy.signal.filtfilt(b, a, rawsong, padlen=padlen)
@@ -361,5 +366,5 @@ def smooth_data(rawsong, samp_freq, freq_cutoffs=None, smooth_win=2):
     h = np.ones((len,)) / len
     smooth = np.convolve(squared_song, h)
     offset = round((smooth.shape[-1] - filtsong.shape[-1]) / 2)
-    smooth = smooth[offset:filtsong.shape[-1] + offset]
+    smooth = smooth[offset : filtsong.shape[-1] + offset]
     return smooth

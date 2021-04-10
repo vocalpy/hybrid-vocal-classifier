@@ -13,35 +13,39 @@ from ..koumura import parse_xml
 # but defined at top-level of the module, since these fields determine
 # what annotations the library can and cannot interpret.
 # The idea is to use the bare minimum of fields required.
-SYL_ANNOT_COLUMN_NAMES = ['filename',
-                          'onset_Hz',
-                          'offset_Hz',
-                          'onset_s',
-                          'offset_s',
-                          'label']
+SYL_ANNOT_COLUMN_NAMES = [
+    "filename",
+    "onset_Hz",
+    "offset_Hz",
+    "onset_s",
+    "offset_s",
+    "label",
+]
 set_SYL_ANNOT_COLUMN_NAMES = set(SYL_ANNOT_COLUMN_NAMES)
 
 # below maps each column in csv to a key in an annot_dict
 # used when appending to lists that correspond to each key
-SYL_ANNOT_TO_SONG_ANNOT_MAPPING = {'onset_Hz':'onsets_Hz',
-                                   'offset_Hz': 'offsets_Hz',
-                                   'onset_s': 'onsets_s',
-                                   'offset_s': 'offsets_s',
-                                   'label': 'labels'}
+SYL_ANNOT_TO_SONG_ANNOT_MAPPING = {
+    "onset_Hz": "onsets_Hz",
+    "offset_Hz": "offsets_Hz",
+    "onset_s": "onsets_s",
+    "offset_s": "offsets_s",
+    "label": "labels",
+}
 
 # used when mapping inputs **from** csv **to** annotation
-SONG_ANNOT_TYPE_MAPPING = {'onsets_Hz': int,
-                           'offsets_Hz': int,
-                           'onsets_s': float,
-                           'offsets_s': float,
-                           'labels': str}
+SONG_ANNOT_TYPE_MAPPING = {
+    "onsets_Hz": int,
+    "offsets_Hz": int,
+    "onsets_s": float,
+    "offsets_s": float,
+    "labels": str,
+}
 
 
-def notmat_to_annot_dict(notmat,
-                         abspath=False, 
-                         basename=False,
-                         round_times=True,
-                         decimals=3):
+def notmat_to_annot_dict(
+    notmat, abspath=False, basename=False, round_times=True, decimals=3
+):
     """open .not.mat file and return as annotation dict,
     the data structure that hybrid-vocal-classifier uses
     internally to represent annotation for one audio file
@@ -71,7 +75,7 @@ def notmat_to_annot_dict(notmat,
         with keys 'filename', 'labels', 'onsets_Hz', 'offsets_Hz', 'onsets_s', 'offsets_s'
 
     The abspath and basename parameters specify how file names for audio files are saved.
-    These options are useful for working with multiple copies of files and for 
+    These options are useful for working with multiple copies of files and for
     reproducibility. Default for both is False, in which case the filename is saved just
     as it is passed to this function.
 
@@ -80,32 +84,35 @@ def notmat_to_annot_dict(notmat,
     a csv file, the result should be the same on Windows and Linux
     """
 
-    if not notmat.endswith('.not.mat'):
-        raise ValueError("notmat filename should end with  '.not.mat',"
-                         "but '{}' does not".format(notmat))
+    if not notmat.endswith(".not.mat"):
+        raise ValueError(
+            "notmat filename should end with  '.not.mat',"
+            "but '{}' does not".format(notmat)
+        )
 
     if abspath and basename:
-        raise ValueError('abspath and basename arguments cannot both be set to True, '
-                         'unclear whether absolute path should be saved or if no path '
-                         'information (just base filename) should be saved.')
+        raise ValueError(
+            "abspath and basename arguments cannot both be set to True, "
+            "unclear whether absolute path should be saved or if no path "
+            "information (just base filename) should be saved."
+        )
 
     notmat_dict = evfuncs.load_notmat(notmat)
     # in .not.mat files saved by evsonganaly,
     # onsets and offsets are in units of ms, have to convert to s
-    onsets_s = notmat_dict['onsets'] / 1000
-    offsets_s = notmat_dict['offsets'] / 1000
+    onsets_s = notmat_dict["onsets"] / 1000
+    offsets_s = notmat_dict["offsets"] / 1000
 
     # convert to Hz using sampling frequency
-    audio_filename = notmat.replace('.not.mat','')
-    if audio_filename.endswith('.cbin'):
-        rec_filename = audio_filename.replace('.cbin','.rec')
-    elif audio_filename.endswith('.wav'):
-        rec_filename = audio_filename.replace('.wav', '.rec')
+    audio_filename = notmat.replace(".not.mat", "")
+    if audio_filename.endswith(".cbin"):
+        rec_filename = audio_filename.replace(".cbin", ".rec")
+    elif audio_filename.endswith(".wav"):
+        rec_filename = audio_filename.replace(".wav", ".rec")
     else:
-        raise ValueError("Can't find .rec file for {}."
-                         .format(notmat))
+        raise ValueError("Can't find .rec file for {}.".format(notmat))
     rec_dict = evfuncs.readrecf(rec_filename)
-    sample_freq = rec_dict['sample_freq']
+    sample_freq = rec_dict["sample_freq"]
     # subtract one because of Python's zero indexing (first sample is sample zero)
     onsets_Hz = np.round(onsets_s * sample_freq).astype(int) - 1
     offsets_Hz = np.round(offsets_s * sample_freq).astype(int)
@@ -122,20 +129,17 @@ def notmat_to_annot_dict(notmat,
         audio_filename = os.path.basename(audio_filename)
 
     annotation_dict = {
-        'filename': audio_filename,
-        'labels': np.asarray(list(notmat_dict['labels'])),
-        'onsets_s': onsets_s,
-        'offsets_s': offsets_s,
-        'onsets_Hz': onsets_Hz,
-        'offsets_Hz': offsets_Hz,
+        "filename": audio_filename,
+        "labels": np.asarray(list(notmat_dict["labels"])),
+        "onsets_s": onsets_s,
+        "offsets_s": offsets_s,
+        "onsets_Hz": onsets_Hz,
+        "offsets_Hz": offsets_Hz,
     }
     return annotation_dict
 
 
-def annot_list_to_csv(annot_list,
-                      csv_fname,
-                      abspath=False,
-                      basename=False):
+def annot_list_to_csv(annot_list, csv_fname, abspath=False, basename=False):
     """writes annotations from files to a comma-separated value (csv) file.
 
     Parameters
@@ -176,11 +180,13 @@ def annot_list_to_csv(annot_list,
     None
     """
     if abspath and basename:
-        raise ValueError('abspath and basename arguments cannot both be set to True, '
-                         'unclear whether absolute path should be saved or if no path '
-                         'information (just base filename) should be saved.')
+        raise ValueError(
+            "abspath and basename arguments cannot both be set to True, "
+            "unclear whether absolute path should be saved or if no path "
+            "information (just base filename) should be saved."
+        )
 
-    with open(csv_fname, 'w', newline='') as csvfile:
+    with open(csv_fname, "w", newline="") as csvfile:
         # SYL_ANNOT_COLUMN_NAMES is defined above, at the level of the module,
         # to ensure consistency across all functions in this module
         # that make use of it
@@ -188,25 +194,28 @@ def annot_list_to_csv(annot_list,
 
         writer.writeheader()
         for annot_dict in annot_list:
-            song_filename = annot_dict['filename']
+            song_filename = annot_dict["filename"]
             if abspath:
                 song_filename = os.path.abspath(song_filename)
             elif basename:
                 song_filename = os.path.basename(song_filename)
 
-            annot_dict_zipped = zip(annot_dict['onsets_Hz'],
-                                    annot_dict['offsets_Hz'],
-                                    annot_dict['onsets_s'],
-                                    annot_dict['offsets_s'],
-                                    annot_dict['labels'],
-                                    )
+            annot_dict_zipped = zip(
+                annot_dict["onsets_Hz"],
+                annot_dict["offsets_Hz"],
+                annot_dict["onsets_s"],
+                annot_dict["offsets_s"],
+                annot_dict["labels"],
+            )
             for onset_Hz, offset_Hz, onset_s, offset_s, label in annot_dict_zipped:
-                syl_annot_dict = {'filename': song_filename,
-                                  'onset_Hz': onset_Hz,
-                                  'offset_Hz': offset_Hz,
-                                  'onset_s': onset_s,
-                                  'offset_s': offset_s,
-                                  'label': label}
+                syl_annot_dict = {
+                    "filename": song_filename,
+                    "onset_Hz": onset_Hz,
+                    "offset_Hz": offset_Hz,
+                    "onset_s": onset_s,
+                    "offset_s": offset_s,
+                    "label": label,
+                }
                 writer.writerow(syl_annot_dict)
 
 
@@ -238,15 +247,15 @@ def notmat_list_to_csv(notmat_list, csv_fname, abspath=False, basename=False):
     -------
     None
     """
-    if not all([notmat.endswith('.not.mat')
-                for notmat in notmat_list]
-               ):
+    if not all([notmat.endswith(".not.mat") for notmat in notmat_list]):
         raise ValueError("all filenames in .not.mat must end with '.not.mat'")
 
     if abspath and basename:
-        raise ValueError('abspath and basename arguments cannot both be set to True, '
-                         'unclear whether absolute path should be saved or if no path '
-                         'information (just base filename) should be saved.')
+        raise ValueError(
+            "abspath and basename arguments cannot both be set to True, "
+            "unclear whether absolute path should be saved or if no path "
+            "information (just base filename) should be saved."
+        )
 
     annot_list = []
     for notmat in notmat_list:
@@ -254,16 +263,18 @@ def notmat_list_to_csv(notmat_list, csv_fname, abspath=False, basename=False):
     annot_list_to_csv(annot_list, csv_fname, abspath=abspath, basename=basename)
 
 
-def make_notmat(filename,
-                labels,
-                onsets_Hz,
-                offsets_Hz,
-                samp_freq,
-                threshold,
-                min_syl_dur,
-                min_silent_dur,
-                clf_file,
-                alternate_path=None):
+def make_notmat(
+    filename,
+    labels,
+    onsets_Hz,
+    offsets_Hz,
+    samp_freq,
+    threshold,
+    min_syl_dur,
+    min_silent_dur,
+    clf_file,
+    alternate_path=None,
+):
     """make a .not.mat file
     that can be read by evsonganaly (MATLAB GUI for labeling song)
 
@@ -307,12 +318,12 @@ def make_notmat(filename,
     None
     """
     # chr() to convert back to character from uint32
-    if labels.dtype == 'int32':
+    if labels.dtype == "int32":
         labels = [chr(val) for val in labels]
-    elif labels.dtype == '<U1':
+    elif labels.dtype == "<U1":
         labels = labels.tolist()
     # convert into one long string, what evsonganaly expects
-    labels = ''.join(labels)
+    labels = "".join(labels)
     # notmat files have onsets/offsets in units of ms
     # need to convert back from s
     onsets_s = onsets_Hz / samp_freq
@@ -323,38 +334,42 @@ def make_notmat(filename,
     # same goes for min_int and min_dur
     # also wrap everything in float so Matlab loads it as double
     # because evsonganaly expects doubles
-    notmat_dict = {'Fs': float(samp_freq),
-                   'min_dur': float(min_syl_dur * 1e3),
-                   'min_int': float(min_silent_dur * 1e3),
-                   'offsets': offsets,
-                   'onsets': onsets,
-                   'sm_win': float(2),  # evsonganaly.m doesn't actually let user change this value
-                   'threshold': float(threshold)
-                   }
-    notmat_dict['labels'] = labels
-    notmat_dict['classifier_file'] = clf_file
+    notmat_dict = {
+        "Fs": float(samp_freq),
+        "min_dur": float(min_syl_dur * 1e3),
+        "min_int": float(min_silent_dur * 1e3),
+        "offsets": offsets,
+        "onsets": onsets,
+        "sm_win": float(2),  # evsonganaly.m doesn't actually let user change this value
+        "threshold": float(threshold),
+    }
+    notmat_dict["labels"] = labels
+    notmat_dict["classifier_file"] = clf_file
 
-    notmat_name = filename + '.not.mat'
+    notmat_name = filename + ".not.mat"
     if os.path.exists(notmat_name):
         if alternate_path:
-            alternate_notmat_name = os.path.join(alternate_path,
-                                                 os.path.basename(filename)
-                                                 + '.not.mat')
+            alternate_notmat_name = os.path.join(
+                alternate_path, os.path.basename(filename) + ".not.mat"
+            )
             if os.path.exists(alternate_notmat_name):
-                raise FileExistsError('Tried to save {} in alternate path {},'
-                                      'but file already exists'.format(alternate_notmat_name,
-                                                                       alternate_path))
+                raise FileExistsError(
+                    "Tried to save {} in alternate path {},"
+                    "but file already exists".format(
+                        alternate_notmat_name, alternate_path
+                    )
+                )
             else:
                 scipy.io.savemat(alternate_notmat_name, notmat_dict)
         else:
-            raise FileExistsError('{} already exists but no alternate path provided'
-                                  .format(notmat_name))
+            raise FileExistsError(
+                "{} already exists but no alternate path provided".format(notmat_name)
+            )
     else:
         scipy.io.savemat(notmat_name, notmat_dict)
 
 
-def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True,
-                      wavpath='./Wave'):
+def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True, wavpath="./Wave"):
     """converts Annotation.xml files from Koumura dataset to annotation list
 
     Parameters
@@ -379,14 +394,19 @@ def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True,
 
     wavpath = os.path.normpath(wavpath)
     if not os.path.isdir(wavpath):
-        raise NotADirectoryError('Path specified for wavpath, {}, not recognized as an '
-                                 'existing directory'.format(wavpath))
+        raise NotADirectoryError(
+            "Path specified for wavpath, {}, not recognized as an "
+            "existing directory".format(wavpath)
+        )
 
-    if not annotation_file.endswith('.xml'):
-        raise ValueError('Name of annotation file should end with .xml, '
-                         'but name passed was {}'.format(annotation_file))
-    annotation = parse_xml(annotation_file,
-                           concat_seqs_into_songs=concat_seqs_into_songs)
+    if not annotation_file.endswith(".xml"):
+        raise ValueError(
+            "Name of annotation file should end with .xml, "
+            "but name passed was {}".format(annotation_file)
+        )
+    annotation = parse_xml(
+        annotation_file, concat_seqs_into_songs=concat_seqs_into_songs
+    )
     annot_list = []
     # loop through 'sequences' defined in xml song
     # (or entire songs, if concat_seqs_into_songs is True)
@@ -394,11 +414,14 @@ def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True,
         wav_filename = os.path.join(wavpath, sequence.wavFile)
         wav_filename = os.path.abspath(wav_filename)
         if not os.path.isfile(wav_filename):
-            raise FileNotFoundError('.wav file {} specified in annotation file {} is not found'
-                                    .format(wav_filename, annotation_file))
+            raise FileNotFoundError(
+                ".wav file {} specified in annotation file {} is not found".format(
+                    wav_filename, annotation_file
+                )
+            )
         # found with %%timeit that Python wave module takes about 1/2 the time of
         # scipy.io.wavfile for just reading sampling frequency from each file
-        with wave.open(wav_filename, 'rb') as wav_file:
+        with wave.open(wav_filename, "rb") as wav_file:
             samp_freq = wav_file.getframerate()
         onsets_Hz = np.asarray([syl.position for syl in sequence.syls])
         offsets_Hz = np.asarray([syl.position + syl.length for syl in sequence.syls])
@@ -406,12 +429,12 @@ def xml_to_annot_list(annotation_file, concat_seqs_into_songs=True,
         offsets_s = np.round(offsets_Hz / samp_freq, decimals=3)
         labels = np.asarray([syl.label for syl in sequence.syls])
         annot_dict = {
-            'filename': wav_filename,
-            'onsets_Hz': onsets_Hz,
-            'offsets_Hz': offsets_Hz,
-            'onsets_s': onsets_s,
-            'offsets_s': offsets_s,
-            'labels': labels
+            "filename": wav_filename,
+            "onsets_Hz": onsets_Hz,
+            "offsets_Hz": offsets_Hz,
+            "onsets_s": onsets_s,
+            "offsets_s": offsets_s,
+            "labels": labels,
         }
         annot_list.append(annot_dict)
     return annot_list
@@ -433,15 +456,16 @@ def xml_to_csv(annotation_file, concat_seqs_into_songs=True, csv_filename=None):
         Default is True.
     csv_filename : str
         Optional, name of .csv file to save. Defaults to None,
-        in which case name is name .xml file, but with 
+        in which case name is name .xml file, but with
         extension changed to .csv.
     """
 
-    annot_list = xml_to_annot_list(annotation_file,
-                                   concat_seqs_into_songs=concat_seqs_into_songs)
+    annot_list = xml_to_annot_list(
+        annotation_file, concat_seqs_into_songs=concat_seqs_into_songs
+    )
     if csv_filename is None:
         csv_filename = os.path.abspath(annotation_file)
-        csv_filename = csv_filename.replace('xml', 'csv')
+        csv_filename = csv_filename.replace("xml", "csv")
     annot_list_to_csv(annot_list, csv_filename)
 
 
@@ -457,14 +481,16 @@ def _fix_annot_dict_types(annot_dict):
         elif type_to_convert == str:
             pass
         else:
-            raise TypeError('Unexpected type {} specified in '
-                            'hvc.utils.annotation'
-                            .format(type_to_convert))
+            raise TypeError(
+                "Unexpected type {} specified in "
+                "hvc.utils.annotation".format(type_to_convert)
+            )
         annot_dict[key] = list_from_key
     # convert all lists to ndarray
-    for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
-        annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]] = \
-            np.asarray(annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]])
+    for col_name in set_SYL_ANNOT_COLUMN_NAMES - {"filename"}:
+        annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]] = np.asarray(
+            annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]]
+        )
     return annot_dict
 
 
@@ -484,7 +510,7 @@ def csv_to_annot_list(csv_fname):
     """
     annot_list = []
 
-    with open(csv_fname, 'r', newline='') as csv_file:
+    with open(csv_fname, "r", newline="") as csv_file:
         reader = csv.reader(csv_file)
 
         header = next(reader)
@@ -492,49 +518,63 @@ def csv_to_annot_list(csv_fname):
         if set_header != set_SYL_ANNOT_COLUMN_NAMES:
             not_in_FIELDNAMES = set_header.difference(set_SYL_ANNOT_COLUMN_NAMES)
             if not_in_FIELDNAMES:
-                raise ValueError('The following column names in {} are not recognized: {}'
-                                 .format(csv_fname, not_in_FIELDNAMES))
+                raise ValueError(
+                    "The following column names in {} are not recognized: {}".format(
+                        csv_fname, not_in_FIELDNAMES
+                    )
+                )
             not_in_header = set_FIELDNAMES.difference(set_header)
             if not_in_header:
                 raise ValueError(
-                    'The following column names in {} are required but missing: {}'
-                    .format(csv_fname, not_in_header))
+                    "The following column names in {} are required but missing: {}".format(
+                        csv_fname, not_in_header
+                    )
+                )
 
-        column_name_index_mapping = {column_name: header.index(column_name)
-                                     for column_name in SYL_ANNOT_COLUMN_NAMES}
+        column_name_index_mapping = {
+            column_name: header.index(column_name)
+            for column_name in SYL_ANNOT_COLUMN_NAMES
+        }
 
         row = next(reader)
-        curr_filename = row[column_name_index_mapping['filename']]
-        annot_dict = {'filename': curr_filename,
-                      'onsets_Hz': [],
-                      'offsets_Hz': [],
-                      'onsets_s': [],
-                      'offsets_s': [],
-                      'labels': []}
-        for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+        curr_filename = row[column_name_index_mapping["filename"]]
+        annot_dict = {
+            "filename": curr_filename,
+            "onsets_Hz": [],
+            "offsets_Hz": [],
+            "onsets_s": [],
+            "offsets_s": [],
+            "labels": [],
+        }
+        for col_name in set_SYL_ANNOT_COLUMN_NAMES - {"filename"}:
             annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
-                row[column_name_index_mapping[col_name]])
+                row[column_name_index_mapping[col_name]]
+            )
 
         for row in reader:
-            row_filename = row[column_name_index_mapping['filename']]
+            row_filename = row[column_name_index_mapping["filename"]]
             if row_filename == curr_filename:
-                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+                for col_name in set_SYL_ANNOT_COLUMN_NAMES - {"filename"}:
                     annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
-                        row[column_name_index_mapping[col_name]])
+                        row[column_name_index_mapping[col_name]]
+                    )
             else:
                 annot_dict = _fix_annot_dict_types(annot_dict)
                 annot_list.append(annot_dict)
                 # and start a new annot_dict
                 curr_filename = row_filename
-                annot_dict = {'filename': curr_filename,
-                              'onsets_Hz': [],
-                              'offsets_Hz': [],
-                              'onsets_s': [],
-                              'offsets_s': [],
-                              'labels': []}
-                for col_name in (set_SYL_ANNOT_COLUMN_NAMES - {'filename'}):
+                annot_dict = {
+                    "filename": curr_filename,
+                    "onsets_Hz": [],
+                    "offsets_Hz": [],
+                    "onsets_s": [],
+                    "offsets_s": [],
+                    "labels": [],
+                }
+                for col_name in set_SYL_ANNOT_COLUMN_NAMES - {"filename"}:
                     annot_dict[SYL_ANNOT_TO_SONG_ANNOT_MAPPING[col_name]].append(
-                        row[column_name_index_mapping[col_name]])
+                        row[column_name_index_mapping[col_name]]
+                    )
         # lines below appends annot_dict corresponding to last file
         # since there won't be another file after it to trigger the 'else' logic above
         annot_dict = _fix_annot_dict_types(annot_dict)
