@@ -1,14 +1,11 @@
 """
 YAML parser for extract config files
 """
-
-# from standard library
 import os
 import csv
 import copy
 import warnings
 
-# from dependencies
 import yaml
 
 from .ref_spect_params import refs_dict

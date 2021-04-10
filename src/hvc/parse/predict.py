@@ -1,13 +1,10 @@
 """
 YAML parser for predict config files
 """
-
-# from standard library
 import os
 import copy
 import csv
 
-# from dependencies
 import yaml
 import joblib
 

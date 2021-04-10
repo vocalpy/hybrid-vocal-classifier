@@ -2,13 +2,10 @@
 ev_funcs
 Python implementations of functions used with EvTAF and evsonganaly.m
 """
-
-# from third-party
 import numpy as np
 from scipy.io import loadmat
 import scipy.signal
 
-# from hvc
 import hvc.audiofileIO
 
 

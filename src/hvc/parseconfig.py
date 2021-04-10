@@ -1,10 +1,7 @@
-# from standard library
 import os
 
-# from dependencies
 import yaml
 
-# from hvc
 from . import parse
 
 parser_dict = {

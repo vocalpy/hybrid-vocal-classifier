@@ -3,26 +3,22 @@ model selection:
 trains models that classify birdsong syllables,
 using algorithms and other parameters specified in config file
 """
-
-# from standard library
 import os
 import copy
 
-# from dependencies
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 import joblib
 import yaml
 
-# from hvc
 from .parseconfig import parse_config
 from .utils import grab_n_samples_by_song, get_acc_by_label, timestamp
 from hvc.parse.select import _validate_models as validate_models
 
 
-path = os.path.abspath(__file__)  # get the path of this file
-dir_path = os.path.dirname(path)  # but then just take the dir
+path = os.path.abspath(__file__)
+dir_path = os.path.dirname(path)
 
 with open(os.path.join(dir_path, "parse", "validation.yml")) as val_yaml:
     validate_dict = yaml.load(val_yaml, Loader=yaml.FullLoader)

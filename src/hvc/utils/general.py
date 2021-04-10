@@ -1,4 +1,3 @@
-# from standard library
 import copy
 import random
 from datetime import datetime

@@ -1,17 +1,13 @@
 """
 YAML parser for select config files
 """
-
-# from standard library
 import os
 import copy
 
-# from dependencies
 import yaml
 import numpy as np
 import joblib
 
-# from hvc
 from ..features.extract import neural_net_features_switch_case_dict
 
 path = os.path.abspath(__file__)  # get the path of this file

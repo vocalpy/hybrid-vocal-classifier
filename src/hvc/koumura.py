@@ -15,14 +15,10 @@ data: https://figshare.com/articles/BirdsongRecognition/3470165
 Boundaries in the Birdsong with Variable Sequences. PLoS ONE 11(7): e0159188.
 doi:10.1371/journal.pone.0159188
 """
-
-# from standard library
 import os
 import glob
 import xml.etree.ElementTree as ET
-import csv
 
-# from dependencies
 import numpy as np
 
 

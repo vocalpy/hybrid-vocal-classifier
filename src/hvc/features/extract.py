@@ -2,7 +2,6 @@ import os
 import warnings
 from glob import glob
 
-# from dependencies
 import numpy as np
 from scipy.io import wavfile
 import joblib
