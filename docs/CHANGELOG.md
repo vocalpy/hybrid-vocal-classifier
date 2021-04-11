@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### changed
+- remove `evfuncs` module, replace with external `evfuncs` library
+  [#114](https://github.com/NickleDave/hybrid-vocal-classifier/pull/114)
+
+## [0.3.0](https://github.com/NickleDave/hybrid-vocal-classifier/releases/tag/0.3.0) -- 2021-04-10
 ### fixed
 - make various fixes so that `hvc` works with current versions of dependencies
   [#101](https://github.com/NickleDave/hybrid-vocal-classifier/pull/101)
