@@ -15,7 +15,6 @@ Many based on the CUIDADO feature set described in Peeters 2004 [2]_.
    and classification) in the CUIDADO project." (2004).
 """
 import numpy as np
-import numpy.matlib
 
 
 def duration(syllable):
@@ -226,9 +225,7 @@ def _convert_spect_to_probability(spect, freqs):
     # amplitude spectrum
     amplitude_spectrum = np.abs(spect)
     # probability
-    prob = amplitude_spectrum / np.matlib.repmat(
-        np.sum(amplitude_spectrum, 0), num_rows, 1
-    )
+    prob = amplitude_spectrum / np.tile(np.sum(amplitude_spectrum, 0), (num_rows, 1))
     return prob, freqs_mat, num_rows, num_cols
 
 
@@ -269,7 +266,7 @@ def _variance(freqs_mat, spect_centroid, num_rows, prob):
     """
 
     return np.sum(
-        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 2)) * prob,
+        (np.power(freqs_mat - np.tile(spect_centroid, (num_rows, 1)), 2)) * prob,
         0,
     )
 
@@ -384,7 +381,7 @@ def spectral_skewness(spect, freqBins):
     spect_centroid = spectral_centroid(prob, freqs_mat)
     variance = _variance(freqs_mat, spect_centroid, num_rows, prob)
     skewness = np.sum(
-        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 3)) * prob,
+        (np.power(freqs_mat - np.tile(spect_centroid, (num_rows, 1)), 3)) * prob,
         0,
     )
     return skewness / np.power(variance, 3 / 2)
@@ -442,7 +439,7 @@ def spectral_kurtosis(spect, freqBins):
     spect_centroid = spectral_centroid(prob, freqs_mat)
     variance = _variance(freqs_mat, spect_centroid, num_rows, prob)
     kurtosis = np.sum(
-        (np.power(freqs_mat - np.matlib.repmat(spect_centroid, num_rows, 1), 4)) * prob,
+        (np.power(freqs_mat - np.tile(spect_centroid, (num_rows, 1)), 4)) * prob,
         0,
     )
     return kurtosis / np.power(variance, 2)
@@ -616,7 +613,7 @@ def _cepstrum_for_pitch(spect, nfft, samp_freq, min_freq, max_freq):
     exs = np.vstack(
         (
             amplitude_spectrum,
-            np.matlib.repmat(amplitude_spectrum[-1, :], nfft, 1),
+            np.tile(amplitude_spectrum[-1, :], (nfft, 1)),
             np.flipud(amplitude_spectrum[1:-1, :]),
         )
     )
