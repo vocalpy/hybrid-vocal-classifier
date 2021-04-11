@@ -1,21 +1,18 @@
 """
 tests tachibana module
 """
-
-# from standard library
 import os
 from glob import glob
 
-# from dependencies
-import yaml
-import pytest
+import evfuncs
 import numpy as np
+import pytest
+import yaml
 
 from hvc.audiofileIO import Spectrogram, Segmenter, make_syls
 from hvc.features import tachibana
 from hvc.features.extract import single_syl_features_switch_case_dict
 from hvc.parse.ref_spect_params import refs_dict
-import hvc.evfuncs
 from hvc.utils import annotation
 
 
@@ -55,7 +52,7 @@ class TestTachibana:
         )
         songfiles_list = glob(songfiles_dir)
         first_song = songfiles_list[0]
-        raw_audio, samp_freq = hvc.evfuncs.load_cbin(first_song)
+        raw_audio, samp_freq = evfuncs.load_cbin(first_song)
 
         first_song_notmat = first_song + ".not.mat"
         annotation_dict = annotation.notmat_to_annot_dict(first_song_notmat)
@@ -107,7 +104,7 @@ class TestTachibana:
                 "cbins/gy6or6/032612/" "gy6or6_baseline_260312_0810.3440.cbin"
             ),
         )
-        raw_audio, samp_freq = hvc.evfuncs.load_cbin(a_cbin)
+        raw_audio, samp_freq = evfuncs.load_cbin(a_cbin)
 
         spect_params = refs_dict["evsonganaly"]
         spect_maker = Spectrogram(**spect_params)

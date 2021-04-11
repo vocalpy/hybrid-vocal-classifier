@@ -1,9 +1,8 @@
 """
 extracts features used with k-Nearest Neighbors algorithm
 """
+import evfuncs
 import numpy as np
-
-import hvc.evfuncs
 
 # helper function that calculates syllable durations
 _duration = lambda onsets, offsets: offsets - onsets
@@ -137,7 +136,7 @@ def _smooth_rect_amp(syllable):
         after bandpass filtering, squaring, and
         and smoothing with evfuncs.smooth_data
     """
-    return hvc.evfuncs.smooth_data(
+    return evfuncs.smooth_data(
         syllable.sylAudio, syllable.sampFreq, syllable.freqCutoffs
     )
 

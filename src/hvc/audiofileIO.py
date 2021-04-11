@@ -1,10 +1,10 @@
 import warnings
 
+import evfuncs
 import numpy as np
 import scipy.signal
 from matplotlib.mlab import specgram
 
-import hvc.evfuncs
 from .parse.ref_spect_params import refs_dict
 
 
@@ -294,7 +294,7 @@ class Spectrogram:
                 raw_audio
             )  # differential filter_func, as applied in Tachibana Okanoya 2014
         elif self.filterFunc == "bandpass_filtfilt":
-            raw_audio = hvc.evfuncs.bandpass_filtfilt(
+            raw_audio = evfuncs.bandpass_filtfilt(
                 raw_audio, samp_freq, self.freqCutoffs
             )
         elif self.filterFunc == "butter_bandpass":
@@ -436,7 +436,7 @@ class Segmenter:
             Method to use.
             evsonganaly -- gives same result as segmentation by evsonganaly.m
             (a Matlab GUI for labeling song developed in the Brainard lab)
-            Uses smoothed filtered amplitude of audio, as returned by hvc.evfuncs.smooth_data
+            Uses smoothed filtered amplitude of audio, as returned by evfuncs.smooth_data
             psd -- uses power spectral density of spectrogram, as returned by _compute_amp
 
         Returns
@@ -494,7 +494,7 @@ class Segmenter:
                 )
 
         if method == "evsonganaly":
-            amp = hvc.evfuncs.smooth_data(
+            amp = evfuncs.smooth_data(
                 array_to_segment, samp_freq, refs_dict["evsonganaly"]["freq_cutoffs"]
             )
         elif method == "psd":
