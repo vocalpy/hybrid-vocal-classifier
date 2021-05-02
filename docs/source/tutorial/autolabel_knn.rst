@@ -1,18 +1,26 @@
 .. _autolabel-knn:
 
+========
+Tutorial
+========
 
-autolabel with k-Nearest Neighbors
-==================================
+"autolabeling" with k-Nearest Neighbors
+---------------------------------------
 
-Here’s a walkthrough for applying the k-Nearest Neighbors algorithm to
-birdsong.
+This tutorial will walk you through using ``hvc`` to
+automatically label Bengalese finch song with
+the k-Nearest Neighbors algorithm.
+We call this the "autolabel" workflow
+(for more detail after going through this tutorial,
+please see :ref:`autolabel` in the :ref:`workflows`
+section of :ref:`howto`.)
 
 There’s three main *modules* in ``hvc`` that you will use in the
 autolabel workflow: ``extract`` to extract features, ``select`` to
 select a model, and ``predict`` to predict labels for unlabeled data.
 The steps below walk you through doing that.
 
-A convenient way to walk through this tutorial would be in iPython, so
+A convenient way to work through this tutorial would be in iPython, so
 you might first start iPython from the commmand line, like this:
 
 ::

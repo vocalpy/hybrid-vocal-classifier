@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/NickleDave/hybrid-vocal-classifier/branch/main/graph/badge.svg?token=9c27qf9WBf)](https://codecov.io/gh/NickleDave/hybrid-vocal-classifier)
 # hybrid-vocal-classifier
 ## a Python machine learning library for animal vocalizations and bioacoustics 
-![Image of finch singing with annotated spectrogram of song](./docs/images/gr41rd41_song.png)
+![Image of finch singing with annotated spectrogram of song](docs/source/images/gr41rd41_song.png)
 
 ### Getting Started
 You can install with pip: `$ pip install hybrid-vocal-classifier`  

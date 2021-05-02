@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
 SPHINXPROJ    = hybrid-vocal-classifier
-SOURCEDIR     = .
+SOURCEDIR     = ./source
 BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
