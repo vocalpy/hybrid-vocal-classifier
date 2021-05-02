@@ -54,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'hybrid-vocal-classifier'
-copyright = '2017, David Nicholson'
+copyright = '2017-present, David Nicholson'
 author = 'David Nicholson'
 
 # The version info for the project you're documenting, acts as replacement for
