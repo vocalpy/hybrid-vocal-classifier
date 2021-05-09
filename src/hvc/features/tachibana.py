@@ -23,7 +23,8 @@ def duration(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -41,12 +42,12 @@ def _spectrum(spect):
 
     Parameters
     ----------
-    spect : 2d array
-        spectrogram of syllable
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
 
     Returns
     -------
-    spectrum
+    spectrum : numpy.ndarray
     """
 
     return 20 * np.log10(np.abs(spect[1:, :]))
@@ -58,11 +59,13 @@ def mean_spectrum(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean of power spectrum across time
+    mean : numpy.ndarray
+        mean of power spectrum across time
     """
 
     spect = _spectrum(syllable.spect)
@@ -76,15 +79,15 @@ def _cepstrum_for_mean(spect, freq_bin_ID):
 
     Parameters
     ----------
-    spect : 2d array
-        syllable spectrogram
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
     freq_bin_ID : integer
         index of where to truncate cepstrum after creating,
         to keep only real component with same frequency bins as spectrum
 
     Returns
     -------
-    cepstrum
+    cepstrum : numpy.ndarray
 
     """
 
@@ -99,11 +102,13 @@ def mean_cepstrum(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean_cepstrum : 1d numpy array, mean of cepstrum (i.e. take mean across columns of spectrogram)
+    mean_cepstrum : numpy.ndarray
+        1-dimensional, mean of cepstrum (i.e. take mean across columns of spectrogram)
     """
 
     cepst = _cepstrum_for_mean(syllable.spect, syllable.freqBins.shape[0])
@@ -121,7 +126,7 @@ def _five_point_delta(x):
 
     Returns
     -------
-    five_point_delta : ndarray
+    five_point_delta : numpy.ndarray
     """
 
     if x.ndim == 2:  # if a matrix, not a 1-d vector
@@ -155,11 +160,12 @@ def mean_delta_spectrum(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean_deltra_spectrum
+    mean_deltra_spectrum :numpy.ndarray
     """
 
     if syllable.spect.shape[-1] < 5:
@@ -181,11 +187,12 @@ def mean_delta_cepstrum(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean delta spectrum
+    mean delta spectrum : numpy.ndarray
     """
 
     if syllable.spect.shape[-1] < 5:
@@ -214,10 +221,14 @@ def _convert_spect_to_probability(spect, freqs):
 
     Returns
     -------
-    prob : 2d numpy array, same size as spect; spectrogram converted to probability
-    freqs_mat : 2d numpy array, tiled frequency bins with same number of columns as spect
-    num_rows : int, number of rows in spect
-    num_cols : int, number of columns in spect
+    prob : numpy.ndarray
+        2d array, same size as spect; spectrogram converted to probability
+    freqs_mat : numpy.ndarray
+        2d array, tiled frequency bins with same number of columns as spect
+    num_rows : int
+        number of rows in spect
+    num_cols : int
+        number of columns in spect
     """
 
     num_rows, num_cols = spect.shape
@@ -235,14 +246,19 @@ def spectral_centroid(prob, freqs_mat):
 
     Parameters
     ----------
-    prob : 2d array, returned by _convert_spect_to_probability. Spectrogram converted to normalized amplitude spectra
-    freqs_mat : 2d array, returned by _convert_spect_to_probability. Frequency bins tiled so columns = time bins
+    prob : numpy.ndarray
+        2d array, returned by _convert_spect_to_probability.
+        Spectrogram converted to normalized amplitude spectra
+    freqs_mat : numpy.ndarray
+        2d array, returned by _convert_spect_to_probability.
+        Frequency bins tiled so columns = time bins
 
     Returns
     -------
-    spectral centroid : 1d array with number of elements equal to width of prob.
-                        Each element is spectral centroid for that time bin of prob.
-                        As calculated in Tachibana et al. 2014
+    spectral centroid : numpy.ndarray
+        1d array with number of elements equal to width of prob.
+        Each element is spectral centroid for that time bin of prob.
+        As calculated in Tachibana et al. 2014
     """
 
     # 1st moment: centroid (mean of distribution)
@@ -255,9 +271,9 @@ def _variance(freqs_mat, spect_centroid, num_rows, prob):
 
     Parameters
     ----------
-    freqs_mat
-    spect_centroid
-    num_rows
+    freqs_mat : numpy.ndarray
+    spect_centroid : numpy.ndarray
+    num_rows : int
     prob
 
     Returns
@@ -278,11 +294,13 @@ def mean_spectral_centroid(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean_spectral_centroid : scalar, mean of spectral centroid across syllable
+    mean_spectral_centroid : float
+        scalar, mean of spectral centroid across syllable
     """
     prob, freqs_mat = _convert_spect_to_probability(syllable.spect, syllable.freqBins)[
         :2
@@ -297,7 +315,8 @@ def mean_delta_spectral_centroid(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -318,11 +337,12 @@ def spectral_spread(spect, freqBins):
 
     Parameters
     ----------
-    spect : 2d numpy array, spectrogram where each element is power for that frequency and time bin
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
 
     Returns
     -------
-    spectral spread
+    spectral spread : numpy.ndarray
     """
     prob, freqs_mat, num_rows = _convert_spect_to_probability(spect, freqBins)[:3]
     spect_centroid = spectral_centroid(prob, freqs_mat)
@@ -337,11 +357,13 @@ def mean_spectral_spread(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean_spectral_spread : scalar, mean of spectral spread across syllable
+    mean_spectral_spread : float
+        scalar, mean of spectral spread across syllable
     """
     return np.mean(spectral_spread(syllable.spect, syllable.freqBins))
 
@@ -352,7 +374,8 @@ def mean_delta_spectral_spread(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -370,7 +393,8 @@ def spectral_skewness(spect, freqBins):
 
     Parameters
     ----------
-    spect
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
 
     Returns
     -------
@@ -394,11 +418,13 @@ def mean_spectral_skewness(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean spectral skewness : scalar, mean of spectral skewness across syllable
+    mean spectral skewness : float
+        scalar, mean of spectral skewness across syllable
     """
 
     return np.mean(spectral_skewness(syllable.spect, syllable.freqBins))
@@ -410,11 +436,13 @@ def mean_delta_spectral_skewness(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean_delta_spectral_skewness : scalar
+    mean_delta_spectral_skewness : float
+        scalar value
     """
 
     return np.mean(
@@ -428,7 +456,7 @@ def spectral_kurtosis(spect, freqBins):
 
     Parameters
     ----------
-    spect
+    spect  : numpy.ndarray
 
     Returns
     -------
@@ -452,7 +480,8 @@ def mean_spectral_kurtosis(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -468,7 +497,8 @@ def mean_delta_spectral_kurtosis(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -486,7 +516,8 @@ def spectral_flatness(spect):
 
     Parameters
     ----------
-    spect
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
 
     Returns
     -------
@@ -504,11 +535,13 @@ def mean_spectral_flatness(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-
+    mean_spectral_skewness : float
+        mean of spectral_flatness across spect
     """
     return np.mean(spectral_flatness(syllable.spect))
 
@@ -519,11 +552,12 @@ def mean_delta_spectral_flatness(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
-    mean delta spectral flatness
+    mean delta spectral flatness : float
     """
     return np.mean(_five_point_delta(spectral_flatness(syllable.spect)))
 
@@ -534,8 +568,10 @@ def spectral_slope(spect, freq_bins):
 
     Parameters
     ----------
-    spect : 2d array,
-    freqBins : 1d array, frequency bins as returned by spectrogram
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
+    freqBins : numpy.ndarray
+        1d array, frequency bins as returned by spectrogram
 
     Returns
     -------
@@ -560,7 +596,8 @@ def mean_spectral_slope(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -576,7 +613,8 @@ def mean_delta_spectral_slope(syllable):
 
     Parameters
     ----------
-    syllable : syllable object
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -593,7 +631,8 @@ def _cepstrum_for_pitch(spect, nfft, samp_freq, min_freq, max_freq):
 
     Parameters
     ----------
-    spect
+    spect : numpy.ndarray
+        2-dimensional array, spectrogram of syllable
     nfft
     samp_freq
     min_freq
@@ -630,7 +669,8 @@ def pitch(syllable, min_freq=500, max_freq=6000):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
     min_freq
     max_freq
 
@@ -651,7 +691,8 @@ def mean_pitch(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -667,7 +708,8 @@ def mean_delta_pitch(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -682,7 +724,8 @@ def pitch_goodness(syllable, min_freq=500, max_freq=6000):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
     min_freq
     max_freq
 
@@ -707,7 +750,8 @@ def mean_pitch_goodness(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -721,7 +765,8 @@ def mean_delta_pitch_goodness(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -737,7 +782,8 @@ def amplitude(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -754,7 +800,8 @@ def mean_amplitude(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -770,7 +817,8 @@ def mean_delta_amplitude(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
@@ -786,7 +834,8 @@ def zero_crossings(syllable):
 
     Parameters
     ----------
-    syllable
+    syllable : hvc.audiofileIO.Syllable
+        instance of Syllable class returned by hvc.audiofileIO.make_syls
 
     Returns
     -------
