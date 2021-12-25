@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### changed
 - remove `evfuncs` module, replace with external `evfuncs` library
   [#114](https://github.com/NickleDave/hybrid-vocal-classifier/pull/114)
+- switch from using `poetry` to using `flit` for development, 
+  makes it possible to specify metadata according to PEP 621
+  [#123](https://github.com/NickleDave/hybrid-vocal-classifier/pull/123).
+
+### fixed
+- change 'requires-python' constraints to include Python 3.9
+  [#123](https://github.com/NickleDave/hybrid-vocal-classifier/pull/123).
 
 ## [0.3.0](https://github.com/NickleDave/hybrid-vocal-classifier/releases/tag/0.3.0) -- 2021-04-10
 ### fixed
