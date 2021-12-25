@@ -4,7 +4,7 @@ description = "a Python machine learning library for animal vocalizations and bi
 authors = [
     {name = "David Nicholson", email = "nickledave@users.noreply.github.com"},
 ]
-version = "0.3.0"
+version = "0.3.1"
 license = {file = "LICENSE"}
 requires-python = ">=3.7,<3.10"
 dependencies = [
