@@ -22,3 +22,5 @@ tests/data_for_tests/model_files/
 # coverage
 .coverage
 coverage.xml
+
+.venv
