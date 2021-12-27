@@ -1,0 +1,40 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: hybrid-vocal-classifier
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - given-names: David
+    family-names: Nicholson
+    email: nicholdav@gmail.com
+    affiliation: Emory University
+    orcid: 'https://orcid.org/0000-0002-4261-4719'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.844932
+    description: all versions
+  - type: doi
+    value: 10.5281/zenodo.4678768
+    description: Version 0.3.0
+  - type: doi
+    value: 10.5281/zenodo.5805569
+    description: Version 0.3.1
+repository-code: >-
+  https://github.com/NickleDave/hybrid-vocal-classifier
+url: >-
+  https://hybrid-vocal-classifier.readthedocs.io/en/latest/
+repository-artifact: 'https://pypi.org/project/hybrid-vocal-classifier/'
+abstract: >-
+  a Python machine learning library for animal
+  vocalizations and bioacoustics
+keywords:
+  - python
+  - machine learning
+  - bioacoustics
+  - birdsong
+  - scikit-learn
+license: BSD-3-Clause
+version: 0.3.1
+date-released: '2021-12-25'
